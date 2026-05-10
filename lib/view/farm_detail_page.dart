@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:kpostal_plus/kpostal_plus.dart';
 import 'package:smart_app/core/api_exception.dart';
 import 'package:smart_app/model/product_record.dart';
@@ -22,7 +23,10 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
   final shippingPolicyController = TextEditingController();
   final returnPolicyController = TextEditingController();
   final repository = ProductRepository();
+  final imagePicker = ImagePicker();
   OwnerFarmRecord? farm;
+  Uint8List? selectedImageBytes;
+  String? selectedImageName;
   bool isLoading = false;
   bool isSaving = false;
   String? loadError;
@@ -95,20 +99,33 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
       onConfirm: () async {
         setState(() => isSaving = true);
         try {
+          var farmImageUrl = farm!.farmImageUrl;
+          if (selectedImageBytes != null && selectedImageName != null) {
+            final uploaded = await repository.uploadFarmImage(
+              farmId: farm!.farmId,
+              fileName: selectedImageName!,
+              fileBytes: selectedImageBytes!,
+            );
+            farmImageUrl = uploaded.farmImageUrl;
+          }
           final saved = await repository.updateFarm(
             OwnerFarmRecord(
               farmId: farm!.farmId,
               farmName: farmNameController.text.trim(),
               farmRegion: farm!.farmRegion,
               farmAddress: addressController.text.trim(),
-              farmImageUrl: farm!.farmImageUrl,
+              farmImageUrl: farmImageUrl,
               farmDescription: introController.text.trim(),
               deliveryPolicy: shippingPolicyController.text.trim(),
               returnPolicy: returnPolicyController.text.trim(),
             ),
           );
           if (!mounted) return;
-          setState(() => farm = saved);
+          setState(() {
+            farm = saved;
+            selectedImageBytes = null;
+            selectedImageName = null;
+          });
           await showInfoAction(
             context: context,
             title: '농장 정보 저장',
@@ -173,6 +190,26 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
     setState(() => addressController.text = selected);
   }
 
+  Future<void> _pickImage() async {
+    try {
+      final picked = await imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+        requestFullMetadata: false,
+      );
+      if (picked == null) return;
+      final bytes = await picked.readAsBytes();
+      if (!mounted) return;
+      setState(() {
+        selectedImageBytes = bytes;
+        selectedImageName = picked.name.isEmpty ? 'farm.jpg' : picked.name;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      showOwnerSnack(context, '이미지를 선택하지 못했습니다.');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -206,6 +243,33 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
               onPressed: _searchAddress,
               icon: const Icon(Icons.search),
               label: const Text('주소 검색'),
+            ),
+            CameraPreviewCard(
+              icon: Icons.photo_camera_back_outlined,
+              label:
+                  selectedImageName ??
+                  (farm?.farmImageUrl?.isNotEmpty == true
+                      ? '등록된 농장 이미지'
+                      : '농장 대표 이미지 선택'),
+              hasImage:
+                  selectedImageBytes != null ||
+                  farm?.farmImageUrl?.isNotEmpty == true,
+              imageBytes: selectedImageBytes,
+              imageUrl: selectedImageBytes == null ? farm?.farmImageUrl : null,
+              onTap: _pickImage,
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: _pickImage,
+                icon: const Icon(Icons.photo_library_outlined),
+                label: Text(
+                  farm?.farmImageUrl?.isNotEmpty == true ||
+                          selectedImageBytes != null
+                      ? '이미지 변경'
+                      : '이미지 선택',
+                ),
+              ),
             ),
             LabeledBox(
               label: '농장 소개',

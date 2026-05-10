@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:smart_app/core/api_exception.dart';
+import 'package:smart_app/repositories/auth_repository.dart';
 import 'package:smart_app/widgets/owner_widgets.dart';
 
 class EmailFindPage extends StatefulWidget {
@@ -10,8 +12,10 @@ class EmailFindPage extends StatefulWidget {
 
 class _EmailFindPageState extends State<EmailFindPage> {
   final formKey = GlobalKey<FormState>();
+  final repository = AuthRepository();
   final nameController = TextEditingController();
   final phoneController = TextEditingController();
+  bool isLoading = false;
 
   @override
   void dispose() {
@@ -20,16 +24,29 @@ class _EmailFindPageState extends State<EmailFindPage> {
     super.dispose();
   }
 
-  void _find() {
+  Future<void> _find() async {
     if (!(formKey.currentState?.validate() ?? false)) return;
-    final maskedPhone = phoneController.text.length >= 4
-        ? '***-****-${phoneController.text.substring(phoneController.text.length - 4)}'
-        : phoneController.text;
-    showInfoAction(
-      context: context,
-      title: '이메일 찾기',
-      message: '${nameController.text.trim()}님의 점주 계정을 확인했습니다. 등록된 연락처 $maskedPhone로 이메일 안내를 발송합니다.',
-    );
+    setState(() => isLoading = true);
+    try {
+      final maskedEmail = await repository.findEmail(
+        name: nameController.text.trim(),
+        phone: phoneController.text.trim(),
+      );
+      if (!mounted) return;
+      showInfoAction(
+        context: context,
+        title: '이메일 찾기',
+        message: '등록된 점주 이메일은 $maskedEmail 입니다.',
+      );
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      showOwnerSnack(context, error.message);
+    } catch (_) {
+      if (!mounted) return;
+      showOwnerSnack(context, '계정 정보를 확인하지 못했습니다.');
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
   }
 
   @override
@@ -63,9 +80,9 @@ class _EmailFindPageState extends State<EmailFindPage> {
             ),
             DualActionBar(
               left: '취소',
-              right: '찾기',
+              right: isLoading ? '확인 중' : '찾기',
               onLeftPressed: () => Navigator.of(context).pop(),
-              onRightPressed: _find,
+              onRightPressed: isLoading ? null : _find,
             ),
           ],
         ),

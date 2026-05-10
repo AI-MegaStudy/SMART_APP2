@@ -126,3 +126,65 @@ class AuthService:
             "customer_profile": customer_profile,
             "owner_profile": owner_profile,
         }
+
+    def find_email(self, *, name: str, phone: str, role: str = AccountRole.OWNER) -> dict:
+        normalized_role = role.upper()
+        account: Account | None = None
+        if normalized_role == AccountRole.OWNER:
+            profile = (
+                self.session.query(OwnerProfile)
+                .join(Account)
+                .filter(OwnerProfile.owner_name == name, OwnerProfile.owner_phone == phone)
+                .one_or_none()
+            )
+            account = profile.account if profile else None
+        else:
+            profile = (
+                self.session.query(CustomerProfile)
+                .join(Account)
+                .filter(CustomerProfile.customer_name == name, CustomerProfile.customer_phone == phone)
+                .one_or_none()
+            )
+            account = profile.account if profile else None
+        if not account:
+            raise HTTPException(status_code=404, detail="account not found")
+        return {
+            "email": account.email,
+            "masked_email": mask_email(account.email),
+            "role": account.role,
+        }
+
+    def request_password_reset(self, *, name: str, email: str, role: str = AccountRole.OWNER) -> dict:
+        normalized_email = normalize_email(email)
+        normalized_role = role.upper()
+        account = self.repo.get_by_email(normalized_email)
+        if not account or account.role != normalized_role:
+            raise HTTPException(status_code=404, detail="account not found")
+        if normalized_role == AccountRole.OWNER:
+            profile = account.owner_profile
+            if not profile or profile.owner_name != name:
+                raise HTTPException(status_code=404, detail="account not found")
+        else:
+            profile = account.customer_profile
+            if not profile or profile.customer_name != name:
+                raise HTTPException(status_code=404, detail="account not found")
+
+        verification = self.email_verification_service.send_verification(
+            email=normalized_email,
+            purpose="RESET_PASSWORD",
+        )
+        return {
+            "email": normalized_email,
+            "masked_email": mask_email(normalized_email),
+            "resend_available_seconds": verification.get("resend_available_seconds"),
+            "dev_code": verification.get("dev_code"),
+        }
+
+
+def mask_email(email: str) -> str:
+    local, _, domain = email.partition("@")
+    if len(local) <= 2:
+        masked_local = f"{local[:1]}***"
+    else:
+        masked_local = f"{local[:2]}***{local[-1:]}"
+    return f"{masked_local}@{domain}" if domain else masked_local

@@ -10,7 +10,7 @@ Last updated: 2026-05-11
 |---|---:|---|
 | 발표용 점주 앱 완성도 | 88% | 로그인부터 상품, 수확 예측, 슬롯 오픈, 예약/주문, 발주, 신선도, 배송, 반품, 프로필까지 주요 동선 시연 가능 |
 | 실제 FastAPI 연동도 | 82% | 대부분 owner API 연결 완료. 일부 화면은 API 실패/데이터 부족 시 fallback으로 발표 흐름 유지 |
-| 실서비스 투입 준비도 | 68% | 비밀번호 재설정/계정 운영 API, 이미지 실기기 권한 최종검증, 운영용 데이터/마이그레이션 정리가 추가 필요 |
+| 실서비스 투입 준비도 | 72% | 비밀번호 재설정 확정 API, 계정 운영 API, 이미지 실기기 권한 최종검증, 운영용 데이터/마이그레이션 정리가 추가 필요 |
 | Chrome 검증 상태 | 완료 | `http://127.0.0.1:3002`에서 주요 화면 확인 |
 | iOS 최종 검증 상태 | 부분 완료 | 로그인/대시보드/메뉴/프로필 확인 완료. 갤러리/이미지 선택은 재빌드 후 추가 확인 필요 |
 
@@ -35,8 +35,8 @@ Last updated: 2026-05-11
 | 로그인 | 100% | 이메일/비밀번호 로그인, OWNER role 검증, 토큰 저장, 세션 복원 | `POST /auth/login`, `GET /me` | 없음 | 운영 오류 메시지 세분화 정도 |
 | 대시보드 | 95% | 점주명/농장명 표시, 선별 대기/신규 발주/배송 준비/반품 요청 카운트, 카드 이동 | `GET /owner/dashboard` | API 실패 시 빈 대시보드로 크래시 방지 | 카운트 기준을 운영 정책과 최종 대조 |
 | 메뉴 | 95% | 업무 그룹별 메뉴, 검색, 주요 화면 이동 | Flutter local navigation | 없음 | 세부 메뉴명 최종 문구 검수 |
-| 상품 관리 | 90% | 상품 목록, 검색/필터, 상품 등록, 상품 수정, 상태 변경, 품종/박스 단위 제한, 가격/수량 stepper, 상품 소개 저장 | `GET/POST/PUT /owner/products`, `PATCH /owner/products/{id}/status` | 상품 수량은 실제 재고가 아니라 표시값. 실제 예약 가능 수량은 수확 슬롯에서 관리 | 상품 대표 이미지 업로드 UI를 등록/수정 화면에 노출하면 완성도 추가 상승 |
-| 농장 정보 수정 | 90% | 농장명, 주소, 농장 소개, 배송 정책, 반품 정책 수정 | `GET /owner/farms/me`, `PUT /owner/farms/{farm_id}` | macOS/web 비지원 환경에서는 주소 후보 bottom sheet, 모바일은 `kpostal_plus` | 농장 대표 이미지 업로드 연결 |
+| 상품 관리 | 94% | 상품 목록, 검색/필터, 상품 등록, 상품 수정, 대표 이미지 선택/업로드/썸네일, 상태 변경, 품종/박스 단위 제한, 가격/수량 stepper, 상품 소개 저장 | `GET/POST/PUT /owner/products`, `POST /owner/products/{id}/image`, `PATCH /owner/products/{id}/status` | 상품 수량은 실제 재고가 아니라 표시값. 실제 예약 가능 수량은 수확 슬롯에서 관리 | 실기기 갤러리 권한 최종 확인 |
+| 농장 정보 수정 | 94% | 농장명, 주소, 농장 대표 이미지 선택/업로드, 농장 소개, 배송 정책, 반품 정책 수정 | `GET /owner/farms/me`, `PUT /owner/farms/{farm_id}`, `POST /owner/farms/{farm_id}/image` | macOS/web 비지원 환경에서는 주소 후보 bottom sheet, 모바일은 `kpostal_plus` | 실기기 갤러리 권한 최종 확인 |
 | 수확 예측 | 90% | 농장/상품 선택, 과거 수확량/최근 날씨/재배 상태 입력, 예측 실행, 예측 카드/트렌드 표시 | `POST /owner/ml/predictions`, `GET /owner/ml/predictions` | rule 기반 owner 예측 결과로 발표 흐름 유지 | 실제 ML 모델 연동 시 feature schema 확정 |
 | 수확 슬롯 열기 | 90% | 예측값을 참고한 뒤 점주가 시작/종료일, 예약 가능 kg, 판매가, 고객 안내 문구를 확정 저장 | `POST /owner/harvest-slots` | 예측값을 그대로 열지 않고 점주 확정값 사용 | 슬롯 수정/마감 UX 세부 보강 |
 | 주문 현황 | 90% | 주문/예약 탭 분리, 상태 필터, 검색, 주문/예약 카드 표시 | `GET /owner/orders`, `GET /owner/reservations` | 내부 seed 주문번호는 화면에 직접 노출하지 않음 | 예약 상세 화면이 필요하면 추가 |
@@ -51,8 +51,8 @@ Last updated: 2026-05-11
 | 내 정보 수정 | 90% | 점주명, 이메일, 전화번호, 사업자번호 조회/수정 | `GET /owner/profile`, `PUT /owner/profile` | 없음 | 비밀번호 변경 API가 있으면 통합 |
 | 마이 | 85% | 점주/농장 헤더, 내 정보 수정, 농장 정보 수정, 로그아웃, 계정 지원 요청 | `GET /owner/profile`, `GET /owner/farms/me` | 회원 탈퇴 미구현 노출 대신 계정 지원 요청 UX | 실제 계정 비활성화/탈퇴 운영 API |
 | 회원가입 | 82% | 점주 회원가입 폼, 이메일 인증번호 발송/검증, 주소 검색 `kpostal_plus`, 입력 검증 | `POST /auth/owners/signup`, `POST /auth/email/send`, `POST /auth/email/verify` | 데스크톱 비지원 환경 주소 후보 제공 | 가입 시 농장/사업자 정보까지 저장하는 API 확장 |
-| 이메일 찾기 | 65% | 이름/전화번호 검증 후 안내 UX | 화면 로컬 처리 | 전용 API가 없어 발표 흐름만 유지 | `POST /auth/email/find` 필요 |
-| 비밀번호 찾기 | 65% | 이름/이메일 검증 후 재설정 안내 UX | 화면 로컬 처리 | 전용 API가 없어 발표 흐름만 유지 | reset token 발급/검증 API 필요 |
+| 이메일 찾기 | 90% | 이름/전화번호 검증 후 마스킹 이메일 조회 | `POST /auth/email/find` | 없음 | 개인정보 노출 정책 최종 확인 |
+| 비밀번호 찾기 | 75% | 이름/이메일 검증 후 비밀번호 재설정 인증 요청 | `POST /auth/password/reset-request` | 개발 모드에서는 확인 코드 표시 | 새 비밀번호 확정 API 필요 |
 
 ## 구현된 FastAPI 연동 기능
 
@@ -70,7 +70,8 @@ Last updated: 2026-05-11
 | 상품 | `POST /owner/products` | 상품 등록 | 연결 완료 |
 | 상품 | `PUT /owner/products/{product_id}` | 상품 수정 | 연결 완료 |
 | 상품 | `PATCH /owner/products/{product_id}/status` | 판매 중지/상태 변경 | 연결 완료 |
-| 상품 | `POST /owner/products/{product_id}/image` | backend 구현됨 | 프론트 UI는 후속 |
+| 상품 | `POST /owner/products/{product_id}/image` | 상품 대표 이미지 업로드 | 연결 완료 |
+| 농장 | `POST /owner/farms/{farm_id}/image` | 농장 대표 이미지 업로드 | 추가 구현/연결 완료 |
 | 수확 예측 | `POST /owner/ml/predictions` | 예측 실행 | 연결 완료 |
 | 수확 예측 | `GET /owner/ml/predictions` | 최근 예측 조회 | 연결 완료 |
 | 수확 슬롯 | `POST /owner/harvest-slots` | 슬롯 열기 | 연결 완료 |
@@ -121,7 +122,8 @@ Last updated: 2026-05-11
 | 반품 관리/현황 | 실제 `GET/PATCH /owner/returns` 사용 | API 실패 시 JSON fallback | 대체 완료, fallback 축소 완료 |
 | 프로필 | 실제 API만 사용 | 없음 | 대체 완료 |
 | 회원가입/이메일 인증 | 실제 API 사용 | 주소 검색 플랫폼 보조 fallback | 계정 생성은 대체 완료 |
-| 이메일 찾기/비밀번호 찾기 | 전용 API 없음 | 안내 UX | 미대체, API 필요 |
+| 이메일 찾기 | 실제 `POST /auth/email/find` 사용 | 없음 | 대체 완료 |
+| 비밀번호 찾기 | 실제 `POST /auth/password/reset-request` 사용 | 새 비밀번호 확정은 미구현 | 부분 대체 완료 |
 
 ## fallback 대체 검토 결과
 
@@ -137,8 +139,9 @@ Last updated: 2026-05-11
 | 반품 목록 JSON fallback | 이미 `GET /owner/returns` 존재 | owner_id=3 seed에 반품 요청 생성. API 실패 시에만 JSON fallback | 추가 API 불필요 |
 | 신선도 분석 local estimate | 부분 가능 | backend 분석 API는 존재하지만 실제 외부 DL 모델은 없음 | 외부 DL 모델 전까지 보조 판정 fallback 필요 |
 | 주소 후보 fallback | 부분 가능 | 모바일은 `kpostal_plus`, 데스크톱/web 비지원 환경만 후보 사용 | 플랫폼 보조 fallback 필요 |
-| 이메일 찾기/비밀번호 찾기 안내 UX | 가능하지만 API 없음 | 문서에 미구현으로 기록 | 신규 API 필요 |
-| 상품/농장 이미지 UI 부재 | 가능 | backend 상품 이미지 API는 있으나 UI 미구현으로 기록 | 다음 구현 후보 |
+| 이메일 찾기 안내 UX | 가능 | `POST /auth/email/find` 추가 및 화면 연결 | 대체 완료 |
+| 비밀번호 찾기 안내 UX | 가능 | `POST /auth/password/reset-request` 추가 및 화면 연결 | 부분 대체 완료. 확정 API는 후속 |
+| 상품/농장 이미지 UI 부재 | 가능 | 상품/농장 대표 이미지 선택, 업로드, asset seed 이미지 표시 구현 | 대체 완료 |
 
 ## 검증 완료 항목
 
@@ -159,10 +162,7 @@ Last updated: 2026-05-11
 | 우선순위 | 작업 | 이유 |
 |---|---|---|
 | P0 | iOS 갤러리 이미지 선택 최종 검증 | 사용자 지적 사항이 있었고, `image_picker` 권한/시뮬레이터 동작 확인 필요 |
-| P1 | 상품 대표 이미지 업로드 UI 추가 | backend API는 있으나 상품 등록/수정 화면에서 아직 직접 노출하지 않음 |
-| P1 | 농장 대표 이미지 업로드 UI/API 정리 | 농장 소개 화면 완성도 향상 |
-| P1 | 비밀번호 재설정 API 설계/구현 | 현재는 안내 UX만 있고 실서비스 기능은 없음 |
-| P2 | 이메일 찾기 API 설계/구현 | 현재는 안내 UX만 있고 실서비스 기능은 없음 |
+| P1 | 비밀번호 재설정 확정 API 구현 | 요청/인증번호 발송까지는 구현. 새 비밀번호 저장 API가 필요 |
 | P2 | 실제 바코드/QR 스캔 연동 | 지금은 송장 입력 보조 액션으로 발표 흐름 유지 |
 | P2 | 배송 상세 화면 추가 | 배송 전용 목록 API는 추가 완료. 다음 보강은 송장/고객/상품 상세 화면 |
 | P2 | 실제 PG 환불 연계 | 반품 승인은 처리되지만 PG 환불은 별도 운영 연계 필요 |
@@ -174,16 +174,16 @@ Last updated: 2026-05-11
 
 | 구분 | 항목 | 현재 상태 | 미구현 내용 | 필요한 작업 | 차단/보류 사유 |
 |---|---|---|---|---|---|
-| 인증 | 비밀번호 재설정 | 화면 안내 UX만 있음 | reset token 발급, 인증번호/토큰 검증, 새 비밀번호 저장 API 없음 | `POST /auth/password/reset-request`, `POST /auth/password/reset-confirm` 추가 | backend 최종본에 API 없음 |
-| 인증 | 이메일 찾기 | 화면 안내 UX만 있음 | 이름/전화번호 기반 계정 조회 API 없음 | `POST /auth/email/find` 또는 운영자 문의 정책 확정 | 개인정보 조회 정책 필요 |
+| 인증 | 비밀번호 재설정 | 요청 API 연결 완료 | 인증번호 발송 요청은 가능. 새 비밀번호 저장 API 없음 | `POST /auth/password/reset-confirm` 추가 | 비밀번호 변경 정책 필요 |
+| 인증 | 이메일 찾기 | 구현 완료 | 이름/전화번호 기반 점주 계정 조회와 마스킹 이메일 반환 | 없음 | 완료 |
 | 인증 | 회원가입 후 농장/사업자 정보 자동 저장 | 회원가입은 owner 계정 생성까지만 연결 | 가입 폼의 농장명/주소/사업자번호가 signup API payload에 완전 반영되지 않음 | owner signup API 확장 또는 가입 후 농장 생성/수정 flow 연결 | 현재 `POST /auth/owners/signup` 스키마가 계정 중심 |
 | 인증 | 비밀번호 변경 | 내 정보 화면에는 표시 문구만 있음 | 로그인 상태에서 기존 비밀번호 확인 후 새 비밀번호 변경 API/화면 없음 | `PUT /owner/profile/password` 등 추가 | backend API 없음 |
 | 계정 운영 | 회원 탈퇴/비활성화 | `계정 지원 요청` 안내 UX로 대체 | 실제 탈퇴, 비활성화, 데이터 보존 정책 처리 없음 | 계정 비활성화 API와 운영 정책 필요 | 삭제는 데이터 무결성/정책 검토 필요 |
-| 상품 | 상품 대표 이미지 업로드 UI | backend API는 있음 | 상품 등록/수정 화면에서 대표 이미지 선택/업로드/미리보기 없음 | `image_picker` + `POST /owner/products/{id}/image` UI 연결 | 우선 상품 CRUD와 소개 저장까지만 구현 |
+| 상품 | 상품 대표 이미지 업로드 UI | 구현 완료 | 상품 등록/수정 화면에서 대표 이미지 선택/업로드/미리보기, 상품 목록 썸네일 표시 | 없음 | 완료 |
 | 상품 | 상품 삭제 | 판매 중지 상태 변경으로 대체 | 물리 삭제 API/UI 없음 | 운영 정책상 삭제 대신 숨김 유지 또는 `DELETE` 추가 | backend에 delete API 없음 |
 | 상품 | 실제 재고 관리 | 화면 표시 수량만 있음 | 상품 테이블에 독립 재고 필드 없음 | 실제 판매 가능 수량은 harvest slot 기반으로 계속 관리하거나 스키마 확장 | DB 스키마 변경 필요 |
 | 상품 | 다중 이미지/상세 이미지 | 없음 | 상세 갤러리, 상품 설명 이미지, 정렬 기능 없음 | product image table/API 추가 | 발표 필수 범위 밖 |
-| 농장 | 농장 대표 이미지 업로드 | URL 유지/수정 가능 구조만 있음 | 농장 이미지 파일 선택/업로드 UI 없음 | 공통 이미지 업로드 또는 farm image API 추가 | 농장 전용 업로드 API 불명확 |
+| 농장 | 농장 대표 이미지 업로드 | 구현 완료 | 농장 이미지 파일 선택/업로드 UI, `POST /owner/farms/{farm_id}/image` API 추가 | 없음 | 완료 |
 | 농장 | farm 생성 flow | 기존 농장 조회/수정 중심 | 신규 점주가 농장이 없을 때 농장 생성 API/UI 없음 | `POST /owner/farms` 추가 또는 signup 확장 | 현재 검증 계정은 farm seed 존재 |
 | 주소 | 주소 검색 web 완전 연동 | 모바일은 `kpostal_plus`, 데스크톱/web은 후보 bottom sheet | web에서 실제 우편번호 검색 팝업까지 완전 동작 검증 부족 | web 대응 방식 확인 또는 별도 주소 검색 web bridge | 패키지/플랫폼 동작 차이 |
 | 수확 예측 | 실제 ML 모델 | rule 기반 예측 | 실제 모델 서버/학습 모델 호출 없음 | 모델 API URL, feature schema, timeout/fallback 정책 확정 | 외부 ML 모델 미제공 |

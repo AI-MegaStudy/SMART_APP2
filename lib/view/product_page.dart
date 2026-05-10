@@ -325,15 +325,7 @@ class _ProductTile extends StatelessWidget {
           ),
           child: Row(
             children: [
-              Container(
-                width: 46,
-                height: 46,
-                decoration: BoxDecoration(
-                  color: AppColors.mint,
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: const Icon(Icons.local_florist, color: AppColors.green),
-              ),
+              _ProductThumbnail(imageUrl: product.imageUrl),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -377,6 +369,32 @@ class _ProductTile extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+class _ProductThumbnail extends StatelessWidget {
+  const _ProductThumbnail({required this.imageUrl});
+
+  final String? imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final url = imageUrl ?? '';
+    final image = url.isEmpty
+        ? null
+        : url.startsWith('assets/')
+        ? Image.asset(url, fit: BoxFit.cover)
+        : Image.network(url, fit: BoxFit.cover);
+    return Container(
+      width: 46,
+      height: 46,
+      decoration: BoxDecoration(
+        color: AppColors.mint,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: image ?? const Icon(Icons.local_florist, color: AppColors.green),
     );
   }
 }

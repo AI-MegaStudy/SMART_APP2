@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:smart_app/core/api_service.dart';
 import 'package:smart_app/model/product_record.dart';
 
@@ -43,6 +45,24 @@ class ProductRepository {
         'delivery_policy': farm.deliveryPolicy,
         'return_policy': farm.returnPolicy,
       },
+      parser: (data) {
+        final json = data as Map<String, dynamic>? ?? const {};
+        return OwnerFarmRecord.fromJson(json);
+      },
+    );
+  }
+
+  Future<OwnerFarmRecord> uploadFarmImage({
+    required int farmId,
+    required String fileName,
+    required Uint8List fileBytes,
+  }) {
+    return ApiService.postMultipartData<OwnerFarmRecord>(
+      '/owner/farms/$farmId/image',
+      requiresAuth: true,
+      fileField: 'file',
+      fileName: fileName,
+      fileBytes: fileBytes,
       parser: (data) {
         final json = data as Map<String, dynamic>? ?? const {};
         return OwnerFarmRecord.fromJson(json);
@@ -115,6 +135,24 @@ class ProductRepository {
       '/owner/products/$productId/status',
       requiresAuth: true,
       body: {'product_status': productStatus},
+      parser: (data) {
+        final json = data as Map<String, dynamic>? ?? const {};
+        return ProductRecord.fromJson(json);
+      },
+    );
+  }
+
+  Future<ProductRecord> uploadProductImage({
+    required int productId,
+    required String fileName,
+    required Uint8List fileBytes,
+  }) {
+    return ApiService.postMultipartData<ProductRecord>(
+      '/owner/products/$productId/image',
+      requiresAuth: true,
+      fileField: 'file',
+      fileName: fileName,
+      fileBytes: fileBytes,
       parser: (data) {
         final json = data as Map<String, dynamic>? ?? const {};
         return ProductRecord.fromJson(json);

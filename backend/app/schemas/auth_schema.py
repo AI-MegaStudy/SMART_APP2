@@ -104,6 +104,18 @@ class LoginRequest(BaseModel):
     )
 
 
+class EmailFindRequest(BaseModel):
+    name: str
+    phone: str
+    role: str = Field(default="OWNER", json_schema_extra={"example": "OWNER"})
+
+
+class PasswordResetRequest(BaseModel):
+    name: str
+    email: str
+    role: str = Field(default="OWNER", json_schema_extra={"example": "OWNER"})
+
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"

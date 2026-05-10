@@ -156,3 +156,22 @@ class ProductService:
         data["file_name"] = upload_result["file_name"]
         data["subfolder"] = upload_result["subfolder"]
         return data
+
+    def upload_farm_image(self, owner_id: int, farm_id: int, upload: UploadFile) -> dict:
+        farm = self.farm_repo.get(farm_id)
+        if not farm or farm.owner_id != owner_id:
+            raise HTTPException(status_code=404, detail="farm not found")
+
+        upload_result = self.image_storage_service.upload_image(
+            upload,
+            product_seq=farm.farm_id,
+            subfolder=f"farms/{farm.owner_id}",
+        )
+        farm.farm_image_url = upload_result["file_url"]
+        self.session.commit()
+        self.session.refresh(farm)
+
+        data = serialize_farm(farm)
+        data["file_name"] = upload_result["file_name"]
+        data["subfolder"] = upload_result["subfolder"]
+        return data

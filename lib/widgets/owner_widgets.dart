@@ -1260,6 +1260,7 @@ class CameraPreviewCard extends StatelessWidget {
   final String? label;
   final bool hasImage;
   final Uint8List? imageBytes;
+  final String? imageUrl;
   final Offset inspectionAnchor;
   final ValueChanged<Offset>? onInspectionAnchorChanged;
   final VoidCallback? onTap;
@@ -1270,6 +1271,7 @@ class CameraPreviewCard extends StatelessWidget {
     this.label,
     this.hasImage = false,
     this.imageBytes,
+    this.imageUrl,
     this.inspectionAnchor = const Offset(0.5, 0.72),
     this.onInspectionAnchorChanged,
     this.onTap,
@@ -1305,6 +1307,12 @@ class CameraPreviewCard extends StatelessWidget {
                   gaplessPlayback: true,
                 ),
               )
+            else if (imageUrl?.isNotEmpty == true)
+              Positioned.fill(
+                child: imageUrl!.startsWith('assets/')
+                    ? Image.asset(imageUrl!, fit: BoxFit.cover)
+                    : Image.network(imageUrl!, fit: BoxFit.cover),
+              )
             else
               Center(
                 child: Icon(
@@ -1325,7 +1333,7 @@ class CameraPreviewCard extends StatelessWidget {
                   child: StatusBadge(text: label!, color: Colors.white),
                 ),
               ),
-            if (hasImage)
+            if (hasImage && onInspectionAnchorChanged != null)
               _InspectionOverlayTool(
                 anchor: inspectionAnchor,
                 onChanged: onInspectionAnchorChanged,

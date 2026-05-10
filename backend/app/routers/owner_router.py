@@ -44,6 +44,16 @@ def update_farm(
     return success_response(ProductService(db).update_farm(current_user.owner_id, farm_id, payload.model_dump()))
 
 
+@router.post("/owner/farms/{farm_id}/image")
+def upload_farm_image(
+    farm_id: int,
+    file: UploadFile = File(..., description="농장 대표 이미지 파일"),
+    current_user: AuthenticatedUser = Depends(require_owner),
+    db: Session = Depends(get_db),
+) -> dict:
+    return success_response(ProductService(db).upload_farm_image(current_user.owner_id, farm_id, file))
+
+
 @router.get("/owner/products")
 def owner_products(
     current_user: AuthenticatedUser = Depends(require_owner),

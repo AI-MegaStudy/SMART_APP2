@@ -1,4 +1,7 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:smart_app/core/api_exception.dart';
 import 'package:smart_app/model/product_record.dart';
 import 'package:smart_app/repositories/product_repository.dart';
@@ -17,7 +20,10 @@ class ProductEditPage extends StatefulWidget {
 class _ProductEditPageState extends State<ProductEditPage> {
   final formKey = GlobalKey<FormState>();
   final repository = ProductRepository();
+  final imagePicker = ImagePicker();
   late final TextEditingController descriptionController;
+  Uint8List? selectedImageBytes;
+  String? selectedImageName;
   late String variety;
   late double packageUnitKg;
   late int price;
@@ -66,7 +72,7 @@ class _ProductEditPageState extends State<ProductEditPage> {
       confirmLabel: '수정',
       onConfirm: () async {
         final productName = ProductRecord.productNameFromVariety(variety);
-        final product = ProductRecord(
+        var product = ProductRecord(
           productName,
           ProductRecord.packageLabel(packageUnitKg),
           price,
@@ -85,9 +91,20 @@ class _ProductEditPageState extends State<ProductEditPage> {
           final saved = product.id == null
               ? product
               : await repository.updateProduct(product);
+          if (saved.id != null &&
+              selectedImageBytes != null &&
+              selectedImageName != null) {
+            product = await repository.uploadProductImage(
+              productId: saved.id!,
+              fileName: selectedImageName!,
+              fileBytes: selectedImageBytes!,
+            );
+          } else {
+            product = saved;
+          }
           if (!mounted) return;
           showOwnerSnack(context, '상품 정보를 수정했습니다.');
-          Navigator.of(context).pop(saved);
+          Navigator.of(context).pop(product);
         } on ApiException catch (error) {
           if (!mounted) return;
           showOwnerSnack(context, error.message);
@@ -109,6 +126,26 @@ class _ProductEditPageState extends State<ProductEditPage> {
       '준비 중' => AppColors.yellow,
       _ => const Color(0xffFFE1DD),
     };
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final picked = await imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+        requestFullMetadata: false,
+      );
+      if (picked == null) return;
+      final bytes = await picked.readAsBytes();
+      if (!mounted) return;
+      setState(() {
+        selectedImageBytes = bytes;
+        selectedImageName = picked.name.isEmpty ? 'product.jpg' : picked.name;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      showOwnerSnack(context, '이미지를 선택하지 못했습니다.');
+    }
   }
 
   @override
@@ -145,6 +182,35 @@ class _ProductEditPageState extends State<ProductEditPage> {
                 final parsed = value.replaceAll(RegExp(r'[^0-9.]'), '');
                 setState(() => packageUnitKg = double.tryParse(parsed) ?? 5);
               },
+            ),
+            CameraPreviewCard(
+              icon: Icons.image_outlined,
+              label:
+                  selectedImageName ??
+                  (widget.product.imageUrl?.isNotEmpty == true
+                      ? '등록된 대표 이미지'
+                      : '상품 대표 이미지 선택'),
+              hasImage:
+                  selectedImageBytes != null ||
+                  widget.product.imageUrl?.isNotEmpty == true,
+              imageBytes: selectedImageBytes,
+              imageUrl: selectedImageBytes == null
+                  ? widget.product.imageUrl
+                  : null,
+              onTap: _pickImage,
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: _pickImage,
+                icon: const Icon(Icons.photo_library_outlined),
+                label: Text(
+                  widget.product.imageUrl?.isNotEmpty == true ||
+                          selectedImageBytes != null
+                      ? '이미지 변경'
+                      : '이미지 선택',
+                ),
+              ),
             ),
             LabeledNumberStepper(
               label: '기본 판매가',

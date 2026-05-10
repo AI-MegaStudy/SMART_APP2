@@ -10,9 +10,11 @@ from backend.app.core.database import get_db
 from backend.app.core.security import AuthenticatedUser, get_current_user
 from backend.app.schemas.auth_schema import (
     EmailResendRequest,
+    EmailFindRequest,
     EmailVerificationSendRequest,
     EmailVerifyRequest,
     LoginRequest,
+    PasswordResetRequest,
     SignupRequest,
 )
 from backend.app.schemas.common_schema import success_response
@@ -90,6 +92,16 @@ def verify_email(payload: EmailVerifyRequest, db: Session = Depends(get_db)) -> 
 @router.get("/auth/email/status")
 def email_verification_status(email: str, purpose: str = "SIGNUP", db: Session = Depends(get_db)) -> dict:
     return success_response(EmailVerificationService(db).get_status(email=email, purpose=purpose))
+
+
+@router.post("/auth/email/find")
+def find_email(payload: EmailFindRequest, db: Session = Depends(get_db)) -> dict:
+    return success_response(AuthService(db).find_email(**payload.model_dump()))
+
+
+@router.post("/auth/password/reset-request")
+def request_password_reset(payload: PasswordResetRequest, db: Session = Depends(get_db)) -> dict:
+    return success_response(AuthService(db).request_password_reset(**payload.model_dump()))
 
 
 @router.post(

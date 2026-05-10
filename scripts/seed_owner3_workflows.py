@@ -42,6 +42,11 @@ from backend.app.models import (
 OWNER_ID = 3
 FARM_ID = 3
 CUSTOMER_PASSWORD = "pass1234!"
+FARM_IMAGE_URL = "assets/images/owner_demo/chungju_apple_farm.png"
+PRODUCT_IMAGE_URLS = {
+    "양광": "assets/images/owner_demo/yanggwang_apples.png",
+    "부사": "assets/images/owner_demo/fuji_apples.png",
+}
 
 
 SCENARIOS = [
@@ -285,7 +290,7 @@ def create_scenario(session, scenario: dict, index: int) -> bool:
             QualityInspection(
                 procurement_item_id=procurement_item.procurement_item_id,
                 owner_id=OWNER_ID,
-                image_url="/mock/quality/owner3-apple.jpg",
+                image_url=PRODUCT_IMAGE_URLS["부사"],
                 model_grade="A",
                 freshness_score=91,
                 color_score=88,
@@ -325,7 +330,7 @@ def create_scenario(session, scenario: dict, index: int) -> bool:
             return_status=return_status,
             reason_code="DAMAGED",
             reason_detail="배송 중 일부 상품이 손상되어 반품을 요청했습니다.",
-            evidence_image_url="/mock/returns/owner3-damaged.jpg",
+            evidence_image_url=PRODUCT_IMAGE_URLS["양광"],
             requested_amount=total_amount,
             approved_amount=0,
             decision_reason=None,
@@ -385,7 +390,7 @@ def sync_existing_scenario(session, order: Order, scenario: dict, index: int) ->
                 QualityInspection(
                     procurement_item_id=item.procurement_item_id,
                     owner_id=OWNER_ID,
-                    image_url="/mock/quality/owner3-apple.jpg",
+                    image_url=PRODUCT_IMAGE_URLS["부사"],
                     model_grade="A",
                     freshness_score=91,
                     color_score=88,
@@ -412,11 +417,29 @@ def sync_existing_scenario(session, order: Order, scenario: dict, index: int) ->
 def main() -> None:
     created = 0
     with SessionLocal() as session:
+        sync_demo_images(session)
         for index, scenario in enumerate(SCENARIOS, start=1):
             if create_scenario(session, scenario, index):
                 created += 1
         session.commit()
     print(f"created_scenarios={created}")
+
+
+def sync_demo_images(session) -> None:
+    first_slot = session.get(HarvestSlot, SCENARIOS[0]["slot_id"])
+    if first_slot and first_slot.farm:
+        first_slot.farm.farm_image_url = FARM_IMAGE_URL
+        for product in first_slot.farm.products:
+            for variety, image_url in PRODUCT_IMAGE_URLS.items():
+                if variety in product.product_name or product.variety == variety:
+                    product.image_url = image_url
+    for scenario in SCENARIOS:
+        slot = session.get(HarvestSlot, scenario["slot_id"])
+        if not slot or not slot.product:
+            continue
+        for variety, image_url in PRODUCT_IMAGE_URLS.items():
+            if variety in slot.product.product_name or slot.product.variety == variety:
+                slot.product.image_url = image_url
 
 
 if __name__ == "__main__":

@@ -14,8 +14,8 @@ Source docs:
 |---|---|---|---|
 | O-001 로그인 | 점주 로그인, JWT 발급 | Done | `POST /auth/login`, `GET /me`, OWNER role 검증 |
 | O-002 대시보드 | 오늘 처리 업무 카운트 | Done | `GET /owner/dashboard`; seed 상태별 카운트 검증 |
-| O-003 농장 관리 | 농장 정보/정책 수정 | Done | `GET /owner/farms/me`, `PUT /owner/farms/{farmId}` API smoke |
-| O-004 상품 관리 | 상품 등록/수정/상태 변경 | Done | `GET/POST/PUT /owner/products`, `PATCH /status` API smoke. 등록/수정 폼에 상품 소개 입력 포함 |
+| O-003 농장 관리 | 농장 정보/정책 수정 | Done | `GET /owner/farms/me`, `PUT /owner/farms/{farmId}`, `POST /owner/farms/{farmId}/image`. 생성형 AI 농장 이미지 seed 적용 |
+| O-004 상품 관리 | 상품 등록/수정/상태 변경 | Done | `GET/POST/PUT /owner/products`, `POST /owner/products/{productId}/image`, `PATCH /status` API smoke. 등록/수정 폼에 대표 이미지와 상품 소개 입력 포함 |
 | O-005 ML 예측 | 농장/상품/환경값/과거 수확량 입력 후 결과 저장 | Done | 수확 예측 화면에 입력값 selector/stepper 추가, `POST /owner/ml/predictions` 저장 smoke 통과 |
 | O-006 수확 슬롯 확정 | 예측 참고 후 점주 확정값 저장 | Done | 예측값 그대로 저장하지 않고 날짜/kg/판매가/고객 안내 문구를 점주가 조정 후 `POST /owner/harvest-slots` smoke 통과 |
 | O-007 예약/주문 현황 | 예약/주문 상태 확인 | Done | `GET /owner/orders`, `GET /owner/reservations` 탭 분리. 긴 내부 주문번호는 화면에 직접 노출하지 않음 |

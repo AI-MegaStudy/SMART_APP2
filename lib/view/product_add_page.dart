@@ -1,4 +1,7 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:smart_app/core/api_exception.dart';
 import 'package:smart_app/model/product_record.dart';
 import 'package:smart_app/repositories/product_repository.dart';
@@ -17,7 +20,10 @@ class ProductAddPage extends StatefulWidget {
 class _ProductAddPageState extends State<ProductAddPage> {
   final formKey = GlobalKey<FormState>();
   final repository = ProductRepository();
+  final imagePicker = ImagePicker();
   final descriptionController = TextEditingController();
+  Uint8List? selectedImageBytes;
+  String? selectedImageName;
   String variety = '';
   double packageUnitKg = 5;
   int price = 39000;
@@ -39,7 +45,7 @@ class _ProductAddPageState extends State<ProductAddPage> {
         setState(() => isSaving = true);
         try {
           final productName = ProductRecord.productNameFromVariety(variety);
-          final product = await repository.createProduct(
+          var product = await repository.createProduct(
             farmId: widget.farmId,
             productName: productName,
             fruitType: '사과',
@@ -49,6 +55,15 @@ class _ProductAddPageState extends State<ProductAddPage> {
             productStatus: ProductRecord.backendStatusFromLabel(status),
             productDescription: descriptionController.text.trim(),
           );
+          if (selectedImageBytes != null &&
+              selectedImageName != null &&
+              product.id != null) {
+            product = await repository.uploadProductImage(
+              productId: product.id!,
+              fileName: selectedImageName!,
+              fileBytes: selectedImageBytes!,
+            );
+          }
           if (!mounted) return;
           showOwnerSnack(context, '상품을 등록했습니다.');
           Navigator.of(context).pop(product);
@@ -71,6 +86,26 @@ class _ProductAddPageState extends State<ProductAddPage> {
   void dispose() {
     descriptionController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final picked = await imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+        requestFullMetadata: false,
+      );
+      if (picked == null) return;
+      final bytes = await picked.readAsBytes();
+      if (!mounted) return;
+      setState(() {
+        selectedImageBytes = bytes;
+        selectedImageName = picked.name.isEmpty ? 'product.jpg' : picked.name;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      showOwnerSnack(context, '이미지를 선택하지 못했습니다.');
+    }
   }
 
   @override
@@ -107,6 +142,21 @@ class _ProductAddPageState extends State<ProductAddPage> {
                 final parsed = value.replaceAll(RegExp(r'[^0-9.]'), '');
                 setState(() => packageUnitKg = double.tryParse(parsed) ?? 5);
               },
+            ),
+            CameraPreviewCard(
+              icon: Icons.image_outlined,
+              label: selectedImageName ?? '상품 대표 이미지 선택',
+              hasImage: selectedImageBytes != null,
+              imageBytes: selectedImageBytes,
+              onTap: _pickImage,
+            ),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton.icon(
+                onPressed: _pickImage,
+                icon: const Icon(Icons.photo_library_outlined),
+                label: Text(selectedImageBytes == null ? '이미지 선택' : '이미지 변경'),
+              ),
             ),
             LabeledNumberStepper(
               label: '기본 판매가',

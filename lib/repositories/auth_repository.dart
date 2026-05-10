@@ -101,6 +101,33 @@ class AuthRepository {
       parser: (_) {},
     );
   }
+
+  Future<String> findEmail({required String name, required String phone}) {
+    return ApiService.postData<String>(
+      '/auth/email/find',
+      body: {'name': name, 'phone': phone, 'role': 'OWNER'},
+      parser: (data) {
+        final json = data as Map<String, dynamic>? ?? const {};
+        return json['masked_email']?.toString() ??
+            json['email']?.toString() ??
+            '';
+      },
+    );
+  }
+
+  Future<String?> requestPasswordReset({
+    required String name,
+    required String email,
+  }) {
+    return ApiService.postData<String?>(
+      '/auth/password/reset-request',
+      body: {'name': name, 'email': email, 'role': 'OWNER'},
+      parser: (data) {
+        final json = data as Map<String, dynamic>? ?? const {};
+        return json['dev_code']?.toString();
+      },
+    );
+  }
 }
 
 int _asInt(Object? value) {
