@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:smart_app/model/owner_order_record.dart';
+import 'package:smart_app/repositories/owner_workflow_repository.dart';
 import 'package:smart_app/util/app_colors.dart';
 import 'package:smart_app/widgets/owner_widgets.dart';
 
@@ -10,9 +12,18 @@ class OrdersPage extends StatefulWidget {
 }
 
 class _OrdersPageState extends State<OrdersPage> {
+  final repository = OwnerWorkflowRepository();
   final searchController = TextEditingController();
   String filter = '전체';
   bool showSearch = false;
+  bool loading = true;
+  List<OwnerOrderRecord> orders = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadOrders();
+  }
 
   @override
   void dispose() {
@@ -20,10 +31,21 @@ class _OrdersPageState extends State<OrdersPage> {
     super.dispose();
   }
 
+  Future<void> _loadOrders() async {
+    setState(() => loading = true);
+    final loaded = await repository.fetchOrders();
+    if (!mounted) return;
+    setState(() {
+      orders = loaded;
+      sharedOwnerOrders = loaded;
+      loading = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final query = searchController.text.trim().toLowerCase();
-    final visible = sampleOrders.where((order) {
+    final visible = orders.where((order) {
       final matchesFilter = filter == '전체' || order.status == filter;
       final matchesQuery =
           query.isEmpty ||
@@ -76,15 +98,23 @@ class _OrdersPageState extends State<OrdersPage> {
             selected: filter,
             onChanged: (value) => setState(() => filter = value),
           ),
-          for (final order in visible)
-            DataTile(
-              icon: Icons.receipt_long_outlined,
-              title: order.title,
-              subtitle: order.subtitle,
-              badge: order.status,
-              badgeColor: order.color,
+          if (loading)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(32),
+                child: CircularProgressIndicator(),
+              ),
             ),
-          if (visible.isEmpty)
+          if (!loading)
+            for (final order in visible)
+              DataTile(
+                icon: Icons.receipt_long_outlined,
+                title: order.title,
+                subtitle: order.subtitle,
+                badge: order.status,
+                badgeColor: order.color,
+              ),
+          if (!loading && visible.isEmpty)
             const NoticeBox(color: AppColors.yellow, text: '검색 결과가 없습니다.'),
         ],
       ),
@@ -92,47 +122,4 @@ class _OrdersPageState extends State<OrdersPage> {
   }
 }
 
-const sampleOrders = [
-  OrderRecord(
-    '홍길동 · 양광 사과 5kg',
-    '2박스 · 78,000원 · 2026-05-07 09:20',
-    '결제 완료',
-    AppColors.blue,
-    '09:20',
-    '78,000원',
-  ),
-  OrderRecord(
-    '김민지 · 부사 사과 3kg',
-    '1박스 · 32,000원 · 2026-05-07 09:45',
-    '주문 완료',
-    AppColors.yellow,
-    '09:45',
-    '32,000원',
-  ),
-  OrderRecord(
-    '박서준 · 양광 사과 7kg',
-    '1박스 · 68,000원 · 2026-05-07 12:10',
-    '결제 완료',
-    AppColors.blue,
-    '12:10',
-    '68,000원',
-  ),
-];
-
-class OrderRecord {
-  final String title;
-  final String subtitle;
-  final String status;
-  final Color color;
-  final String time;
-  final String amount;
-
-  const OrderRecord(
-    this.title,
-    this.subtitle,
-    this.status,
-    this.color,
-    this.time,
-    this.amount,
-  );
-}
+List<OwnerOrderRecord> sharedOwnerOrders = const [];

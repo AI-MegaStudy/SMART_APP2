@@ -52,10 +52,11 @@ SMART_WEB은 API client, repository, model mapping 패턴만 참고한다. 파�
 5. 앱 내부 상태명은 화면 표시용 한글과 백엔드 enum을 분리한다.
 6. DB 수정이 필요한 작업은 후순위로 미루고, 사용자 검증을 받은 뒤 진행한다.
 7. 기능 검증은 먼저 Chrome으로 빠르게 확인하고, 최종 앱 검증은 iOS 시뮬레이터에서 진행한다.
-8. 사과 품종은 `양광`, `부사` 두 가지로 제한한다.
-9. 상품 박스 단위는 SMART_WEB과 동일하게 `1kg`, `3kg`, `5kg`, `7.5kg`, `10kg`만 사용한다.
-10. 입력 필드가 필요한 화면은 가능한 경우 수동 입력보다 dropdown, stepper, selector를 우선 사용한다.
-11. 사용자 주소 입력은 `kpostal_plus` 패키지를 사용한다.
+8. DB 데이터가 없어 화면 검증이 막히는 경우, API 우선 호출 후 `assets/mock/*.json` fallback으로 기능 흐름을 유지한다. fallback 원인은 이 문서에 남긴다.
+9. 사과 품종은 `양광`, `부사` 두 가지로 제한한다.
+10. 상품 박스 단위는 SMART_WEB과 동일하게 `1kg`, `3kg`, `5kg`, `7.5kg`, `10kg`만 사용한다.
+11. 입력 필드가 필요한 화면은 가능한 경우 수동 입력보다 dropdown, stepper, selector를 우선 사용한다.
+12. 사용자 주소 입력은 `kpostal_plus` 패키지를 사용한다.
 
 ## Current Architecture
 
@@ -147,11 +148,12 @@ Success criteria:
 
 - [ ] ML prediction request/response model 추가
 - [ ] Harvest slot request/response model 추가
-- [ ] 주문/예약 목록 model 추가
+- [x] 주문 목록 model 추가
 - [ ] 발주 목록/상세 model 추가
 - [ ] 수확 슬롯 생성 연결
-- [ ] 주문 현황 연결
-- [ ] 발주 승인/거절 연결
+- [x] 주문 현황 API 우선 + JSON fallback 연결
+- [x] 발주 승인 화면을 주문 API 우선 + JSON fallback 데이터로 구동
+- [ ] 실제 발주 목록/승인 API 연결
 
 Success criteria:
 - 점주가 상품별 수확 슬롯을 생성할 수 있다.
@@ -174,7 +176,7 @@ Success criteria:
 
 ### Phase 5: Profile, Signup, Recovery
 
-- [ ] 점주 프로필 조회/수정 연결
+- [x] 점주 프로필 조회/수정 연결
 - [ ] 회원가입 API 연결
 - [ ] 이메일 인증 요청/검증 연결
 - [ ] 이메일 찾기 API 없음 문서화 유지
@@ -190,6 +192,7 @@ Success criteria:
 | 농장 이미지 업로드 | 농장 전용 업로드 API가 명확하지 않다 | 공통 이미지 업로드 후 `farm_image_url` 저장으로 처리 가능 |
 | 배송 현황 상세 | owner shipment list 전용 API가 없다 | `GET /owner/orders` 응답에 shipment 포함 여부 확인 후 부족하면 API 추가 |
 | seed/demo data | 주문/발주/배송/반품까지 검증할 seed가 아직 부족하다 | 현재 점주/농장/상품/수확 슬롯 seed는 생성됨. 다음 단계에서 주문 계열 seed 필요 시 사전 검토 후 생성 |
+| 주문/발주 DB 데이터 없음 | 현재 DB에 PDF의 QA 주문/결제/배송/반품 seed가 없다 | `assets/mock/owner_orders.json` fallback으로 주문/발주 화면을 먼저 기능하게 하고, 실제 seed는 별도 검토 후 생성 |
 | DB 스키마 변경이 필요한 기능 | 사용자 검증 전에는 DB 변경 범위를 확정하지 않는다 | 현재 DB/API로 검증 가능한 화면을 먼저 연결한 뒤 별도 승인 후 진행 |
 | 상품 수량 입력 | backend `products`에는 재고/수량 필드가 없고 실제 예약 가능 수량은 `harvest_slots`에 있다 | 상품 화면에서는 표시/데모 값으로 유지하고 실제 판매 가능 수량은 수확 슬롯 단계에서 연결 |
 | Chrome 로그인 이후 검증 | 2026-05-11 `cheng80@gmail.com` 계정으로 login -> dashboard -> product list -> product add input 확인 완료 | 농장 수정/등록 저장, 주문 계열 흐름은 연결 단계별로 추가 검증 |
@@ -201,6 +204,8 @@ Success criteria:
 - [ ] Dart unit: API wrapper `data` extraction
 - [ ] Dart unit: dashboard snake_case mapping
 - [ ] Flutter smoke: login form validation
+- [x] Flutter analyze
+- [x] Flutter test
 - [x] Chrome manual: login -> dashboard
 - [x] Chrome manual: product list -> product add input flow
 - [ ] Chrome manual: farm update flow

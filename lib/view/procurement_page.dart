@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:smart_app/model/owner_order_record.dart';
+import 'package:smart_app/repositories/owner_workflow_repository.dart';
 import 'package:smart_app/util/app_colors.dart';
 import 'package:smart_app/view/orders_page.dart';
 import 'package:smart_app/view/procurement_status_page.dart';
@@ -12,28 +14,18 @@ class ProcurementPage extends StatefulWidget {
 }
 
 class _ProcurementPageState extends State<ProcurementPage> {
+  final repository = OwnerWorkflowRepository();
   final searchController = TextEditingController();
   final selectedIds = <String>{};
   bool showSearch = false;
-  late final requests =
-      [
-          for (var i = 0; i < sampleOrders.length; i++)
-            _ApprovalRequest(
-              'order-$i',
-              sampleOrders[i].title,
-              sampleOrders[i].subtitle,
-              sampleOrders[i].status,
-              sampleOrders[i].status == '결제 완료',
-              sampleOrders[i].time,
-              sampleOrders[i].amount,
-            ),
-        ].where((item) => !_handledProcurementIds.contains(item.id)).toList()
-        ..sort((a, b) {
-          if (a.enabled != b.enabled) {
-            return a.enabled ? -1 : 1;
-          }
-          return a.time.compareTo(b.time);
-        });
+  bool loading = true;
+  var requests = <_ApprovalRequest>[];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRequests();
+  }
 
   List<_ApprovalRequest> get enabledRequests =>
       requests.where((item) => item.enabled).toList();
@@ -46,6 +38,39 @@ class _ProcurementPageState extends State<ProcurementPage> {
   void dispose() {
     searchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadRequests() async {
+    setState(() => loading = true);
+    final orders = sharedOwnerOrders.isNotEmpty
+        ? sharedOwnerOrders
+        : await repository.fetchOrders();
+    if (!mounted) return;
+    setState(() {
+      requests = _requestsFromOrders(orders);
+      loading = false;
+    });
+  }
+
+  List<_ApprovalRequest> _requestsFromOrders(List<OwnerOrderRecord> orders) {
+    return [
+        for (final order in orders)
+          _ApprovalRequest(
+            order.id,
+            order.title,
+            order.subtitle,
+            order.status,
+            order.status == '결제 완료',
+            order.time,
+            order.amount,
+          ),
+      ].where((item) => !_handledProcurementIds.contains(item.id)).toList()
+      ..sort((a, b) {
+        if (a.enabled != b.enabled) {
+          return a.enabled ? -1 : 1;
+        }
+        return a.time.compareTo(b.time);
+      });
   }
 
   void _toggleAll(bool? selected) {
@@ -195,33 +220,43 @@ class _ProcurementPageState extends State<ProcurementPage> {
                 prefixIcon: Icon(Icons.search),
               ),
             ),
-          for (final request in visible)
-            _ApprovalTile(
-              request: request,
-              selected: selectedIds.contains(request.id),
-              onChanged: (checked) {
-                setState(() {
-                  if (checked == true) {
-                    selectedIds.add(request.id);
-                  } else {
-                    selectedIds.remove(request.id);
-                  }
-                });
-              },
+          if (loading)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(32),
+                child: CircularProgressIndicator(),
+              ),
             ),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton(
-              onPressed: () => _toggleAll(!allSelected),
-              child: Text(allSelected ? '전체 선택 해제' : '전체 선택'),
+          if (!loading)
+            for (final request in visible)
+              _ApprovalTile(
+                request: request,
+                selected: selectedIds.contains(request.id),
+                onChanged: (checked) {
+                  setState(() {
+                    if (checked == true) {
+                      selectedIds.add(request.id);
+                    } else {
+                      selectedIds.remove(request.id);
+                    }
+                  });
+                },
+              ),
+          if (!loading)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton(
+                onPressed: () => _toggleAll(!allSelected),
+                child: Text(allSelected ? '전체 선택 해제' : '전체 선택'),
+              ),
             ),
-          ),
-          DualActionBar(
-            left: '거절',
-            right: '승인',
-            onLeftPressed: _confirmReject,
-            onRightPressed: _confirmApprove,
-          ),
+          if (!loading)
+            DualActionBar(
+              left: '거절',
+              right: '승인',
+              onLeftPressed: _confirmReject,
+              onRightPressed: _confirmApprove,
+            ),
         ],
       ),
     );

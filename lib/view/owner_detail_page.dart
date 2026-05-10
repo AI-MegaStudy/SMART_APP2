@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:smart_app/core/api_exception.dart';
+import 'package:smart_app/model/owner_profile.dart';
+import 'package:smart_app/repositories/owner_repository.dart';
 import 'package:smart_app/widgets/owner_widgets.dart';
 
 class OwnerDetailPage extends StatefulWidget {
@@ -9,23 +12,55 @@ class OwnerDetailPage extends StatefulWidget {
 }
 
 class _OwnerDetailPageState extends State<OwnerDetailPage> {
+  final repository = OwnerRepository();
   final formKey = GlobalKey<FormState>();
-  final nameController = TextEditingController(text: '김하늘');
-  final emailController = TextEditingController(text: 'owner@harvestslot.kr');
-  final passwordController = TextEditingController(text: 'owner1234');
-  final passwordConfirmController = TextEditingController(text: 'owner1234');
-  final phoneController = TextEditingController(text: '1022223344');
-  final businessController = TextEditingController(text: '3124567890');
+  final nameController = TextEditingController();
+  final emailController = TextEditingController();
+  final phoneController = TextEditingController();
+  final businessController = TextEditingController();
+  OwnerProfile? profile;
+  bool loading = true;
+  bool saving = false;
+  String? errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
 
   @override
   void dispose() {
     nameController.dispose();
     emailController.dispose();
-    passwordController.dispose();
-    passwordConfirmController.dispose();
     phoneController.dispose();
     businessController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadProfile() async {
+    setState(() {
+      loading = true;
+      errorMessage = null;
+    });
+
+    try {
+      final loaded = await repository.fetchProfile();
+      if (!mounted) return;
+      profile = loaded;
+      nameController.text = loaded.ownerName;
+      emailController.text = loaded.email;
+      phoneController.text = loaded.ownerPhone;
+      businessController.text = loaded.businessNumber ?? '';
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      errorMessage = error.message;
+    } catch (_) {
+      if (!mounted) return;
+      errorMessage = '내 정보를 불러오지 못했습니다.';
+    } finally {
+      if (mounted) setState(() => loading = false);
+    }
   }
 
   void _save() {
@@ -35,13 +70,43 @@ class _OwnerDetailPageState extends State<OwnerDetailPage> {
       title: '내 정보 저장',
       message: '입력한 내 정보로 저장할까요?',
       confirmLabel: '확인',
-      onConfirm: () => showInfoAction(
+      onConfirm: _submitSave,
+    );
+  }
+
+  Future<void> _submitSave() async {
+    setState(() => saving = true);
+    try {
+      final saved = await repository.updateProfile(
+        ownerName: nameController.text.trim(),
+        ownerPhone: phoneController.text.trim(),
+        businessNumber: businessController.text.trim(),
+      );
+      if (!mounted) return;
+      profile = saved;
+      showInfoAction(
         context: context,
         title: '내 정보 저장',
         message: '저장이 완료되었습니다.',
         onConfirm: () => Navigator.of(context).pop(),
-      ),
-    );
+      );
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      showInfoAction(
+        context: context,
+        title: '내 정보 저장',
+        message: error.message,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      showInfoAction(
+        context: context,
+        title: '내 정보 저장',
+        message: '저장하지 못했습니다.',
+      );
+    } finally {
+      if (mounted) setState(() => saving = false);
+    }
   }
 
   @override
@@ -55,72 +120,69 @@ class _OwnerDetailPageState extends State<OwnerDetailPage> {
             icon: Icons.arrow_back,
             onPressed: () => Navigator.of(context).pop(),
           ),
-          children: [
-            LabeledField(
-              label: '이름',
-              value: '',
-              controller: nameController,
-              hintText: '이름',
-              validator: nameValidator,
-            ),
-            LabeledField(
-              label: '이메일',
-              value: '',
-              controller: emailController,
-              hintText: '이메일',
-              keyboardType: TextInputType.emailAddress,
-              validator: emailValidator,
-            ),
-            LabeledField(
-              label: '비밀번호',
-              value: '',
-              controller: passwordController,
-              hintText: '비밀번호',
-              helperText: '영문과 숫자를 포함해 8~20자',
-              obscureText: true,
-              validator: passwordValidator,
-            ),
-            LabeledField(
-              label: '비밀번호 확인',
-              value: '',
-              controller: passwordConfirmController,
-              hintText: '비밀번호 확인',
-              obscureText: true,
-              validator: (value) {
-                final required = requiredValidator('비밀번호 확인', value);
-                if (required != null) return required;
-                return value == passwordController.text
-                    ? null
-                    : '비밀번호가 일치하지 않습니다.';
-              },
-            ),
-            LabeledField(
-              label: '전화번호',
-              value: '',
-              controller: phoneController,
-              hintText: '전화번호',
-              keyboardType: TextInputType.number,
-              maxLength: 11,
-              inputFormatters: const [DigitsOnlyInputFormatter()],
-              validator: phoneValidator,
-            ),
-            LabeledField(
-              label: '사업자번호',
-              value: '',
-              controller: businessController,
-              hintText: '사업자번호',
-              keyboardType: TextInputType.number,
-              maxLength: 10,
-              inputFormatters: const [DigitsOnlyInputFormatter()],
-              validator: businessValidator,
-            ),
-            DualActionBar(
-              left: '취소',
-              right: '저장',
-              onLeftPressed: () => Navigator.of(context).pop(),
-              onRightPressed: _save,
-            ),
-          ],
+          children: loading
+              ? const [
+                  Center(
+                    child: Padding(
+                      padding: EdgeInsets.all(32),
+                      child: CircularProgressIndicator(),
+                    ),
+                  ),
+                ]
+              : errorMessage != null
+              ? [
+                  DataTile(
+                    icon: Icons.error_outline,
+                    title: '내 정보 불러오기 실패',
+                    subtitle: errorMessage!,
+                    badge: '재시도',
+                    badgeColor: const Color(0xffFFE1DD),
+                    onTap: _loadProfile,
+                  ),
+                ]
+              : [
+                  LabeledField(
+                    label: '이름',
+                    value: '',
+                    controller: nameController,
+                    hintText: '이름',
+                    validator: nameValidator,
+                  ),
+                  LabeledField(
+                    label: '이메일',
+                    value: '',
+                    controller: emailController,
+                    hintText: '이메일',
+                    keyboardType: TextInputType.emailAddress,
+                    readOnly: true,
+                  ),
+                  LabeledField(
+                    label: '전화번호',
+                    value: '',
+                    controller: phoneController,
+                    hintText: '전화번호',
+                    keyboardType: TextInputType.number,
+                    maxLength: 11,
+                    inputFormatters: const [DigitsOnlyInputFormatter()],
+                    validator: phoneValidator,
+                  ),
+                  LabeledField(
+                    label: '사업자번호',
+                    value: '',
+                    controller: businessController,
+                    hintText: '사업자번호',
+                    keyboardType: TextInputType.number,
+                    maxLength: 10,
+                    inputFormatters: const [DigitsOnlyInputFormatter()],
+                    validator: businessValidator,
+                  ),
+                  DualActionBar(
+                    left: '취소',
+                    right: saving ? '저장 중' : '저장',
+                    onLeftPressed: () => Navigator.of(context).pop(),
+                    onRightPressed: saving ? null : _save,
+                  ),
+                ],
         ),
       ),
     );
