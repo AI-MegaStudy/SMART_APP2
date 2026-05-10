@@ -52,6 +52,7 @@ class OwnerWorkflowRepository {
     required OwnerProcurementRequestRecord request,
     required String decision,
     String? rejectedReason,
+    List<OwnerProcurementDecisionItem>? decisionItems,
   }) async {
     if (request.isFallback) return false;
     try {
@@ -61,16 +62,25 @@ class OwnerWorkflowRepository {
         body: {
           'decision': decision,
           'items': [
-            for (final item in request.items)
+            for (final item in decisionItems ??
+                [
+                  for (final item in request.items)
+                    OwnerProcurementDecisionItem(
+                      procurementItemId: item.procurementItemId,
+                      approvedPackageCount: decision == 'REJECTED'
+                          ? 0
+                          : item.requestedPackageCount,
+                      approvedKg: decision == 'REJECTED' ? 0 : item.requestedKg,
+                      ownerMemo: decision == 'REJECTED'
+                          ? rejectedReason
+                          : '정상 수량 확인',
+                    ),
+                ])
               {
                 'procurement_item_id': item.procurementItemId,
-                'approved_package_count': decision == 'REJECTED'
-                    ? 0
-                    : item.requestedPackageCount,
-                'approved_kg': decision == 'REJECTED' ? 0 : item.requestedKg,
-                'owner_memo': decision == 'REJECTED'
-                    ? rejectedReason
-                    : '정상 수량 확인',
+                'approved_package_count': item.approvedPackageCount,
+                'approved_kg': item.approvedKg,
+                'owner_memo': item.ownerMemo,
               },
           ],
           'rejected_reason': rejectedReason,
@@ -263,4 +273,18 @@ class OwnerWorkflowRepository {
   bool _hasShipment(Map<String, dynamic> item) {
     return item['tracking_no'] != null || item['shipment_status'] != null;
   }
+}
+
+class OwnerProcurementDecisionItem {
+  const OwnerProcurementDecisionItem({
+    required this.procurementItemId,
+    required this.approvedPackageCount,
+    required this.approvedKg,
+    this.ownerMemo,
+  });
+
+  final int procurementItemId;
+  final int approvedPackageCount;
+  final double approvedKg;
+  final String? ownerMemo;
 }

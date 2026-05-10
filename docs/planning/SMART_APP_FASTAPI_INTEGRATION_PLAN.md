@@ -154,11 +154,13 @@ Success criteria:
 - [x] 주문 현황 API 우선 + JSON fallback 연결
 - [x] 발주 승인 화면을 주문 API 우선 + JSON fallback 데이터로 구동
 - [x] 실제 발주 목록/승인 API 우선 + JSON fallback 연결
+- [x] 발주 상세 및 결정 화면 추가: 품목별 승인 박스/kg, 점주 메모, 부분승인/거절 저장
 
 Success criteria:
 - 점주가 상품별 수확 슬롯을 생성할 수 있다.
 - 고객 결제 후 생성된 발주를 점주가 승인/거절할 수 있다.
 - 일괄 승인 UI는 procurement_id별 PATCH 실패를 개별 표시한다.
+- 발주 상세 화면에서 품목별 수량을 조정해 `APPROVED`, `PARTIAL_APPROVED`, `REJECTED`를 저장한다.
 
 ### Phase 4: Quality, Shipment, Return
 

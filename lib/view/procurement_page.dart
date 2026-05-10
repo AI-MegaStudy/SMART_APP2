@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:smart_app/model/owner_order_record.dart';
 import 'package:smart_app/repositories/owner_workflow_repository.dart';
 import 'package:smart_app/util/app_colors.dart';
+import 'package:smart_app/view/procurement_detail_page.dart';
 import 'package:smart_app/view/procurement_status_page.dart';
 import 'package:smart_app/widgets/owner_widgets.dart';
 
@@ -179,6 +180,17 @@ class _ProcurementPageState extends State<ProcurementPage> {
     showOwnerSnack(context, '발주 현황을 갱신했습니다.');
   }
 
+  Future<void> _openDetail(_ApprovalRequest request) async {
+    final updated = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => ProcurementDetailPage(procurement: request.procurement),
+      ),
+    );
+    if (updated == true) {
+      await _loadRequests();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final query = searchController.text.trim().toLowerCase();
@@ -230,6 +242,7 @@ class _ProcurementPageState extends State<ProcurementPage> {
               _ApprovalTile(
                 request: request,
                 selected: selectedIds.contains(request.id),
+                onTap: () => _openDetail(request),
                 onChanged: (checked) {
                   setState(() {
                     if (checked == true) {
@@ -274,11 +287,13 @@ final _handledProcurementIds = <String>{};
 class _ApprovalTile extends StatelessWidget {
   final _ApprovalRequest request;
   final bool selected;
+  final VoidCallback onTap;
   final ValueChanged<bool?> onChanged;
 
   const _ApprovalTile({
     required this.request,
     required this.selected,
+    required this.onTap,
     required this.onChanged,
   });
 
@@ -292,15 +307,43 @@ class _ApprovalTile extends StatelessWidget {
           border: Border.all(color: AppColors.line),
           borderRadius: BorderRadius.circular(16),
         ),
-        child: CheckboxListTile(
-          value: selected,
-          onChanged: request.enabled ? onChanged : null,
-          title: Text(
-            '${request.title} · ${request.status}',
-            style: const TextStyle(fontWeight: FontWeight.w900),
-          ),
-          subtitle: Text(request.subtitle),
-          controlAffinity: ListTileControlAffinity.leading,
+        child: Row(
+          children: [
+            Checkbox(value: selected, onChanged: request.enabled ? onChanged : null),
+            Expanded(
+              child: InkWell(
+                onTap: onTap,
+                borderRadius: BorderRadius.circular(16),
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(0, 14, 14, 14),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '${request.title} · ${request.status}',
+                        style: const TextStyle(fontWeight: FontWeight.w900),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(request.subtitle),
+                      const SizedBox(height: 8),
+                      const Text(
+                        '상세에서 품목별 수량과 메모를 조정하세요.',
+                        style: TextStyle(
+                          color: AppColors.muted,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.only(right: 12),
+              child: Icon(Icons.chevron_right, color: AppColors.muted),
+            ),
+          ],
         ),
       ),
     );
