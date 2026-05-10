@@ -25,16 +25,32 @@ class DashboardModel {
 
   factory DashboardModel.fromJson(Map<String, dynamic> json) {
     return DashboardModel(
-      openSlots: _readInt(json, 'openSlots'),
-      newProcurements: _readInt(json, 'newProcurements'),
-      inspectionWaiting: _readInt(json, 'inspectionWaiting'),
-      readyToShip: _readInt(json, 'readyToShip'),
-      returnRequests: _readInt(json, 'returnRequests'),
+      openSlots: _readInt(json, 'open_slots', fallbackKey: 'openSlots'),
+      newProcurements: _readInt(
+        json,
+        'new_procurements',
+        fallbackKey: 'newProcurements',
+      ),
+      inspectionWaiting: _readInt(
+        json,
+        'quality_waiting',
+        fallbackKey: 'inspectionWaiting',
+      ),
+      readyToShip: _readInt(json, 'ready_to_ship', fallbackKey: 'readyToShip'),
+      returnRequests: _readInt(
+        json,
+        'return_requests',
+        fallbackKey: 'returnRequests',
+      ),
     );
   }
 
-  static int _readInt(Map<String, dynamic> json, String key) {
-    final value = json[key];
+  static int _readInt(
+    Map<String, dynamic> json,
+    String key, {
+    String? fallbackKey,
+  }) {
+    final value = json[key] ?? (fallbackKey == null ? null : json[fallbackKey]);
     if (value is int) {
       return value;
     }

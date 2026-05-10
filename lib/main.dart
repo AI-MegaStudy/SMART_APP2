@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:smart_app/core/auth_session.dart';
 import 'package:smart_app/repositories/dashboard_repository.dart';
+import 'package:smart_app/view/home.dart';
 import 'package:smart_app/view/login_page.dart';
 import 'package:smart_app/vm/dashboard_viewmodel.dart';
 
@@ -8,8 +10,15 @@ void main() {
   runApp(const OwnerApp());
 }
 
-class OwnerApp extends StatelessWidget {
+class OwnerApp extends StatefulWidget {
   const OwnerApp({super.key});
+
+  @override
+  State<OwnerApp> createState() => _OwnerAppState();
+}
+
+class _OwnerAppState extends State<OwnerApp> {
+  late final Future<void> restoreSession = AuthSession.restore();
 
   @override
   Widget build(BuildContext context) {
@@ -77,7 +86,17 @@ class OwnerApp extends StatelessWidget {
             ),
           ),
         ),
-        home: const LoginPage(),
+        home: FutureBuilder<void>(
+          future: restoreSession,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState != ConnectionState.done) {
+              return const Scaffold(
+                body: Center(child: CircularProgressIndicator()),
+              );
+            }
+            return AuthSession.isLoggedIn ? const Home() : const LoginPage();
+          },
+        ),
       ),
     );
   }

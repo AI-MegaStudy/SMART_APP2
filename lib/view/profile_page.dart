@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smart_app/core/auth_session.dart';
 import 'package:smart_app/util/app_colors.dart';
 import 'package:smart_app/view/farm_detail_page.dart';
 import 'package:smart_app/view/login_page.dart';
@@ -45,7 +46,9 @@ class ProfilePage extends StatelessWidget {
               title: '로그아웃',
               message: '현재 계정에서 로그아웃할까요?',
               confirmLabel: '확인',
-              onConfirm: () {
+              onConfirm: () async {
+                await AuthSession.logout();
+                if (!context.mounted) return;
                 Navigator.of(context).pushAndRemoveUntil(
                   MaterialPageRoute(builder: (_) => const LoginPage()),
                   (route) => false,

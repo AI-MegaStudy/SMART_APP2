@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:smart_app/core/api_exception.dart';
+import 'package:smart_app/core/auth_session.dart';
+import 'package:smart_app/repositories/auth_repository.dart';
 import 'package:smart_app/view/email_find_page.dart';
 import 'package:smart_app/view/home.dart';
 import 'package:smart_app/view/password_find_page.dart';
@@ -16,7 +19,9 @@ class _LoginPageState extends State<LoginPage> {
   final formKey = GlobalKey<FormState>();
   final emailController = TextEditingController(text: 'owner@harvestslot.kr');
   final passwordController = TextEditingController(text: 'owner1234');
+  final authRepository = AuthRepository();
   String? loginError;
+  bool isSubmitting = false;
 
   @override
   void dispose() {
@@ -25,21 +30,41 @@ class _LoginPageState extends State<LoginPage> {
     super.dispose();
   }
 
-  void _login() {
+  Future<void> _login() async {
     setState(() => loginError = null);
     if (!(formKey.currentState?.validate() ?? false)) return;
-    final ok =
-        emailController.text.trim() == 'owner@harvestslot.kr' &&
-        passwordController.text.trim() == 'owner1234';
-    if (!ok) {
-      setState(() => loginError = '이메일 또는 비밀번호가 일치하지 않습니다.');
+
+    setState(() => isSubmitting = true);
+
+    try {
+      final result = await authRepository.login(
+        email: emailController.text.trim(),
+        password: passwordController.text.trim(),
+      );
+      await AuthSession.login(token: result.accessToken, userRole: result.role);
+      final me = await authRepository.fetchMe();
+      if (me.role != 'OWNER') {
+        await AuthSession.logout();
+        throw const ApiException(message: '점주 계정으로 로그인해주세요.');
+      }
+      if (!mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const Home()),
+      );
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      setState(() => loginError = error.message);
       formKey.currentState?.validate();
-      return;
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => loginError = '서버 연결을 확인해주세요.');
+      formKey.currentState?.validate();
+    } finally {
+      if (mounted) {
+        setState(() => isSubmitting = false);
+      }
     }
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const Home()),
-    );
   }
 
   @override
@@ -116,8 +141,8 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         const SizedBox(height: 28),
                         FilledButton(
-                          onPressed: _login,
-                          child: const Text('로그인'),
+                          onPressed: isSubmitting ? null : _login,
+                          child: Text(isSubmitting ? '로그인 중...' : '로그인'),
                         ),
                         const SizedBox(height: 10),
                         Wrap(
