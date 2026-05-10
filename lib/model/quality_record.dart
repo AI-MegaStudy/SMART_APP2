@@ -56,6 +56,8 @@ class QualityAnalysisRecord {
   const QualityAnalysisRecord({
     required this.modelGrade,
     required this.freshnessScore,
+    required this.colorScore,
+    required this.roundnessScore,
     required this.bruiseProbability,
     required this.modelDecision,
     required this.imageUrl,
@@ -63,14 +65,21 @@ class QualityAnalysisRecord {
 
   final String modelGrade;
   final double freshnessScore;
+  final double colorScore;
+  final double roundnessScore;
   final double bruiseProbability;
   final String modelDecision;
   final String imageUrl;
 
   factory QualityAnalysisRecord.fromJson(Map<String, dynamic> json) {
+    final freshnessScore = _asDouble(json['freshness_score']);
+    final colorScore = _asDouble(json['color_score']);
+    final roundnessScore = _asDouble(json['roundness_score']);
     return QualityAnalysisRecord(
       modelGrade: json['model_grade']?.toString() ?? 'A',
-      freshnessScore: _asDouble(json['freshness_score']),
+      freshnessScore: freshnessScore,
+      colorScore: colorScore == 0 ? freshnessScore : colorScore,
+      roundnessScore: roundnessScore == 0 ? freshnessScore - 3 : roundnessScore,
       bruiseProbability: _asDouble(json['bruise_probability']),
       modelDecision: json['model_decision']?.toString() ?? 'PASS',
       imageUrl: json['image_url']?.toString() ?? '',
@@ -82,6 +91,8 @@ class QualityAnalysisRecord {
     required int byteLength,
   }) {
     final score = 84 + (byteLength % 12);
+    final color = 82 + ((imageName.length + byteLength) % 14);
+    final roundness = 80 + ((imageName.length * 3 + byteLength) % 16);
     final bruise = 0.05 + ((imageName.length + byteLength) % 18) / 100;
     final grade = score >= 92
         ? 'A'
@@ -91,6 +102,8 @@ class QualityAnalysisRecord {
     return QualityAnalysisRecord(
       modelGrade: grade,
       freshnessScore: score.toDouble(),
+      colorScore: color.toDouble(),
+      roundnessScore: roundness.toDouble(),
       bruiseProbability: bruise,
       modelDecision: bruise < 0.2 && score >= 86 ? 'PASS' : 'REVIEW',
       imageUrl: 'local://$imageName',
@@ -98,6 +111,9 @@ class QualityAnalysisRecord {
   }
 
   String get freshnessLabel => '${freshnessScore.round()}점';
+  String get colorLabel => '${colorScore.round()}점';
+  String get roundnessLabel => '${roundnessScore.round()}점';
+  String get bruiseProbabilityLabel => '${(bruiseProbability * 100).round()}%';
   String get decisionLabel => modelDecision == 'PASS' ? '통과' : '확인 필요';
   String get bruiseLabel {
     if (bruiseProbability < 0.25) return '멍 가능성 낮음';

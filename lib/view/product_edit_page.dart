@@ -17,6 +17,7 @@ class ProductEditPage extends StatefulWidget {
 class _ProductEditPageState extends State<ProductEditPage> {
   final formKey = GlobalKey<FormState>();
   final repository = ProductRepository();
+  late final TextEditingController descriptionController;
   late String variety;
   late double packageUnitKg;
   late int price;
@@ -42,6 +43,15 @@ class _ProductEditPageState extends State<ProductEditPage> {
     price = widget.product.price;
     stockBoxes = widget.product.stockKg;
     status = widget.product.status;
+    descriptionController = TextEditingController(
+      text: widget.product.description ?? '',
+    );
+  }
+
+  @override
+  void dispose() {
+    descriptionController.dispose();
+    super.dispose();
   }
 
   Future<void> _save() async {
@@ -67,7 +77,7 @@ class _ProductEditPageState extends State<ProductEditPage> {
           farmId: widget.product.farmId,
           fruitType: '사과',
           variety: variety,
-          description: widget.product.description,
+          description: descriptionController.text.trim(),
           imageUrl: widget.product.imageUrl,
         );
         setState(() => isSaving = true);
@@ -157,6 +167,14 @@ class _ProductEditPageState extends State<ProductEditPage> {
             const NoticeBox(
               color: AppColors.yellow,
               text: '상품 수량은 현재 화면 표시값입니다. 실제 예약 가능 수량은 수확 슬롯에서 관리합니다.',
+            ),
+            LabeledBox(
+              label: '상품 소개',
+              value: '',
+              controller: descriptionController,
+              hintText: '상품 상세 페이지에 표시될 소개 문구',
+              maxLength: 160,
+              required: false,
             ),
             LabeledDropdown(
               label: '판매 상태',

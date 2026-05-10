@@ -15,9 +15,11 @@ class _OrdersPageState extends State<OrdersPage> {
   final repository = OwnerWorkflowRepository();
   final searchController = TextEditingController();
   String filter = '전체';
+  String section = '주문';
   bool showSearch = false;
   bool loading = true;
   List<OwnerOrderRecord> orders = const [];
+  List<OwnerReservationRecord> reservations = const [];
 
   @override
   void initState() {
@@ -33,11 +35,15 @@ class _OrdersPageState extends State<OrdersPage> {
 
   Future<void> _loadOrders() async {
     setState(() => loading = true);
-    final loaded = await repository.fetchOrders();
+    final loaded = await Future.wait<Object>([
+      repository.fetchOrders(),
+      repository.fetchReservations(),
+    ]);
     if (!mounted) return;
     setState(() {
-      orders = loaded;
-      sharedOwnerOrders = loaded;
+      orders = loaded[0] as List<OwnerOrderRecord>;
+      reservations = loaded[1] as List<OwnerReservationRecord>;
+      sharedOwnerOrders = orders;
       loading = false;
     });
   }
@@ -45,7 +51,7 @@ class _OrdersPageState extends State<OrdersPage> {
   @override
   Widget build(BuildContext context) {
     final query = searchController.text.trim().toLowerCase();
-    final visible = orders.where((order) {
+    final visibleOrders = orders.where((order) {
       final matchesFilter = filter == '전체' || order.status == filter;
       final matchesQuery =
           query.isEmpty ||
@@ -54,6 +60,16 @@ class _OrdersPageState extends State<OrdersPage> {
               .contains(query);
       return matchesFilter && matchesQuery;
     }).toList()..sort((a, b) => a.time.compareTo(b.time));
+    final visibleReservations = reservations.where((reservation) {
+      final matchesFilter = filter == '전체' || reservation.status == filter;
+      final matchesQuery =
+          query.isEmpty ||
+          '${reservation.title} ${reservation.subtitle} ${reservation.status}'
+              .toLowerCase()
+              .contains(query);
+      return matchesFilter && matchesQuery;
+    }).toList();
+    final visible = section == '주문' ? visibleOrders : visibleReservations;
 
     return Scaffold(
       body: AppScaffold(
@@ -94,7 +110,19 @@ class _OrdersPageState extends State<OrdersPage> {
               ),
             ),
           FilterTabs(
-            labels: const ['전체', '주문 완료', '결제 완료'],
+            labels: const ['주문', '예약'],
+            selected: section,
+            onChanged: (value) {
+              setState(() {
+                section = value;
+                filter = '전체';
+              });
+            },
+          ),
+          FilterTabs(
+            labels: section == '주문'
+                ? const ['전체', '주문 완료', '결제 완료']
+                : const ['전체', '예약 유지', '주문 전환', '예약 만료'],
             selected: filter,
             onChanged: (value) => setState(() => filter = value),
           ),
@@ -106,14 +134,23 @@ class _OrdersPageState extends State<OrdersPage> {
               ),
             ),
           if (!loading)
-            for (final order in visible)
-              DataTile(
-                icon: Icons.receipt_long_outlined,
-                title: order.title,
-                subtitle: order.subtitle,
-                badge: order.status,
-                badgeColor: order.color,
-              ),
+            for (final item in visible)
+              if (item is OwnerOrderRecord)
+                DataTile(
+                  icon: Icons.receipt_long_outlined,
+                  title: item.title,
+                  subtitle: item.subtitle,
+                  badge: item.status,
+                  badgeColor: item.color,
+                )
+              else if (item is OwnerReservationRecord)
+                DataTile(
+                  icon: Icons.event_available_outlined,
+                  title: item.title,
+                  subtitle: item.subtitle,
+                  badge: item.status,
+                  badgeColor: item.color,
+                ),
           if (!loading && visible.isEmpty)
             const NoticeBox(color: AppColors.yellow, text: '검색 결과가 없습니다.'),
         ],

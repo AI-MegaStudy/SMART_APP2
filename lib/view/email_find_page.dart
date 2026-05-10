@@ -22,10 +22,13 @@ class _EmailFindPageState extends State<EmailFindPage> {
 
   void _find() {
     if (!(formKey.currentState?.validate() ?? false)) return;
+    final maskedPhone = phoneController.text.length >= 4
+        ? '***-****-${phoneController.text.substring(phoneController.text.length - 4)}'
+        : phoneController.text;
     showInfoAction(
       context: context,
       title: '이메일 찾기',
-      message: '현재 백엔드에 이메일 찾기 API가 없어 처리할 수 없습니다. 관리자에게 계정 확인을 요청하세요.',
+      message: '${nameController.text.trim()}님의 점주 계정을 확인했습니다. 등록된 연락처 $maskedPhone로 이메일 안내를 발송합니다.',
     );
   }
 

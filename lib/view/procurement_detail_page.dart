@@ -52,10 +52,6 @@ class _ProcurementDetailPageState extends State<ProcurementDetailPage> {
   }
 
   Future<void> _submit() async {
-    if (widget.procurement.isFallback) {
-      showOwnerSnack(context, '현재 항목은 상세 결정을 저장할 수 없습니다.');
-      return;
-    }
     if (items.isEmpty) {
       showOwnerSnack(context, '결정할 발주 품목이 없습니다.');
       return;

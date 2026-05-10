@@ -18,6 +18,24 @@ class OwnerStatusRecord {
   final String? rawStatus;
   final bool isFallback;
 
+  OwnerStatusRecord copyWith({
+    String? title,
+    String? subtitle,
+    String? status,
+    int? shipmentId,
+    String? rawStatus,
+    bool? isFallback,
+  }) {
+    return OwnerStatusRecord(
+      title: title ?? this.title,
+      subtitle: subtitle ?? this.subtitle,
+      status: status ?? this.status,
+      shipmentId: shipmentId ?? this.shipmentId,
+      rawStatus: rawStatus ?? this.rawStatus,
+      isFallback: isFallback ?? this.isFallback,
+    );
+  }
+
   factory OwnerStatusRecord.fromJson(
     Map<String, dynamic> json, {
     bool isFallback = false,

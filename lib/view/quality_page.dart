@@ -291,12 +291,24 @@ class _QualityPageState extends State<QualityPage> {
                 value: analysis?.freshnessLabel ?? '-',
                 label: '신선도',
               ),
+              MetricCard(
+                icon: Icons.palette_outlined,
+                value: analysis?.colorLabel ?? '-',
+                label: '색상 점수',
+              ),
+              MetricCard(
+                icon: Icons.circle_outlined,
+                value: analysis?.roundnessLabel ?? '-',
+                label: '형태 점수',
+              ),
             ],
           ),
           DataTile(
             icon: Icons.check_circle_outline,
             title: analysis?.bruiseLabel ?? '분석 대기',
-            subtitle: selectedTarget?.subtitle ?? '검사 대상과 이미지를 선택하세요.',
+            subtitle: analysis == null
+                ? selectedTarget?.subtitle ?? '검사 대상과 이미지를 선택하세요.'
+                : '${selectedTarget?.subtitle ?? '검사 대상'} · 멍 확률 ${analysis!.bruiseProbabilityLabel}',
             badge: analysis?.decisionLabel ?? '대기',
             badgeColor: AppColors.mint,
           ),

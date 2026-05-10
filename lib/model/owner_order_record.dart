@@ -78,6 +78,71 @@ class OwnerOrderRecord {
   }
 }
 
+class OwnerReservationRecord {
+  const OwnerReservationRecord({
+    required this.id,
+    required this.customerName,
+    required this.productName,
+    required this.packageCount,
+    required this.reservedKg,
+    required this.totalAmount,
+    required this.status,
+    required this.reservedUntil,
+    this.reservationNo,
+    this.orderNo,
+  });
+
+  final String id;
+  final String customerName;
+  final String productName;
+  final int packageCount;
+  final int reservedKg;
+  final int totalAmount;
+  final String status;
+  final String reservedUntil;
+  final String? reservationNo;
+  final String? orderNo;
+
+  factory OwnerReservationRecord.fromJson(Map<String, dynamic> json) {
+    final items = json['items'] as List<dynamic>? ?? const [];
+    final firstItem = items.isEmpty
+        ? const <String, dynamic>{}
+        : items.first as Map<String, dynamic>? ?? const {};
+    return OwnerReservationRecord(
+      id: (json['reservation_id'] ?? json['reservation_no'] ?? '').toString(),
+      customerName: json['customer_name']?.toString() ?? '고객',
+      productName: firstItem['product_name']?.toString() ?? '상품',
+      packageCount: _asInt(firstItem['package_count'], fallback: 1),
+      reservedKg: _asInt(json['total_reserved_kg']),
+      totalAmount: _asInt(json['total_amount']),
+      status: _reservationStatusLabel(
+        json['reservation_status']?.toString() ?? '',
+        json['order_status']?.toString(),
+      ),
+      reservedUntil: _formatOrderedAt(json['reserved_until']),
+      reservationNo: json['reservation_no']?.toString(),
+      orderNo: json['order_no']?.toString(),
+    );
+  }
+
+  String get title => '$customerName · $productName ${reservedKg}kg';
+
+  String get subtitle {
+    final progress = status == '주문 전환'
+        ? '주문 전환 완료'
+        : status == '예약 유지'
+        ? '예약 마감 $reservedUntil'
+        : status;
+    return '$packageCount박스 · ${_money(totalAmount)} · $progress';
+  }
+
+  Color get color => switch (status) {
+    '주문 전환' => AppColors.blue,
+    '예약 만료' || '예약 취소' => const Color(0xffFFE1DD),
+    _ => AppColors.mint,
+  };
+}
+
 class OwnerProcurementRequestRecord {
   const OwnerProcurementRequestRecord({
     required this.id,
@@ -157,7 +222,15 @@ class OwnerProcurementRequestRecord {
       time: order.time,
       amount: order.amount,
       isFallback: true,
-      items: const [],
+      items: [
+        OwnerProcurementItemRecord(
+          procurementItemId: int.tryParse(order.id) ?? 0,
+          productName: order.productName,
+          requestedPackageCount: order.packageCount,
+          requestedKg: order.orderedKg.toDouble(),
+          hasQualityInspection: false,
+        ),
+      ],
       orderId: int.tryParse(order.id),
       shipmentStatus: null,
     );
@@ -231,5 +304,17 @@ String _procurementStatusLabel(String status) {
     'PARTIAL_APPROVED' => '부분승인',
     'REJECTED' => '거절',
     _ => status.isEmpty ? '승인 대기' : status,
+  };
+}
+
+String _reservationStatusLabel(String status, String? orderStatus) {
+  if ((orderStatus ?? '').isNotEmpty || status == 'ORDERED') {
+    return '주문 전환';
+  }
+  return switch (status) {
+    'RESERVED' => '예약 유지',
+    'EXPIRED' => '예약 만료',
+    'CANCELED' => '예약 취소',
+    _ => status.isEmpty ? '예약 유지' : status,
   };
 }

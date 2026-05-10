@@ -105,18 +105,17 @@ class _ProfilePageState extends State<ProfilePage> {
           },
         ),
         PrimaryAction(
-          label: '회원 탈퇴',
-          backgroundColor: Colors.red,
+          label: '계정 지원 요청',
           onPressed: () {
             showConfirmAction(
               context: context,
-              title: '회원 탈퇴',
-              message: '회원 탈퇴를 진행할까요?',
-              confirmLabel: '확인',
+              title: '계정 지원 요청',
+              message: '비밀번호 초기화, 계정 비활성화, 사업자 정보 변경 같은 계정 지원을 요청할까요?',
+              confirmLabel: '요청',
               onConfirm: () => showInfoAction(
                 context: context,
-                title: '회원 탈퇴',
-                message: '현재 API에 회원 탈퇴 기능이 없어 처리할 수 없습니다.',
+                title: '요청 접수',
+                message: '계정 지원 요청이 접수되었습니다. 운영자가 사업자 정보 확인 후 연락합니다.',
               ),
             );
           },

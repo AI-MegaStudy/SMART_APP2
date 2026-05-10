@@ -6,6 +6,8 @@ import 'package:smart_app/model/owner_order_record.dart';
 import 'package:smart_app/model/owner_status_record.dart';
 
 class OwnerWorkflowRepository {
+  static final Set<String> _locallyHandledFallbackProcurementIds = {};
+
   Future<List<OwnerOrderRecord>> fetchOrders() async {
     try {
       final orders = await ApiService.getData<List<OwnerOrderRecord>>(
@@ -18,6 +20,27 @@ class OwnerWorkflowRepository {
       // Development fallback: keep owner flows usable while backend data is sparse.
     }
     return _loadMockOrders();
+  }
+
+  Future<List<OwnerReservationRecord>> fetchReservations() async {
+    try {
+      final records = await ApiService.getData<List<OwnerReservationRecord>>(
+        '/owner/reservations',
+        requiresAuth: true,
+        parser: (data) {
+          final list = data as List<dynamic>? ?? const [];
+          return [
+            for (final item in list)
+              OwnerReservationRecord.fromJson(
+                item as Map<String, dynamic>? ?? const {},
+              ),
+          ];
+        },
+      );
+      return records;
+    } catch (_) {
+      return const [];
+    }
   }
 
   Future<List<OwnerProcurementRequestRecord>> fetchProcurementRequests() async {
@@ -44,7 +67,8 @@ class OwnerWorkflowRepository {
     final orders = await fetchOrders();
     return [
       for (final order in orders)
-        OwnerProcurementRequestRecord.fromOrder(order),
+        if (!_locallyHandledFallbackProcurementIds.contains(order.id))
+          OwnerProcurementRequestRecord.fromOrder(order),
     ];
   }
 
@@ -54,7 +78,10 @@ class OwnerWorkflowRepository {
     String? rejectedReason,
     List<OwnerProcurementDecisionItem>? decisionItems,
   }) async {
-    if (request.isFallback) return false;
+    if (request.isFallback) {
+      _locallyHandledFallbackProcurementIds.add(request.id);
+      return true;
+    }
     try {
       await ApiService.patchData<Map<String, dynamic>>(
         '/owner/procurements/${request.id}/decision',

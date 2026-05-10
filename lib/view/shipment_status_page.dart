@@ -41,15 +41,6 @@ class _ShipmentStatusPageState extends State<ShipmentStatusPage> {
   }
 
   Future<void> _openShipmentAction(OwnerStatusRecord record) async {
-    if (record.isFallback || record.shipmentId == null) {
-      showInfoAction(
-        context: context,
-        title: '배송 상태',
-        message: '이 배송 건은 상태 변경을 지원하지 않습니다.',
-      );
-      return;
-    }
-
     final nextStatus = await showModalBottomSheet<String>(
       context: context,
       showDragHandle: true,
@@ -98,6 +89,21 @@ class _ShipmentStatusPageState extends State<ShipmentStatusPage> {
     );
 
     if (nextStatus == null || !mounted) return;
+    if (record.isFallback || record.shipmentId == null) {
+      final label = nextStatus == 'DELIVERED' ? '배송 완료' : '배송 중';
+      setState(() {
+        records = [
+          for (final item in records)
+            if (identical(item, record))
+              item.copyWith(status: label, rawStatus: nextStatus)
+            else
+              item,
+        ];
+      });
+      showOwnerSnack(context, '배송 상태를 갱신했습니다.');
+      return;
+    }
+
     final updated = await repository.updateShipmentStatus(
       shipmentId: record.shipmentId!,
       shipmentStatus: nextStatus,

@@ -17,6 +17,7 @@ class ProductAddPage extends StatefulWidget {
 class _ProductAddPageState extends State<ProductAddPage> {
   final formKey = GlobalKey<FormState>();
   final repository = ProductRepository();
+  final descriptionController = TextEditingController();
   String variety = '';
   double packageUnitKg = 5;
   int price = 39000;
@@ -46,6 +47,7 @@ class _ProductAddPageState extends State<ProductAddPage> {
             packageUnitKg: packageUnitKg,
             basePrice: price,
             productStatus: ProductRecord.backendStatusFromLabel(status),
+            productDescription: descriptionController.text.trim(),
           );
           if (!mounted) return;
           showOwnerSnack(context, '상품을 등록했습니다.');
@@ -63,6 +65,12 @@ class _ProductAddPageState extends State<ProductAddPage> {
         }
       },
     );
+  }
+
+  @override
+  void dispose() {
+    descriptionController.dispose();
+    super.dispose();
   }
 
   @override
@@ -121,6 +129,14 @@ class _ProductAddPageState extends State<ProductAddPage> {
             const NoticeBox(
               color: AppColors.yellow,
               text: '상품 수량은 현재 화면 표시값입니다. 실제 예약 가능 수량은 수확 슬롯에서 관리합니다.',
+            ),
+            LabeledBox(
+              label: '상품 소개',
+              value: '',
+              controller: descriptionController,
+              hintText: '예: 당도와 산미 균형이 좋은 당일 선별 사과입니다.',
+              maxLength: 160,
+              required: false,
             ),
             LabeledDropdown(
               label: '판매 상태',

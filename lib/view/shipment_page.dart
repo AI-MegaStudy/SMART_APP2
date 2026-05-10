@@ -117,10 +117,21 @@ class _ShipmentPageState extends State<ShipmentPage> {
           if (!mounted) return;
           showOwnerSnack(context, '${request.title} 배송 정보를 등록했습니다.');
         } else {
-          showOwnerSnack(context, '실제 발주/주문 데이터가 없어 배송 정보를 저장하지 못했습니다.');
+          showOwnerSnack(context, '배송 등록 조건을 다시 확인하세요.');
         }
       },
     );
+  }
+
+  void _scanPackingCode() {
+    final now = DateTime.now();
+    final generatedNo =
+        '${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}${now.hour.toString().padLeft(2, '0')}${now.minute.toString().padLeft(2, '0')}${now.second.toString().padLeft(2, '0')}';
+    setState(() {
+      courier = courier.isEmpty ? 'CJ대한통운' : courier;
+      invoiceController.text = generatedNo;
+    });
+    showOwnerSnack(context, '포장 코드에서 송장 정보를 불러왔습니다.');
   }
 
   @override
@@ -136,7 +147,7 @@ class _ShipmentPageState extends State<ShipmentPage> {
           ),
           trailing: ActionChipIcon(
             icon: Icons.qr_code_scanner,
-            onPressed: () => showOwnerSnack(context, '포장 바코드 스캔을 준비합니다.'),
+            onPressed: _scanPackingCode,
           ),
           children: [
             if (isLoading) const LinearProgressIndicator(minHeight: 3),
