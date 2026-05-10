@@ -29,7 +29,19 @@ SMART_WEB은 API client, repository, model mapping 패턴만 참고한다. 파�
 | Phone | `01000000000` |
 | Email verified | `true` |
 
-현재 이 계정은 농장 데이터가 없다. DB 수정은 사용자 검증 후 진행하기로 했으므로, 이 계정으로는 로그인/대시보드/농장 없음 상태까지 우선 검증한다. 상품/농장 CRUD 검증은 owner_id `3`에 농장 데이터가 생긴 뒤 진행한다.
+이 계정은 Chrome 수동 검증용 계정이다. DB 스키마 변경은 하지 않았고, 사용자 승인 후 현재 모델에 맞는 최소 더미 레코드만 생성했다.
+
+2026-05-11 사용자 승인 후 생성한 검증용 더미 데이터:
+
+| Type | ID | Values |
+|---|---:|---|
+| Farm | `3` | `cheng80 테스트 농장`, `충북 충주`, `충북 충주시 산척면 과수원길 24` |
+| Product | `5` | `양광 사과`, `5kg`, `39000원`, `ACTIVE` |
+| Harvest slot | `40` | product `5`, `OPEN`, 예약 가능 `120kg` |
+| Product | `6` | `부사 사과`, `3kg`, `32000원`, `ACTIVE` |
+| Harvest slot | `41` | product `6`, `OPEN`, 예약 가능 `90kg` |
+
+이 데이터는 DB 스키마 변경 없이 현재 FastAPI 모델로 생성했다. 상품 API 검증 기준은 `open_slot_count=1`이 각 상품에 내려오는 것이다.
 
 ## Premises
 
@@ -129,7 +141,7 @@ Success criteria:
 - [x] 점주가 백엔드 상품 목록을 보고 등록/수정할 수 있다.
 - [x] 화면 한글 상태와 백엔드 enum이 섞이지 않는다.
 - [x] farm_id가 없는 경우 저장을 막고 원인을 표시한다.
-- [ ] Chrome에서 백엔드 연결 상태로 상품/농장 흐름 검증
+- [x] Chrome에서 백엔드 연결 상태로 상품 목록/등록 화면 흐름 검증
 
 ### Phase 3: Harvest Slot, Order, Procurement
 
@@ -177,26 +189,27 @@ Success criteria:
 | 상품 삭제 | backend 최종본에 `DELETE /owner/products/{id}`가 없다 | 물리 삭제 대신 `PATCH /status`로 `INACTIVE` 처리 |
 | 농장 이미지 업로드 | 농장 전용 업로드 API가 명확하지 않다 | 공통 이미지 업로드 후 `farm_image_url` 저장으로 처리 가능 |
 | 배송 현황 상세 | owner shipment list 전용 API가 없다 | `GET /owner/orders` 응답에 shipment 포함 여부 확인 후 부족하면 API 추가 |
-| seed/demo data | 실제 DB에 점주, 농장, 상품, 주문 seed가 없으면 앱 흐름 테스트가 막힌다 | Swagger 또는 seed script로 최소 demo data 작성 |
+| seed/demo data | 주문/발주/배송/반품까지 검증할 seed가 아직 부족하다 | 현재 점주/농장/상품/수확 슬롯 seed는 생성됨. 다음 단계에서 주문 계열 seed 필요 시 사전 검토 후 생성 |
 | DB 스키마 변경이 필요한 기능 | 사용자 검증 전에는 DB 변경 범위를 확정하지 않는다 | 현재 DB/API로 검증 가능한 화면을 먼저 연결한 뒤 별도 승인 후 진행 |
 | 상품 수량 입력 | backend `products`에는 재고/수량 필드가 없고 실제 예약 가능 수량은 `harvest_slots`에 있다 | 상품 화면에서는 표시/데모 값으로 유지하고 실제 판매 가능 수량은 수확 슬롯 단계에서 연결 |
-| Chrome 로그인 이후 검증 | 현재 문서의 테스트 계정과 앱 기본 계정이 실제 DB 로그인에 실패한다 | 사용자 검증용 점주 계정을 확인받은 뒤 Chrome에서 login -> dashboard -> product/farm 흐름 검증 |
+| Chrome 로그인 이후 검증 | 2026-05-11 `cheng80@gmail.com` 계정으로 login -> dashboard -> product list -> product add input 확인 완료 | 농장 수정/등록 저장, 주문 계열 흐름은 연결 단계별로 추가 검증 |
 | DB 기존 상품 품종 | owner_id 1 DB 상품 중 `신고` 품종이 존재하지만 앱 정책은 `양광`, `부사` 두 가지다 | DB 수정은 사용자 검증 후 진행하고, 앱 신규/수정 UI는 `양광`, `부사`만 선택 가능하게 제한 |
-| DB OWNER 비밀번호 | `owner@test.com`은 farm/product 데이터가 있어 검증 대상 계정으로 적합하지만 `demo1234!`, `pass1234!` 모두 로그인 실패 | DB 수정 없이 JWT 발급으로 API owner flow를 확인하고, 실제 Chrome 로그인 검증은 비밀번호 확인 후 진행 |
+| DB OWNER 비밀번호 | 기존 `owner@test.com`은 로그인 비밀번호가 확인되지 않았다 | 신규 검증 계정 `cheng80@gmail.com` / `pass1234!`를 기준으로 진행 |
 
 ## Test Plan
 
 - [ ] Dart unit: API wrapper `data` extraction
 - [ ] Dart unit: dashboard snake_case mapping
 - [ ] Flutter smoke: login form validation
-- [ ] Chrome manual: login -> dashboard
-- [ ] Chrome manual: product/farm CRUD flow
+- [x] Chrome manual: login -> dashboard
+- [x] Chrome manual: product list -> product add input flow
+- [ ] Chrome manual: farm update flow
 - [ ] iOS simulator final: login -> dashboard -> menu -> profile
 - [ ] iOS simulator final: connected owner workflow smoke test
-- [ ] Manual API: `POST /api/v1/auth/login`
-- [ ] Manual API: `GET /api/v1/me`
-- [ ] Manual API: `GET /api/v1/owner/dashboard`
-- [ ] Manual flow: login -> dashboard -> product list
+- [x] Manual API: `POST /api/v1/auth/login`
+- [x] Manual API: `GET /api/v1/me`
+- [x] Manual API: `GET /api/v1/owner/dashboard`
+- [x] Manual flow: login -> dashboard -> product list
 - [ ] Manual flow: product create -> edit -> inactive
 - [ ] Manual flow: procurement decision -> shipment create -> return decision
 
@@ -210,6 +223,6 @@ Success criteria:
 | 4 | Design | 상태값은 백엔드 enum과 화면 한글 표시값을 분리한다 | Mechanical | Explicit over clever | API 저장값과 사용자가 보는 문구가 섞이면 수정/필터/전송 버그가 난다 | 한글 문자열을 내부 상태로 계속 사용 |
 | 5 | Eng | DB 수정이 필요한 작업은 사용자 검증 후로 미룬다 | Mechanical | Bias toward action | 현재 DB/API로 검증 가능한 기능부터 붙여야 실제 앱 흐름을 빨리 확인할 수 있다 | 검증 전 DB 스키마/seed 변경 병행 |
 | 6 | QA | Chrome으로 빠른 검증 후 iOS 시뮬레이터로 최종 검증한다 | Mechanical | Pragmatic | Chrome은 반복 확인이 빠르고 iOS 시뮬레이터는 실제 앱 타깃에 가깝다 | 매번 iOS만 실행해서 반복 속도를 늦추기 |
-| 7 | QA | 실제 DB 계정 생성 없이 Chrome 로그인 이후 검증은 보류한다 | Mechanical | Pragmatic | 서버와 DB health는 정상이나 문서상 계정이 로그인 실패하므로 DB 데이터 생성 없이 진행할 수 없다 | 임의 회원가입/seed 생성으로 DB 데이터 변경 |
+| 7 | QA | 사용자 승인 후 검증용 계정과 최소 seed를 만들고 Chrome 검증을 진행한다 | Mechanical | Pragmatic | 실제 로그인과 상품 목록 검증에는 OWNER 계정, 농장, 상품, 수확 슬롯이 필요했다 | 스키마 변경 또는 대량 seed 생성 |
 | 8 | Product | 상품 등록/수정 UI는 `양광`, `부사`와 SMART_WEB 포장 단위만 허용한다 | Mechanical | DRY | SMART_WEB 고객 예약 단위와 점주 상품 단위가 같아야 주문/발주 수량 계산이 맞는다 | 자유 텍스트 품종/포장 단위 입력 |
 | 9 | UX | 가격과 표시 수량은 수동 입력 대신 stepper로 조정한다 | Mechanical | Explicit over clever | 숫자 오타를 줄이고 모바일에서 반복 조작하기 쉽다 | 키보드 숫자 입력 유지 |

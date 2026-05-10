@@ -43,7 +43,7 @@ def serialize_product(product: Product, open_slot_count: int | None = None) -> d
         "farm_name": product.farm.farm_name if product.farm else None,
         "farm_region": product.farm.farm_region if product.farm else None,
         "farm_image_url": product.farm.farm_image_url if product.farm else None,
-        "open_slot_count": open_slot_count if open_slot_count is not None else 0,
+        "open_slot_count": open_slot_count if open_slot_count is not None else len(open_slots),
         "min_open_slot_price": min_open_price,
     }
 
