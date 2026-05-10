@@ -17,8 +17,8 @@ class LoginPage extends StatefulWidget {
 
 class _LoginPageState extends State<LoginPage> {
   final formKey = GlobalKey<FormState>();
-  final emailController = TextEditingController(text: 'owner@harvestslot.kr');
-  final passwordController = TextEditingController(text: 'owner1234');
+  final emailController = TextEditingController();
+  final passwordController = TextEditingController();
   final authRepository = AuthRepository();
   String? loginError;
   bool isSubmitting = false;
@@ -106,7 +106,7 @@ class _LoginPageState extends State<LoginPage> {
                         ),
                         const SizedBox(height: 10),
                         const Text(
-                          '충주 햇살농원의 주문, 발주, 배송 현황을 이어서 관리합니다.',
+                          '내 농장의 주문, 발주, 배송 현황을 이어서 관리합니다.',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 15,

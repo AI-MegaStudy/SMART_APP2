@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:smart_app/model/owner_profile.dart';
+import 'package:smart_app/model/product_record.dart';
+import 'package:smart_app/repositories/owner_repository.dart';
+import 'package:smart_app/repositories/product_repository.dart';
 import 'package:smart_app/view/harvest_slot_page.dart';
 import 'package:smart_app/view/procurement_page.dart';
 import 'package:smart_app/view/quality_page.dart';
@@ -18,7 +22,11 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
+  final ownerRepository = OwnerRepository();
+  final productRepository = ProductRepository();
   bool didLoad = false;
+  OwnerProfile? owner;
+  OwnerFarmRecord? farm;
 
   @override
   void didChangeDependencies() {
@@ -27,7 +35,29 @@ class _DashboardPageState extends State<DashboardPage> {
     didLoad = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<DashboardViewModel>().loadDashboard();
+      _loadHeader();
     });
+  }
+
+  Future<void> _loadHeader() async {
+    final results = await Future.wait<Object?>([
+      _fetchOwnerProfile(),
+      productRepository.fetchOwnerFarms().catchError((_) => <OwnerFarmRecord>[]),
+    ]);
+    if (!mounted) return;
+    final farms = results[1] as List<OwnerFarmRecord>;
+    setState(() {
+      owner = results[0] as OwnerProfile?;
+      farm = farms.isEmpty ? null : farms.first;
+    });
+  }
+
+  Future<OwnerProfile?> _fetchOwnerProfile() async {
+    try {
+      return await ownerRepository.fetchProfile();
+    } catch (_) {
+      return null;
+    }
   }
 
   void _open(Widget page) {
@@ -37,10 +67,14 @@ class _DashboardPageState extends State<DashboardPage> {
   @override
   Widget build(BuildContext context) {
     final dashboard = context.watch<DashboardViewModel>().dashboard;
+    final ownerName = owner?.ownerName.trim();
+    final farmName = farm?.farmName.trim();
 
     return AppScaffold(
-      title: '안녕하세요, 김하늘 점주님',
-      subtitle: '충주 햇살농원',
+      title: ownerName == null || ownerName.isEmpty
+          ? '안녕하세요'
+          : '안녕하세요, $ownerName 점주님',
+      subtitle: farmName == null || farmName.isEmpty ? '내 농장' : farmName,
       children: [
         _MlReferenceCard(onPressed: () => _open(const HarvestSlotPage())),
         const SectionHeader(title: '업무 현황'),
@@ -66,7 +100,7 @@ class _DashboardPageState extends State<DashboardPage> {
             ),
             MetricCard(
               icon: Icons.keyboard_return_outlined,
-              value: '2',
+              value: '${dashboard?.returnRequests ?? 0}',
               label: '반품 요청',
               onTap: () => _open(const ReturnPage()),
             ),

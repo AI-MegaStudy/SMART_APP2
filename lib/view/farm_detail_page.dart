@@ -16,8 +16,8 @@ class FarmDetailPage extends StatefulWidget {
 
 class _FarmDetailPageState extends State<FarmDetailPage> {
   final formKey = GlobalKey<FormState>();
-  final farmNameController = TextEditingController(text: '충주 햇살농원');
-  final addressController = TextEditingController(text: '충북 충주시 산척면 과수원길 24');
+  final farmNameController = TextEditingController();
+  final addressController = TextEditingController();
   final introController = TextEditingController();
   final shippingPolicyController = TextEditingController();
   final returnPolicyController = TextEditingController();

@@ -1,23 +1,68 @@
 import 'package:flutter/material.dart';
 import 'package:smart_app/core/auth_session.dart';
+import 'package:smart_app/model/owner_profile.dart';
+import 'package:smart_app/model/product_record.dart';
+import 'package:smart_app/repositories/owner_repository.dart';
+import 'package:smart_app/repositories/product_repository.dart';
 import 'package:smart_app/util/app_colors.dart';
 import 'package:smart_app/view/farm_detail_page.dart';
 import 'package:smart_app/view/login_page.dart';
 import 'package:smart_app/view/owner_detail_page.dart';
 import 'package:smart_app/widgets/owner_widgets.dart';
 
-class ProfilePage extends StatelessWidget {
+class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
   @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
+
+class _ProfilePageState extends State<ProfilePage> {
+  final ownerRepository = OwnerRepository();
+  final productRepository = ProductRepository();
+  OwnerProfile? owner;
+  OwnerFarmRecord? farm;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadHeader();
+  }
+
+  Future<void> _loadHeader() async {
+    final results = await Future.wait<Object?>([
+      _fetchOwnerProfile(),
+      productRepository.fetchOwnerFarms().catchError((_) => <OwnerFarmRecord>[]),
+    ]);
+    if (!mounted) return;
+    final farms = results[1] as List<OwnerFarmRecord>;
+    setState(() {
+      owner = results[0] as OwnerProfile?;
+      farm = farms.isEmpty ? null : farms.first;
+    });
+  }
+
+  Future<OwnerProfile?> _fetchOwnerProfile() async {
+    try {
+      return await ownerRepository.fetchProfile();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final ownerName = owner?.ownerName.trim();
+    final farmName = farm?.farmName.trim();
     return AppScaffold(
       title: '마이',
       subtitle: '점주와 농장 정보',
       children: [
-        const HeroPanel(
-          eyebrow: '충주 햇살농원',
-          title: '김하늘 점주',
+        HeroPanel(
+          eyebrow: farmName == null || farmName.isEmpty ? '내 농장' : farmName,
+          title: ownerName == null || ownerName.isEmpty
+              ? '점주 정보'
+              : '$ownerName 점주',
           icon: Icons.badge_outlined,
           compact: true,
         ),
