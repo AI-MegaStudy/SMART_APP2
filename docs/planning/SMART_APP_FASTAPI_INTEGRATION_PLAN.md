@@ -166,7 +166,9 @@ Success criteria:
 - [ ] 품질 이미지 분석/저장 연결
 - [ ] 배송 등록 연결
 - [ ] 배송 상태 변경 연결
-- [ ] 반품 목록 연결
+- [x] 배송 현황 API 우선 + JSON fallback 연결
+- [x] 반품 현황 API 우선 + JSON fallback 연결
+- [ ] 반품 목록/관리 화면 API 연결
 - [ ] 반품 승인/거절 연결
 
 Success criteria:
@@ -193,6 +195,7 @@ Success criteria:
 | 배송 현황 상세 | owner shipment list 전용 API가 없다 | `GET /owner/orders` 응답에 shipment 포함 여부 확인 후 부족하면 API 추가 |
 | seed/demo data | 주문/발주/배송/반품까지 검증할 seed가 아직 부족하다 | 현재 점주/농장/상품/수확 슬롯 seed는 생성됨. 다음 단계에서 주문 계열 seed 필요 시 사전 검토 후 생성 |
 | 주문/발주 DB 데이터 없음 | 현재 DB에 PDF의 QA 주문/결제/배송/반품 seed가 없다 | `assets/mock/owner_orders.json` fallback으로 주문/발주 화면을 먼저 기능하게 하고, 실제 seed는 별도 검토 후 생성 |
+| 배송/반품 DB 데이터 없음 | 현재 DB에 배송/반품 QA seed가 없다 | `assets/mock/owner_shipments.json`, `assets/mock/owner_returns.json` fallback으로 현황 화면을 먼저 기능하게 한다 |
 | DB 스키마 변경이 필요한 기능 | 사용자 검증 전에는 DB 변경 범위를 확정하지 않는다 | 현재 DB/API로 검증 가능한 화면을 먼저 연결한 뒤 별도 승인 후 진행 |
 | 상품 수량 입력 | backend `products`에는 재고/수량 필드가 없고 실제 예약 가능 수량은 `harvest_slots`에 있다 | 상품 화면에서는 표시/데모 값으로 유지하고 실제 판매 가능 수량은 수확 슬롯 단계에서 연결 |
 | Chrome 로그인 이후 검증 | 2026-05-11 `cheng80@gmail.com` 계정으로 login -> dashboard -> product list -> product add input 확인 완료 | 농장 수정/등록 저장, 주문 계열 흐름은 연결 단계별로 추가 검증 |

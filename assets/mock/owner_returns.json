@@ -1,0 +1,41 @@
+[
+  {
+    "return_request_id": 9101,
+    "customer_name": "홍길동",
+    "reason_code": "배송 중 박스 파손",
+    "reason_detail": "배송 중 박스 파손으로 상품이 눌렸습니다.",
+    "product_name": "양광 사과",
+    "package_count": 2,
+    "ordered_kg": 10,
+    "requested_amount": 39000,
+    "return_status": "REQUESTED",
+    "requested_at": "2026-05-07T09:30:00"
+  },
+  {
+    "return_request_id": 9102,
+    "customer_name": "김민지",
+    "reason_code": "상품 멍 확인",
+    "reason_detail": "수령 직후 멍이 보여 반품을 요청합니다.",
+    "product_name": "부사 사과",
+    "package_count": 1,
+    "ordered_kg": 3,
+    "requested_amount": 32000,
+    "return_status": "REFUNDED",
+    "refund_status": "COMPLETED",
+    "approved_amount": 12000,
+    "requested_at": "2026-05-07T10:10:00"
+  },
+  {
+    "return_request_id": 9103,
+    "customer_name": "박서준",
+    "reason_code": "수량 오배송",
+    "reason_detail": "주문한 박스 수와 배송된 박스 수가 다릅니다.",
+    "product_name": "양광 사과",
+    "package_count": 1,
+    "ordered_kg": 5,
+    "requested_amount": 39000,
+    "return_status": "REJECTED",
+    "decision_reason": "환불 정책 대상 아님",
+    "requested_at": "2026-05-07T11:40:00"
+  }
+]

@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:smart_app/model/owner_status_record.dart';
+import 'package:smart_app/repositories/owner_workflow_repository.dart';
 import 'package:smart_app/util/app_colors.dart';
 import 'package:smart_app/widgets/owner_widgets.dart';
 
@@ -10,9 +12,18 @@ class ReturnStatusPage extends StatefulWidget {
 }
 
 class _ReturnStatusPageState extends State<ReturnStatusPage> {
+  final repository = OwnerWorkflowRepository();
   final searchController = TextEditingController();
   String filter = '전체';
   bool showSearch = false;
+  bool loading = true;
+  List<OwnerStatusRecord> records = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRecords();
+  }
 
   @override
   void dispose() {
@@ -20,18 +31,30 @@ class _ReturnStatusPageState extends State<ReturnStatusPage> {
     super.dispose();
   }
 
+  Future<void> _loadRecords() async {
+    setState(() => loading = true);
+    final loaded = await repository.fetchReturnStatuses();
+    if (!mounted) return;
+    setState(() {
+      records = loaded;
+      loading = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final query = searchController.text.trim().toLowerCase();
-    final visible = returnStatusRecords.where((item) {
-      final matchesFilter = filter == '전체' || item.status == filter;
-      final matchesQuery =
-          query.isEmpty ||
-          '${item.title} ${item.subtitle} ${item.status}'
-              .toLowerCase()
-              .contains(query);
-      return matchesFilter && matchesQuery;
-    }).toList();
+    final visible = <OwnerStatusRecord>[...returnStatusRecords, ...records]
+        .where((item) {
+          final matchesFilter = filter == '전체' || item.status == filter;
+          final matchesQuery =
+              query.isEmpty ||
+              '${item.title} ${item.subtitle} ${item.status}'
+                  .toLowerCase()
+                  .contains(query);
+          return matchesFilter && matchesQuery;
+        })
+        .toList();
 
     return Scaffold(
       body: AppScaffold(
@@ -67,16 +90,24 @@ class _ReturnStatusPageState extends State<ReturnStatusPage> {
             selected: filter,
             onChanged: (value) => setState(() => filter = value),
           ),
-          for (final item in visible)
-            DataTile(
-              icon: Icons.assignment_return_outlined,
-              title: item.title,
-              subtitle: item.subtitle,
-              badge: item.status,
-              badgeColor: item.color,
-              iconBackground: AppColors.mint,
-              iconColor: AppColors.green,
+          if (loading)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(32),
+                child: CircularProgressIndicator(),
+              ),
             ),
+          if (!loading)
+            for (final item in visible)
+              DataTile(
+                icon: Icons.assignment_return_outlined,
+                title: item.title,
+                subtitle: item.subtitle,
+                badge: item.status,
+                badgeColor: item.color,
+                iconBackground: AppColors.mint,
+                iconColor: AppColors.green,
+              ),
         ],
       ),
     );
@@ -98,11 +129,16 @@ final returnStatusRecords = <ReturnStatusRecord>[
   ),
 ];
 
-class ReturnStatusRecord {
-  final String title;
-  final String subtitle;
-  final String status;
-  final Color color;
+class ReturnStatusRecord extends OwnerStatusRecord {
+  const ReturnStatusRecord(
+    String title,
+    String subtitle,
+    String status,
+    this.overrideColor,
+  ) : super(title: title, subtitle: subtitle, status: status);
 
-  const ReturnStatusRecord(this.title, this.subtitle, this.status, this.color);
+  final Color overrideColor;
+
+  @override
+  Color get color => overrideColor;
 }
