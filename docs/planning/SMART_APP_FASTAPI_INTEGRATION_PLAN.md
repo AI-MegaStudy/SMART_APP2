@@ -244,6 +244,7 @@ Success criteria:
 | DB OWNER 비밀번호 | 기존 `owner@test.com`은 로그인 비밀번호가 확인되지 않았다 | 신규 검증 계정 `cheng80@gmail.com` / `pass1234!`를 기준으로 진행 |
 | owner workflow smoke | 2026-05-11 `scripts/owner_workflow_smoke.py`로 임시 발주 생성 -> 승인 -> 품질검사 -> 배송등록 -> 배송완료 -> 반품승인까지 실제 API/DB로 검증했다 | 스모크 데이터는 실행 후 자동 정리한다 |
 | iOS simulator final | 2026-05-11 iPhone 17 시뮬레이터에서 직접 비밀번호 입력 후 login -> dashboard -> menu -> 배송 현황 -> profile 확인 완료 | 보안 입력 필드는 자동입력에서 문자가 누락될 수 있어 최종 로그인만 수동 입력으로 검증 |
+| owner product/farm smoke | 2026-05-11 실제 API로 농장 동일값 저장, 상품 생성, 상품 수정, 상품 `INACTIVE` 상태 전환을 검증했다 | 검증 상품은 비활성 상태로 남겨 발표 목록에는 노출되지 않게 처리 |
 
 ## Test Plan
 
@@ -256,7 +257,7 @@ Success criteria:
 - [x] Chrome manual: product list -> product add input flow
 - [x] Chrome manual: signup screen email verification UI only, no submit
 - [x] Chrome manual: login -> dashboard -> 발주 현황 -> 배송 현황 -> 배송 상태 action sheet
-- [ ] Chrome manual: farm update flow
+- [x] API smoke: farm update flow
 - [x] iOS simulator final: login -> dashboard -> menu -> profile
 - [x] iOS simulator final: connected owner workflow smoke test
 - [x] Manual API: `POST /api/v1/auth/login`
@@ -264,7 +265,7 @@ Success criteria:
 - [x] Manual API: `GET /api/v1/owner/dashboard`
 - [x] Manual API: owner3 login -> dashboard -> products -> procurements -> quality analyze
 - [x] Manual flow: login -> dashboard -> product list
-- [ ] Manual flow: product create -> edit -> inactive
+- [x] Manual flow: product create -> edit -> inactive
 - [x] Manual flow: procurement decision -> shipment create -> shipment status -> return decision
 
 ## Decision Audit Trail
