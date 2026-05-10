@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:smart_app/model/owner_order_record.dart';
 import 'package:smart_app/repositories/owner_workflow_repository.dart';
 import 'package:smart_app/util/app_colors.dart';
-import 'package:smart_app/view/orders_page.dart';
 import 'package:smart_app/view/procurement_status_page.dart';
 import 'package:smart_app/widgets/owner_widgets.dart';
 
@@ -42,28 +41,19 @@ class _ProcurementPageState extends State<ProcurementPage> {
 
   Future<void> _loadRequests() async {
     setState(() => loading = true);
-    final orders = sharedOwnerOrders.isNotEmpty
-        ? sharedOwnerOrders
-        : await repository.fetchOrders();
+    final procurements = await repository.fetchProcurementRequests();
     if (!mounted) return;
     setState(() {
-      requests = _requestsFromOrders(orders);
+      requests = _requestsFromProcurements(procurements);
       loading = false;
     });
   }
 
-  List<_ApprovalRequest> _requestsFromOrders(List<OwnerOrderRecord> orders) {
+  List<_ApprovalRequest> _requestsFromProcurements(
+    List<OwnerProcurementRequestRecord> procurements,
+  ) {
     return [
-        for (final order in orders)
-          _ApprovalRequest(
-            order.id,
-            order.title,
-            order.subtitle,
-            order.status,
-            order.status == '결제 완료',
-            order.time,
-            order.amount,
-          ),
+        for (final procurement in procurements) _ApprovalRequest(procurement),
       ].where((item) => !_handledProcurementIds.contains(item.id)).toList()
       ..sort((a, b) {
         if (a.enabled != b.enabled) {
@@ -158,10 +148,18 @@ class _ProcurementPageState extends State<ProcurementPage> {
     }
   }
 
-  void _applyDecision(String status, {String? reason}) {
+  Future<void> _applyDecision(String status, {String? reason}) async {
     final handled = requests
         .where((item) => selectedIds.contains(item.id))
         .toList(growable: false);
+    for (final item in handled) {
+      await repository.decideProcurement(
+        request: item.procurement,
+        decision: status == '승인' ? 'APPROVED' : 'REJECTED',
+        rejectedReason: reason,
+      );
+    }
+    if (!mounted) return;
     procurementStatusRecords.addAll([
       for (final item in handled)
         ProcurementStatusRecord(
@@ -310,21 +308,15 @@ class _ApprovalTile extends StatelessWidget {
 }
 
 class _ApprovalRequest {
-  final String id;
-  final String title;
-  final String subtitle;
-  final String status;
-  final bool enabled;
-  final String time;
-  final String amount;
+  const _ApprovalRequest(this.procurement);
 
-  const _ApprovalRequest(
-    this.id,
-    this.title,
-    this.subtitle,
-    this.status,
-    this.enabled,
-    this.time,
-    this.amount,
-  );
+  final OwnerProcurementRequestRecord procurement;
+
+  String get id => procurement.id;
+  String get title => procurement.title;
+  String get subtitle => procurement.subtitle;
+  String get status => procurement.status;
+  bool get enabled => procurement.enabled;
+  String get time => procurement.time;
+  String get amount => procurement.amount;
 }

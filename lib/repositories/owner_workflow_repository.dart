@@ -20,6 +20,69 @@ class OwnerWorkflowRepository {
     return _loadMockOrders();
   }
 
+  Future<List<OwnerProcurementRequestRecord>> fetchProcurementRequests() async {
+    try {
+      final records =
+          await ApiService.getData<List<OwnerProcurementRequestRecord>>(
+            '/owner/procurements',
+            requiresAuth: true,
+            parser: (data) {
+              final list = data as List<dynamic>? ?? const [];
+              return [
+                for (final item in list)
+                  OwnerProcurementRequestRecord.fromProcurementJson(
+                    item as Map<String, dynamic>? ?? const {},
+                  ),
+              ];
+            },
+          );
+      if (records.isNotEmpty) return records;
+    } catch (_) {
+      // Development fallback: order seed exists before procurement seed.
+    }
+
+    final orders = await fetchOrders();
+    return [
+      for (final order in orders)
+        OwnerProcurementRequestRecord.fromOrder(order),
+    ];
+  }
+
+  Future<bool> decideProcurement({
+    required OwnerProcurementRequestRecord request,
+    required String decision,
+    String? rejectedReason,
+  }) async {
+    if (request.isFallback) return false;
+    try {
+      await ApiService.patchData<Map<String, dynamic>>(
+        '/owner/procurements/${request.id}/decision',
+        requiresAuth: true,
+        body: {
+          'decision': decision,
+          'items': [
+            for (final item in request.items)
+              {
+                'procurement_item_id': item.procurementItemId,
+                'approved_package_count': decision == 'REJECTED'
+                    ? 0
+                    : item.requestedPackageCount,
+                'approved_kg': decision == 'REJECTED' ? 0 : item.requestedKg,
+                'owner_memo': decision == 'REJECTED'
+                    ? rejectedReason
+                    : '정상 수량 확인',
+              },
+          ],
+          'rejected_reason': rejectedReason,
+        },
+        parser: (data) => data as Map<String, dynamic>? ?? const {},
+      );
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   List<OwnerOrderRecord> _parseOrders(Object? data) {
     final list = data as List<dynamic>? ?? const [];
     return [

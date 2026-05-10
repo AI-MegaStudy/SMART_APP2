@@ -149,11 +149,11 @@ Success criteria:
 - [x] ML prediction request/response model 추가
 - [x] Harvest slot request/response model 추가
 - [x] 주문 목록 model 추가
-- [ ] 발주 목록/상세 model 추가
+- [x] 발주 목록/상세 model 추가
 - [x] 수확 슬롯 생성 연결
 - [x] 주문 현황 API 우선 + JSON fallback 연결
 - [x] 발주 승인 화면을 주문 API 우선 + JSON fallback 데이터로 구동
-- [ ] 실제 발주 목록/승인 API 연결
+- [x] 실제 발주 목록/승인 API 우선 + JSON fallback 연결
 
 Success criteria:
 - 점주가 상품별 수확 슬롯을 생성할 수 있다.
