@@ -1,0 +1,195 @@
+from datetime import datetime
+
+from fastapi import HTTPException
+from sqlalchemy.orm import Session
+
+from backend.app.core.status import OrderItemStatus, OrderStatus, ReservationStatus
+from backend.app.core.transaction import transaction_scope
+from backend.app.models.order import Order, OrderItem
+from backend.app.models.reservation import Reservation
+from backend.app.repositories.order_repo import OrderRepository
+from backend.app.repositories.reservation_repo import ReservationRepository
+
+
+def serialize_order(order: Order) -> dict:
+    return {
+        "order_id": order.order_id,
+        "reservation_id": order.reservation_id,
+        "reservation_no": order.reservation.reservation_no if order.reservation else None,
+        "order_no": order.order_no,
+        "order_status": order.order_status,
+        "total_amount": order.total_amount,
+        "customer_id": order.reservation.customer_id if order.reservation else None,
+        "customer_name": order.reservation.customer.customer_name if order.reservation and order.reservation.customer else None,
+        "receiver_name": order.receiver_name,
+        "receiver_phone": order.receiver_phone,
+        "shipping_address": order.shipping_address,
+        "delivery_memo": order.delivery_memo,
+        "ordered_at": order.ordered_at,
+        "paid_at": order.paid_at,
+        "payment_status": order.payments[0].payment_status if order.payments else None,
+        "shipment_status": order.shipment.shipment_status if order.shipment else None,
+        "tracking_no": order.shipment.tracking_no if order.shipment else None,
+        "return_status": order.return_request.return_status if order.return_request else None,
+        "refund_status": order.return_request.refund.refund_status if order.return_request and order.return_request.refund else None,
+        "order_items": [
+            {
+                "order_item_id": item.order_item_id,
+                "reservation_item_id": item.reservation_item_id,
+                "slot_id": item.reservation_item.slot_id if item.reservation_item else None,
+                "product_id": item.reservation_item.slot.product_id if item.reservation_item and item.reservation_item.slot else None,
+                "product_name": (
+                    item.reservation_item.slot.product.product_name
+                    if item.reservation_item and item.reservation_item.slot and item.reservation_item.slot.product
+                    else None
+                ),
+                "farm_id": item.reservation_item.slot.farm_id if item.reservation_item and item.reservation_item.slot else None,
+                "farm_name": (
+                    item.reservation_item.slot.farm.farm_name
+                    if item.reservation_item and item.reservation_item.slot and item.reservation_item.slot.farm
+                    else None
+                ),
+                "image_url": (
+                    item.reservation_item.slot.product.image_url
+                    if item.reservation_item and item.reservation_item.slot and item.reservation_item.slot.product
+                    else None
+                ),
+                "package_count": item.package_count,
+                "ordered_kg": float(item.ordered_kg),
+                "unit_price": item.unit_price,
+                "subtotal_amount": item.subtotal_amount,
+                "order_item_status": item.order_item_status,
+            }
+            for item in order.order_items
+        ],
+    }
+
+
+def serialize_refund(refund) -> dict | None:
+    if not refund:
+        return None
+    return {
+        "refund_id": refund.refund_id,
+        "refund_status": refund.refund_status,
+        "requested_amount": refund.requested_amount,
+        "refunded_amount": refund.refunded_amount,
+        "requested_at": refund.requested_at,
+        "completed_at": refund.completed_at,
+        "failure_reason": refund.failure_reason,
+    }
+
+
+class OrderService:
+    def __init__(self, session: Session):
+        self.session = session
+        self.reservation_repo = ReservationRepository(session)
+        self.order_repo = OrderRepository(session)
+
+    def create_from_reservation(self, customer_id: int, payload: dict) -> dict:
+        with transaction_scope(self.session):
+            reservation = self.reservation_repo.lock_reservation_for_customer(
+                reservation_id=payload["reservation_id"],
+                customer_id=customer_id,
+            )
+            if not reservation:
+                raise HTTPException(status_code=404, detail="reservation not found")
+            if reservation.reservation_status != ReservationStatus.RESERVED:
+                raise HTTPException(status_code=400, detail="invalid reservation status")
+            if reservation.reserved_until <= datetime.utcnow():
+                raise HTTPException(status_code=400, detail="reservation expired")
+
+            order = Order(
+                reservation_id=reservation.reservation_id,
+                order_no=f"ORD-{int(datetime.utcnow().timestamp())}",
+                order_status=OrderStatus.PAYMENT_PENDING,
+                total_amount=reservation.total_amount,
+                receiver_name=payload["receiver_name"],
+                receiver_phone=payload["receiver_phone"],
+                shipping_address=payload["shipping_address"],
+                delivery_memo=payload.get("delivery_memo"),
+                ordered_at=datetime.utcnow(),
+            )
+            self.session.add(order)
+            self.session.flush()
+
+            for item in reservation.reservation_items:
+                self.session.add(
+                    OrderItem(
+                        order_id=order.order_id,
+                        reservation_item_id=item.reservation_item_id,
+                        package_count=item.package_count,
+                        ordered_kg=item.reserved_kg,
+                        unit_price=item.unit_price_snapshot,
+                        subtotal_amount=item.subtotal_amount,
+                        order_item_status=OrderItemStatus.ORDERED,
+                    )
+                )
+
+            reservation.reservation_status = ReservationStatus.ORDERED
+            self.session.flush()
+            self.session.refresh(order)
+            return serialize_order(order)
+
+    def list_my_orders(self, customer_id: int) -> list[dict]:
+        rows = (
+            self.session.query(Order)
+            .join(Order.reservation)
+            .filter(Reservation.customer_id == customer_id)
+            .order_by(Order.created_at.desc())
+            .all()
+        )
+        return [serialize_order(row) for row in rows]
+
+    def get_my_order_detail(self, customer_id: int, order_id: int) -> dict:
+        order = self.order_repo.get(order_id)
+        if not order or order.reservation.customer_id != customer_id:
+            raise HTTPException(status_code=404, detail="order not found")
+        data = serialize_order(order)
+        data["payments"] = [
+            {
+                "payment_id": payment.payment_id,
+                "payment_status": payment.payment_status,
+                "approved_amount": payment.approved_amount,
+                "idempotency_key": payment.idempotency_key,
+            }
+            for payment in order.payments
+        ]
+        data["procurement"] = (
+            {
+                "procurement_id": order.procurement.procurement_id,
+                "procurement_no": order.procurement.procurement_no,
+                "procurement_status": order.procurement.procurement_status,
+            }
+            if order.procurement
+            else None
+        )
+        data["shipment"] = (
+            {
+                "shipment_id": order.shipment.shipment_id,
+                "shipment_status": order.shipment.shipment_status,
+                "tracking_no": order.shipment.tracking_no,
+            }
+            if order.shipment
+            else None
+        )
+        data["return_request"] = (
+            {
+                "return_request_id": order.return_request.return_request_id,
+                "return_status": order.return_request.return_status,
+                "requested_amount": order.return_request.requested_amount,
+                "approved_amount": order.return_request.approved_amount,
+                "decision_reason": order.return_request.decision_reason,
+                "requested_at": order.return_request.requested_at,
+                "decided_at": order.return_request.decided_at,
+                "refund": serialize_refund(order.return_request.refund),
+            }
+            if order.return_request
+            else None
+        )
+        data["refund"] = serialize_refund(order.return_request.refund) if order.return_request else None
+        return data
+
+    def list_owner_orders(self, owner_id: int) -> list[dict]:
+        rows = self.session.query(Order).distinct().order_by(Order.created_at.desc()).all()
+        filtered = [row for row in rows if any(item.reservation_item.slot.farm.owner_id == owner_id for item in row.order_items)]
+        return [serialize_order(row) for row in filtered]
