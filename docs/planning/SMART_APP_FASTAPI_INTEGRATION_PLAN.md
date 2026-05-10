@@ -156,6 +156,7 @@ Success criteria:
 | seed/demo data | 실제 DB에 점주, 농장, 상품, 주문 seed가 없으면 앱 흐름 테스트가 막힌다 | Swagger 또는 seed script로 최소 demo data 작성 |
 | DB 스키마 변경이 필요한 기능 | 사용자 검증 전에는 DB 변경 범위를 확정하지 않는다 | 현재 DB/API로 검증 가능한 화면을 먼저 연결한 뒤 별도 승인 후 진행 |
 | 상품 수량 입력 | backend `products`에는 재고/수량 필드가 없고 실제 예약 가능 수량은 `harvest_slots`에 있다 | 상품 화면에서는 표시/데모 값으로 유지하고 실제 판매 가능 수량은 수확 슬롯 단계에서 연결 |
+| Chrome 로그인 이후 검증 | 현재 문서의 테스트 계정과 앱 기본 계정이 실제 DB 로그인에 실패한다 | 사용자 검증용 점주 계정을 확인받은 뒤 Chrome에서 login -> dashboard -> product/farm 흐름 검증 |
 
 ## Test Plan
 
@@ -183,3 +184,4 @@ Success criteria:
 | 4 | Design | 상태값은 백엔드 enum과 화면 한글 표시값을 분리한다 | Mechanical | Explicit over clever | API 저장값과 사용자가 보는 문구가 섞이면 수정/필터/전송 버그가 난다 | 한글 문자열을 내부 상태로 계속 사용 |
 | 5 | Eng | DB 수정이 필요한 작업은 사용자 검증 후로 미룬다 | Mechanical | Bias toward action | 현재 DB/API로 검증 가능한 기능부터 붙여야 실제 앱 흐름을 빨리 확인할 수 있다 | 검증 전 DB 스키마/seed 변경 병행 |
 | 6 | QA | Chrome으로 빠른 검증 후 iOS 시뮬레이터로 최종 검증한다 | Mechanical | Pragmatic | Chrome은 반복 확인이 빠르고 iOS 시뮬레이터는 실제 앱 타깃에 가깝다 | 매번 iOS만 실행해서 반복 속도를 늦추기 |
+| 7 | QA | 실제 DB 계정 생성 없이 Chrome 로그인 이후 검증은 보류한다 | Mechanical | Pragmatic | 서버와 DB health는 정상이나 문서상 계정이 로그인 실패하므로 DB 데이터 생성 없이 진행할 수 없다 | 임의 회원가입/seed 생성으로 DB 데이터 변경 |
