@@ -91,18 +91,21 @@ Success criteria:
 
 ### Phase 2: Product/Farm
 
-- [ ] `OwnerFarm` model 추가
-- [ ] `OwnerProduct` model 추가
-- [ ] `OwnerRepository` 또는 `ProductRepository` 추가
-- [ ] 상품 목록을 `GET /owner/products`로 교체
-- [ ] 상품 등록/수정 연결
-- [ ] 상품 상태 enum 매핑: `ACTIVE`, `HIDDEN`, `SOLD_OUT`
-- [ ] 농장 조회/수정 연결
+- [x] `OwnerFarm` model 추가
+- [x] `OwnerProduct` model 추가
+- [x] `OwnerRepository` 또는 `ProductRepository` 추가
+- [x] 상품 목록을 `GET /owner/products`로 교체
+- [x] 상품 등록/수정 연결
+- [x] 상품 상태 enum 매핑: `ACTIVE`, `HIDDEN`, `SOLD_OUT`
+- [x] 농장 조회/수정 연결
+- [x] `flutter analyze` 통과
+- [x] `flutter test` 통과
 
 Success criteria:
-- 점주가 백엔드 상품 목록을 보고 등록/수정할 수 있다.
-- 화면 한글 상태와 백엔드 enum이 섞이지 않는다.
-- farm_id가 없는 경우 저장을 막고 원인을 표시한다.
+- [x] 점주가 백엔드 상품 목록을 보고 등록/수정할 수 있다.
+- [x] 화면 한글 상태와 백엔드 enum이 섞이지 않는다.
+- [x] farm_id가 없는 경우 저장을 막고 원인을 표시한다.
+- [ ] Chrome에서 백엔드 연결 상태로 상품/농장 흐름 검증
 
 ### Phase 3: Harvest Slot, Order, Procurement
 
@@ -152,6 +155,7 @@ Success criteria:
 | 배송 현황 상세 | owner shipment list 전용 API가 없다 | `GET /owner/orders` 응답에 shipment 포함 여부 확인 후 부족하면 API 추가 |
 | seed/demo data | 실제 DB에 점주, 농장, 상품, 주문 seed가 없으면 앱 흐름 테스트가 막힌다 | Swagger 또는 seed script로 최소 demo data 작성 |
 | DB 스키마 변경이 필요한 기능 | 사용자 검증 전에는 DB 변경 범위를 확정하지 않는다 | 현재 DB/API로 검증 가능한 화면을 먼저 연결한 뒤 별도 승인 후 진행 |
+| 상품 수량 입력 | backend `products`에는 재고/수량 필드가 없고 실제 예약 가능 수량은 `harvest_slots`에 있다 | 상품 화면에서는 표시/데모 값으로 유지하고 실제 판매 가능 수량은 수확 슬롯 단계에서 연결 |
 
 ## Test Plan
 

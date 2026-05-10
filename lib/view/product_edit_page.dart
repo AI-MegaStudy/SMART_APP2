@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:smart_app/core/api_exception.dart';
 import 'package:smart_app/model/product_record.dart';
+import 'package:smart_app/repositories/product_repository.dart';
 import 'package:smart_app/util/app_colors.dart';
 import 'package:smart_app/widgets/owner_widgets.dart';
 
@@ -17,8 +19,10 @@ class _ProductEditPageState extends State<ProductEditPage> {
   final packageController = TextEditingController();
   final priceController = TextEditingController();
   final stockController = TextEditingController();
+  final repository = ProductRepository();
   late String productName;
   late String status;
+  bool isSaving = false;
 
   @override
   void initState() {
@@ -41,17 +45,17 @@ class _ProductEditPageState extends State<ProductEditPage> {
     super.dispose();
   }
 
-  void _save() {
+  Future<void> _save() async {
     if (!(formKey.currentState?.validate() ?? false)) {
       showOwnerSnack(context, '모든 항목을 입력한 뒤 수정하세요.');
       return;
     }
-    showConfirmAction(
+    await showConfirmAction(
       context: context,
       title: '상품 수정',
       message: '상품 정보를 수정할까요?',
       confirmLabel: '수정',
-      onConfirm: () {
+      onConfirm: () async {
         final product = ProductRecord(
           productName,
           '${packageController.text}kg 박스',
@@ -59,11 +63,42 @@ class _ProductEditPageState extends State<ProductEditPage> {
           int.parse(stockController.text),
           status,
           _statusColor(status),
+          id: widget.product.id,
+          farmId: widget.product.farmId,
+          fruitType: widget.product.fruitType,
+          variety: widget.product.variety.isEmpty
+              ? _variety(productName)
+              : widget.product.variety,
+          description: widget.product.description,
+          imageUrl: widget.product.imageUrl,
         );
-        showOwnerSnack(context, '상품 정보를 수정했습니다.');
-        Navigator.of(context).pop(product);
+        setState(() => isSaving = true);
+        try {
+          final saved = product.id == null
+              ? product
+              : await repository.updateProduct(product);
+          if (!mounted) return;
+          showOwnerSnack(context, '상품 정보를 수정했습니다.');
+          Navigator.of(context).pop(saved);
+        } on ApiException catch (error) {
+          if (!mounted) return;
+          showOwnerSnack(context, error.message);
+        } catch (_) {
+          if (!mounted) return;
+          showOwnerSnack(context, '상품 수정에 실패했습니다.');
+        } finally {
+          if (mounted) {
+            setState(() => isSaving = false);
+          }
+        }
       },
     );
+  }
+
+  String _variety(String productName) {
+    return productName.replaceAll('사과', '').trim().isEmpty
+        ? productName
+        : productName.replaceAll('사과', '').trim();
   }
 
   Color _statusColor(String status) {
@@ -141,6 +176,10 @@ class _ProductEditPageState extends State<ProductEditPage> {
               },
               suffixText: '박스',
             ),
+            const NoticeBox(
+              color: AppColors.yellow,
+              text: '상품 수량은 현재 화면 표시값입니다. 실제 예약 가능 수량은 수확 슬롯에서 관리합니다.',
+            ),
             LabeledDropdown(
               label: '판매 상태',
               value: status,
@@ -153,9 +192,9 @@ class _ProductEditPageState extends State<ProductEditPage> {
             ),
             DualActionBar(
               left: '취소',
-              right: '수정',
+              right: isSaving ? '저장 중' : '수정',
               onLeftPressed: () => Navigator.of(context).pop(),
-              onRightPressed: _save,
+              onRightPressed: isSaving ? () {} : _save,
             ),
           ],
         ),

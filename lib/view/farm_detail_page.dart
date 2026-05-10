@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:kpostal_plus/kpostal_plus.dart';
+import 'package:smart_app/core/api_exception.dart';
+import 'package:smart_app/model/product_record.dart';
+import 'package:smart_app/repositories/product_repository.dart';
 import 'package:smart_app/util/app_colors.dart';
 import 'package:smart_app/widgets/owner_widgets.dart';
 
@@ -18,11 +21,22 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
   final introController = TextEditingController();
   final shippingPolicyController = TextEditingController();
   final returnPolicyController = TextEditingController();
+  final repository = ProductRepository();
+  OwnerFarmRecord? farm;
+  bool isLoading = false;
+  bool isSaving = false;
+  String? loadError;
   static const fallbackAddresses = [
     '충북 충주시 산척면 과수원길 24',
     '충북 충주시 주덕읍 냇내로 18',
     '충북 충주시 동량면 사과밭길 7',
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
 
   @override
   void dispose() {
@@ -34,18 +48,85 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
     super.dispose();
   }
 
-  void _save() {
+  Future<void> _load() async {
+    setState(() {
+      isLoading = true;
+      loadError = null;
+    });
+    try {
+      final farms = await repository.fetchOwnerFarms();
+      if (!mounted) return;
+      if (farms.isEmpty) {
+        setState(() => loadError = '등록된 농장 정보가 없습니다.');
+        return;
+      }
+      final loaded = farms.first;
+      setState(() {
+        farm = loaded;
+        farmNameController.text = loaded.farmName;
+        addressController.text = loaded.farmAddress;
+        introController.text = loaded.farmDescription ?? '';
+        shippingPolicyController.text = loaded.deliveryPolicy ?? '';
+        returnPolicyController.text = loaded.returnPolicy ?? '';
+      });
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      setState(() => loadError = error.message);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => loadError = '서버 연결을 확인해주세요.');
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _save() async {
     if (!(formKey.currentState?.validate() ?? false)) return;
-    showConfirmAction(
+    if (farm == null) {
+      showOwnerSnack(context, '저장할 농장 ID가 없습니다.');
+      return;
+    }
+    await showConfirmAction(
       context: context,
       title: '농장 정보 저장',
       message: '입력한 농장 정보로 저장할까요?',
-      onConfirm: () => showInfoAction(
-        context: context,
-        title: '농장 정보 저장',
-        message: '저장이 완료되었습니다.',
-        onConfirm: () => Navigator.of(context).pop(),
-      ),
+      onConfirm: () async {
+        setState(() => isSaving = true);
+        try {
+          final saved = await repository.updateFarm(
+            OwnerFarmRecord(
+              farmId: farm!.farmId,
+              farmName: farmNameController.text.trim(),
+              farmRegion: farm!.farmRegion,
+              farmAddress: addressController.text.trim(),
+              farmImageUrl: farm!.farmImageUrl,
+              farmDescription: introController.text.trim(),
+              deliveryPolicy: shippingPolicyController.text.trim(),
+              returnPolicy: returnPolicyController.text.trim(),
+            ),
+          );
+          if (!mounted) return;
+          setState(() => farm = saved);
+          await showInfoAction(
+            context: context,
+            title: '농장 정보 저장',
+            message: '저장이 완료되었습니다.',
+            onConfirm: () => Navigator.of(context).pop(),
+          );
+        } on ApiException catch (error) {
+          if (!mounted) return;
+          showOwnerSnack(context, error.message);
+        } catch (_) {
+          if (!mounted) return;
+          showOwnerSnack(context, '농장 정보 저장에 실패했습니다.');
+        } finally {
+          if (mounted) {
+            setState(() => isSaving = false);
+          }
+        }
+      },
     );
   }
 
@@ -104,6 +185,9 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
             onPressed: () => Navigator.of(context).pop(),
           ),
           children: [
+            if (isLoading) const LinearProgressIndicator(minHeight: 3),
+            if (loadError != null)
+              NoticeBox(color: AppColors.yellow, text: loadError!),
             LabeledField(
               label: '농장명',
               value: '',
@@ -146,9 +230,9 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
             ),
             DualActionBar(
               left: '취소',
-              right: '저장',
+              right: isSaving ? '저장 중' : '저장',
               onLeftPressed: () => Navigator.of(context).pop(),
-              onRightPressed: _save,
+              onRightPressed: isSaving ? () {} : _save,
             ),
           ],
         ),

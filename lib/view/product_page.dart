@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:smart_app/core/api_exception.dart';
 import 'package:smart_app/model/product_record.dart';
+import 'package:smart_app/repositories/product_repository.dart';
 import 'package:smart_app/util/app_colors.dart';
 import 'package:smart_app/view/product_add_page.dart';
 import 'package:smart_app/view/product_edit_page.dart';
@@ -17,13 +19,30 @@ class _ProductPageState extends State<ProductPage> {
   String filter = '전체';
   bool showSearch = false;
   bool deleteMode = false;
+  bool isLoading = false;
+  String? loadError;
+  final repository = ProductRepository();
+  List<OwnerFarmRecord> farms = const [];
   final selectedProducts = <ProductRecord>{};
 
-  final products = [
+  final products = <ProductRecord>[
     const ProductRecord('양광 사과', '5kg 박스', 39000, 42, '판매 중', AppColors.mint),
     const ProductRecord('부사 사과', '3kg 박스', 32000, 18, '준비 중', AppColors.yellow),
-    const ProductRecord('양광 사과', '7kg 박스', 68000, 12, '판매 중지', Color(0xffFFE1DD)),
+    const ProductRecord(
+      '양광 사과',
+      '7kg 박스',
+      68000,
+      12,
+      '판매 중지',
+      Color(0xffFFE1DD),
+    ),
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
 
   @override
   void dispose() {
@@ -32,8 +51,14 @@ class _ProductPageState extends State<ProductPage> {
   }
 
   Future<void> _openAdd() async {
+    if (farms.isEmpty) {
+      showOwnerSnack(context, '농장 정보가 없어 서버에 상품을 등록할 수 없습니다.');
+      return;
+    }
     final product = await Navigator.of(context).push<ProductRecord>(
-      MaterialPageRoute(builder: (_) => const ProductAddPage()),
+      MaterialPageRoute(
+        builder: (_) => ProductAddPage(farmId: farms.first.farmId),
+      ),
     );
     setState(() {
       deleteMode = false;
@@ -69,18 +94,75 @@ class _ProductPageState extends State<ProductPage> {
     }
     showConfirmAction(
       context: context,
-      title: '상품 삭제',
-      message: '선택한 ${selectedProducts.length}개 상품을 삭제할까요?',
-      confirmLabel: '삭제',
-      onConfirm: () {
-        setState(() {
-          products.removeWhere(selectedProducts.contains);
-          selectedProducts.clear();
-          deleteMode = false;
-        });
-        showOwnerSnack(context, '상품 목록을 갱신했습니다.');
+      title: '상품 판매 중지',
+      message: '선택한 ${selectedProducts.length}개 상품을 판매 중지 상태로 변경할까요?',
+      confirmLabel: '변경',
+      onConfirm: () async {
+        await _stopSelectedProducts();
       },
     );
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      isLoading = true;
+      loadError = null;
+    });
+    try {
+      final loadedFarms = await repository.fetchOwnerFarms();
+      final loadedProducts = await repository.fetchOwnerProducts();
+      if (!mounted) return;
+      setState(() {
+        farms = loadedFarms;
+        products
+          ..clear()
+          ..addAll(loadedProducts);
+      });
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      setState(() => loadError = error.message);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => loadError = '서버 연결을 확인해주세요.');
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _stopSelectedProducts() async {
+    final selected = selectedProducts.toList();
+    try {
+      for (final product in selected) {
+        if (product.id == null) continue;
+        final updated = await repository.updateProductStatus(
+          productId: product.id!,
+          productStatus: 'HIDDEN',
+        );
+        setState(() {
+          final index = products.indexOf(product);
+          if (index >= 0) {
+            products[index] = updated;
+          }
+        });
+      }
+      setState(() {
+        products.removeWhere(
+          (product) => product.id == null && selected.contains(product),
+        );
+        selectedProducts.clear();
+        deleteMode = false;
+      });
+      if (!mounted) return;
+      showOwnerSnack(context, '상품 상태를 갱신했습니다.');
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      showOwnerSnack(context, error.message);
+    } catch (_) {
+      if (!mounted) return;
+      showOwnerSnack(context, '상품 상태 변경에 실패했습니다.');
+    }
   }
 
   @override
@@ -122,6 +204,12 @@ class _ProductPageState extends State<ProductPage> {
           ],
         ),
         children: [
+          if (isLoading) const LinearProgressIndicator(minHeight: 3),
+          if (loadError != null)
+            NoticeBox(
+              color: AppColors.yellow,
+              text: '$loadError 더미 목록을 표시합니다.',
+            ),
           if (showSearch)
             TextField(
               controller: searchController,
@@ -181,7 +269,8 @@ class _ProductPageState extends State<ProductPage> {
                     });
                   },
                   child: Text(
-                    visible.isNotEmpty && selectedProducts.length == visible.length
+                    visible.isNotEmpty &&
+                            selectedProducts.length == visible.length
                         ? '전체 선택 해제'
                         : '전체 선택',
                   ),
@@ -189,7 +278,7 @@ class _ProductPageState extends State<ProductPage> {
                 const SizedBox(width: 8),
                 TextButton(
                   onPressed: _toggleDeleteMode,
-                  child: const Text('삭제'),
+                  child: const Text('판매 중지'),
                 ),
                 const Spacer(),
                 TextButton(
@@ -203,12 +292,12 @@ class _ProductPageState extends State<ProductPage> {
             )
           else
             Align(
-            alignment: Alignment.centerRight,
-            child: TextButton(
-              onPressed: _toggleDeleteMode,
-              child: const Text('삭제'),
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: _toggleDeleteMode,
+                child: const Text('판매 중지'),
+              ),
             ),
-          ),
         ],
       ),
     );
