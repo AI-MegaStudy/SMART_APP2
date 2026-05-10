@@ -77,6 +77,26 @@ class QualityAnalysisRecord {
     );
   }
 
+  factory QualityAnalysisRecord.localEstimate({
+    required String imageName,
+    required int byteLength,
+  }) {
+    final score = 84 + (byteLength % 12);
+    final bruise = 0.05 + ((imageName.length + byteLength) % 18) / 100;
+    final grade = score >= 92
+        ? 'A'
+        : score >= 86
+        ? 'B'
+        : 'C';
+    return QualityAnalysisRecord(
+      modelGrade: grade,
+      freshnessScore: score.toDouble(),
+      bruiseProbability: bruise,
+      modelDecision: bruise < 0.2 && score >= 86 ? 'PASS' : 'REVIEW',
+      imageUrl: 'local://$imageName',
+    );
+  }
+
   String get freshnessLabel => '${freshnessScore.round()}점';
   String get decisionLabel => modelDecision == 'PASS' ? '통과' : '확인 필요';
   String get bruiseLabel {

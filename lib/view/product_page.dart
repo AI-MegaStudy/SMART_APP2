@@ -25,18 +25,7 @@ class _ProductPageState extends State<ProductPage> {
   List<OwnerFarmRecord> farms = const [];
   final selectedProducts = <ProductRecord>{};
 
-  final products = <ProductRecord>[
-    const ProductRecord('양광 사과', '5kg 박스', 39000, 42, '판매 중', AppColors.mint),
-    const ProductRecord('부사 사과', '3kg 박스', 32000, 18, '준비 중', AppColors.yellow),
-    const ProductRecord(
-      '양광 사과',
-      '7kg 박스',
-      68000,
-      12,
-      '판매 중지',
-      Color(0xffFFE1DD),
-    ),
-  ];
+  final products = <ProductRecord>[];
 
   @override
   void initState() {
@@ -208,7 +197,7 @@ class _ProductPageState extends State<ProductPage> {
           if (loadError != null)
             NoticeBox(
               color: AppColors.yellow,
-              text: '$loadError 더미 목록을 표시합니다.',
+              text: '$loadError 등록된 상품을 불러오지 못했습니다.',
             ),
           if (showSearch)
             TextField(
@@ -253,6 +242,12 @@ class _ProductPageState extends State<ProductPage> {
                     product: product,
                     onTap: () => _openEdit(product),
                   ),
+          if (!isLoading && visible.isEmpty)
+            const EmptyState(
+              icon: Icons.inventory_2_outlined,
+              title: '표시할 상품이 없습니다',
+              message: '상품을 등록하면 이곳에서 판매 상태와 포장 단위를 관리할 수 있습니다.',
+            ),
           if (deleteMode)
             Row(
               children: [
@@ -346,11 +341,12 @@ class _ProductTile extends StatelessWidget {
                   children: [
                     Text(
                       '${product.name} · ${product.packageUnit}',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      maxLines: 2,
+                      overflow: TextOverflow.visible,
                       style: const TextStyle(
                         color: AppColors.text,
                         fontSize: 15,
+                        height: 1.25,
                         fontWeight: FontWeight.w900,
                       ),
                     ),

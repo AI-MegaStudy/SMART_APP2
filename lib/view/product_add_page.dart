@@ -65,47 +65,6 @@ class _ProductAddPageState extends State<ProductAddPage> {
     );
   }
 
-  Color _statusColor(String status) {
-    return switch (status) {
-      '판매 중' => AppColors.mint,
-      '준비 중' => AppColors.yellow,
-      _ => const Color(0xffFFE1DD),
-    };
-  }
-
-  ProductRecord _offlineProduct() {
-    final productName = ProductRecord.productNameFromVariety(variety);
-    return ProductRecord(
-      productName,
-      ProductRecord.packageLabel(packageUnitKg),
-      price,
-      stockBoxes,
-      status,
-      _statusColor(status),
-      farmId: widget.farmId,
-      fruitType: '사과',
-      variety: variety,
-    );
-  }
-
-  Future<void> _saveOfflineForDemo() async {
-    if (!(formKey.currentState?.validate() ?? false)) {
-      showOwnerSnack(context, '모든 항목을 입력한 뒤 등록하세요.');
-      return;
-    }
-    await showConfirmAction(
-      context: context,
-      title: '상품 등록',
-      message: '서버 연결 없이 화면에만 추가할까요?',
-      confirmLabel: '추가',
-      onConfirm: () {
-        final product = _offlineProduct();
-        showOwnerSnack(context, '화면에 상품을 추가했습니다.');
-        Navigator.of(context).pop(product);
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -178,10 +137,6 @@ class _ProductAddPageState extends State<ProductAddPage> {
               right: isSaving ? '저장 중' : '등록',
               onLeftPressed: () => Navigator.of(context).pop(),
               onRightPressed: isSaving ? () {} : _save,
-            ),
-            TextButton(
-              onPressed: isSaving ? null : _saveOfflineForDemo,
-              child: const Text('서버 없이 화면에만 추가'),
             ),
           ],
         ),

@@ -11,6 +11,8 @@
 	</dict>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>신선도 검사를 위해 갤러리 사진을 선택합니다.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>신선도 검사 이미지를 저장하거나 다시 선택할 때 사진 보관함 접근이 필요합니다.</string>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>CFBundleDevelopmentRegion</key>

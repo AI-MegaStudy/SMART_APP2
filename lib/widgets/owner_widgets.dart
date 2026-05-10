@@ -335,10 +335,10 @@ class GridCards extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         return GridView.count(
-          crossAxisCount: constraints.maxWidth > 520 ? 4 : 2,
+          crossAxisCount: constraints.maxWidth > 900 ? 4 : 2,
           mainAxisSpacing: 10,
           crossAxisSpacing: 10,
-          childAspectRatio: 1.22,
+          childAspectRatio: constraints.maxWidth > 900 ? 1.22 : 1.55,
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           children: children,
@@ -383,20 +383,24 @@ class MetricCard extends StatelessWidget {
               const Spacer(),
               Text(
                 value,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                maxLines: 2,
+                overflow: TextOverflow.visible,
                 style: const TextStyle(
                   color: AppColors.text,
-                  fontSize: 25,
+                  fontSize: 21,
+                  height: 1.08,
                   fontWeight: FontWeight.w900,
                 ),
               ),
+              const SizedBox(height: 4),
               Text(
                 label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
+                maxLines: 2,
+                overflow: TextOverflow.visible,
                 style: const TextStyle(
                   color: AppColors.muted,
+                  fontSize: 12,
+                  height: 1.2,
                   fontWeight: FontWeight.w700,
                 ),
               ),
@@ -466,21 +470,23 @@ class DataTile extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                      maxLines: 2,
+                      overflow: TextOverflow.visible,
                       style: const TextStyle(
                         color: AppColors.text,
                         fontSize: 15,
+                        height: 1.25,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       subtitle,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                      maxLines: 3,
+                      overflow: TextOverflow.visible,
                       style: const TextStyle(
                         color: AppColors.muted,
+                        height: 1.3,
                         fontWeight: FontWeight.w700,
                       ).merge(subtitleStyle),
                     ),
@@ -1124,12 +1130,31 @@ class PrimaryAction extends StatelessWidget {
 }
 
 class YieldChart extends StatelessWidget {
-  const YieldChart({super.key});
+  final List<double> values;
+  final List<String> labels;
+  final String title;
+
+  const YieldChart({
+    super.key,
+    required this.values,
+    required this.labels,
+    this.title = '예측 수확량 흐름',
+  });
 
   @override
   Widget build(BuildContext context) {
+    final chartValues = values.isEmpty ? const [0.0] : values;
+    final maxValue = chartValues.fold<double>(
+      1,
+      (max, value) => value > max ? value : max,
+    );
+    final normalizedLabels = [
+      for (var index = 0; index < chartValues.length; index++)
+        index < labels.length ? labels[index] : '${index + 1}',
+    ];
+
     return Container(
-      height: 164,
+      height: 188,
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1137,7 +1162,16 @@ class YieldChart extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text(
+            title,
+            style: const TextStyle(
+              color: AppColors.text,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 10),
           Expanded(
             child: Stack(
               children: [
@@ -1151,27 +1185,20 @@ class YieldChart extends StatelessWidget {
                       ),
                   ],
                 ),
-                const Row(
+                Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    _Bar(height: 54),
-                    _Bar(height: 78),
-                    _Bar(height: 104),
-                    _Bar(height: 92),
-                    _Bar(height: 68),
+                    for (final value in chartValues)
+                      _Bar(height: 24 + (value / maxValue * 82)),
                   ],
                 ),
               ],
             ),
           ),
           const SizedBox(height: 8),
-          const Row(
+          Row(
             children: [
-              _ChartLabel('10.12'),
-              _ChartLabel('10.13'),
-              _ChartLabel('10.14'),
-              _ChartLabel('10.15'),
-              _ChartLabel('10.16'),
+              for (final label in normalizedLabels) _ChartLabel(label),
             ],
           ),
         ],
@@ -1235,6 +1262,7 @@ class CameraPreviewCard extends StatelessWidget {
   final Uint8List? imageBytes;
   final Offset inspectionAnchor;
   final ValueChanged<Offset>? onInspectionAnchorChanged;
+  final VoidCallback? onTap;
 
   const CameraPreviewCard({
     super.key,
@@ -1244,63 +1272,94 @@ class CameraPreviewCard extends StatelessWidget {
     this.imageBytes,
     this.inspectionAnchor = const Offset(0.5, 0.72),
     this.onInspectionAnchorChanged,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: 210,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(20),
-        gradient: LinearGradient(
-          colors: hasImage
-              ? const [Color(0xff9F2F25), Color(0xffE57352), Color(0xffF6B38D)]
-              : const [Color(0xffF4F7F1), Color(0xffDCECE4)],
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        height: 210,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          gradient: LinearGradient(
+            colors: hasImage
+                ? const [
+                    Color(0xff9F2F25),
+                    Color(0xffE57352),
+                    Color(0xffF6B38D),
+                  ]
+                : const [Color(0xffF4F7F1), Color(0xffDCECE4)],
+          ),
         ),
-      ),
-      clipBehavior: Clip.antiAlias,
-      child: Stack(
-        children: [
-          if (imageBytes != null)
-            Positioned.fill(
-              child: Image.memory(
-                imageBytes!,
-                fit: BoxFit.cover,
-                gaplessPlayback: true,
-              ),
-            )
-          else
-            Center(
-              child: Icon(
-                icon,
-                color: hasImage
-                    ? Colors.white.withValues(alpha: 0.84)
-                    : AppColors.green.withValues(alpha: 0.28),
-                size: hasImage ? 118 : 82,
-              ),
-            ),
-          if (label != null)
-            Positioned(
-              left: 16,
-              top: 16,
-              child: StatusBadge(text: label!, color: Colors.white),
-            ),
-          if (hasImage)
-            _InspectionOverlayTool(
-              anchor: inspectionAnchor,
-              onChanged: onInspectionAnchorChanged,
-            ),
-          if (!hasImage)
-            const Center(
-              child: Text(
-                '갤러리에서 이미지를 선택하세요',
-                style: TextStyle(
-                  color: AppColors.green,
-                  fontWeight: FontWeight.w900,
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
+          children: [
+            if (imageBytes != null)
+              Positioned.fill(
+                child: Image.memory(
+                  imageBytes!,
+                  fit: BoxFit.cover,
+                  gaplessPlayback: true,
+                ),
+              )
+            else
+              Center(
+                child: Icon(
+                  icon,
+                  color: hasImage
+                      ? Colors.white.withValues(alpha: 0.84)
+                      : AppColors.green.withValues(alpha: 0.28),
+                  size: hasImage ? 118 : 82,
                 ),
               ),
-            ),
-        ],
+            if (label != null)
+              Positioned(
+                left: 16,
+                right: 16,
+                top: 16,
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: StatusBadge(text: label!, color: Colors.white),
+                ),
+              ),
+            if (hasImage)
+              _InspectionOverlayTool(
+                anchor: inspectionAnchor,
+                onChanged: onInspectionAnchorChanged,
+              ),
+            if (!hasImage)
+              const Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.add_photo_alternate_outlined,
+                      color: AppColors.green,
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      '이미지 선택',
+                      style: TextStyle(
+                        color: AppColors.green,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    SizedBox(height: 4),
+                    Text(
+                      '탭해서 갤러리를 엽니다',
+                      style: TextStyle(
+                        color: AppColors.muted,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

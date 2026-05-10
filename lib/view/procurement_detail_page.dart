@@ -53,7 +53,7 @@ class _ProcurementDetailPageState extends State<ProcurementDetailPage> {
 
   Future<void> _submit() async {
     if (widget.procurement.isFallback) {
-      showOwnerSnack(context, 'JSON fallback 발주는 상세 결정 API 저장을 할 수 없습니다.');
+      showOwnerSnack(context, '현재 항목은 상세 결정을 저장할 수 없습니다.');
       return;
     }
     if (items.isEmpty) {

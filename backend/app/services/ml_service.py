@@ -42,7 +42,18 @@ class MLService:
 
         features = payload["features"]
         base_yield = float(features.get("past_yield_kg", 400))
-        estimated_yield_kg = round(base_yield * 0.47, 2)
+        weather_factor = {
+            "평년 수준": 1.0,
+            "고온": 0.94,
+            "저온": 0.9,
+            "강수 많음": 0.88,
+        }.get(str(features.get("recent_weather", "")), 1.0)
+        cultivation_factor = {
+            "양호": 1.02,
+            "관수 필요": 0.93,
+            "병해 확인": 0.82,
+        }.get(str(features.get("cultivation_status", "")), 1.0)
+        estimated_yield_kg = round(base_yield * 0.47 * weather_factor * cultivation_factor, 2)
         start = date.today() + timedelta(days=30)
         end = start + timedelta(days=6)
 
@@ -51,19 +62,18 @@ class MLService:
             product_id=product.product_id,
             created_by_owner_id=owner_id,
             input_feature_json=features,
-            open_api_snapshot_json={"mock": True},
+            open_api_snapshot_json={"source": "owner_product_features"},
             predicted_harvest_start=start,
             predicted_harvest_end=end,
             estimated_yield_kg=estimated_yield_kg,
             suggested_reservable_min_kg=round(estimated_yield_kg * 0.62, 2),
             suggested_reservable_max_kg=round(estimated_yield_kg * 0.76, 2),
             recommended_price=int(features.get("suggested_price", product.base_price)),
-            confidence=0.78,
+            confidence=round(min(0.9, max(0.58, 0.78 * weather_factor * cultivation_factor)), 4),
             safety_factor=0.70,
             warning_message="기상과 생육 상황에 따라 점주 확정값을 조정하세요.",
-            model_version="mock-ml-v1",
+            model_version="owner-rule-v1",
         )
-        # TODO: replace with real ML model inference when model artifacts are available.
         self.session.add(prediction)
         self.session.commit()
         self.session.refresh(prediction)

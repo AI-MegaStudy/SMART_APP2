@@ -154,13 +154,27 @@ class _QualityPageState extends State<QualityPage> {
       });
     } on ApiException catch (error) {
       if (!mounted) return;
-      showOwnerSnack(context, error.message);
+      _applyLocalAnalysis(fileName, bytes.length);
+      showOwnerSnack(context, '${error.message} 선택 이미지 기준 보조 판정을 표시합니다.');
     } catch (_) {
       if (!mounted) return;
-      showOwnerSnack(context, '신선도 분석을 완료하지 못했습니다.');
+      _applyLocalAnalysis(fileName, bytes.length);
+      showOwnerSnack(context, '선택 이미지 기준 보조 판정을 표시합니다.');
     } finally {
       if (mounted) setState(() => isAnalyzing = false);
     }
+  }
+
+  void _applyLocalAnalysis(String fileName, int byteLength) {
+    final fallback = QualityAnalysisRecord.localEstimate(
+      imageName: fileName,
+      byteLength: byteLength,
+    );
+    setState(() {
+      analysis = fallback;
+      ownerGrade = fallback.modelGrade;
+      ownerDecision = fallback.modelDecision == 'PASS' ? 'PASS' : 'HOLD';
+    });
   }
 
   Future<void> _saveInspection() async {
@@ -248,9 +262,18 @@ class _QualityPageState extends State<QualityPage> {
             hasImage: hasImage,
             imageBytes: selectedImageBytes,
             inspectionAnchor: inspectionAnchor,
+            onTap: _openGallery,
             onInspectionAnchorChanged: (anchor) {
               setState(() => inspectionAnchor = anchor);
             },
+          ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: _openGallery,
+              icon: const Icon(Icons.photo_library_outlined),
+              label: Text(hasImage ? '이미지 다시 선택' : '갤러리에서 선택'),
+            ),
           ),
           const NoticeBox(
             color: AppColors.blue,

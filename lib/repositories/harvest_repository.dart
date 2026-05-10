@@ -33,8 +33,11 @@ class HarvestRepository {
   }
 
   Future<HarvestPredictionRecord> createPrediction(
-    HarvestProductOption option,
-  ) {
+    HarvestProductOption option, {
+    required int pastYieldKg,
+    required String recentWeather,
+    required String cultivationStatus,
+  }) {
     return ApiService.postData<HarvestPredictionRecord>(
       '/owner/ml/predictions',
       requiresAuth: true,
@@ -42,10 +45,13 @@ class HarvestRepository {
         'farm_id': option.farm.farmId,
         'product_id': option.product.id,
         'features': {
-          'past_yield_kg': 420,
+          'past_yield_kg': pastYieldKg,
           'suggested_price': option.product.price,
           'package_unit_kg': option.product.packageUnitKg,
+          'open_slot_count': option.product.stockKg,
           'variety': option.product.variety,
+          'recent_weather': recentWeather,
+          'cultivation_status': cultivationStatus,
         },
       },
       parser: (data) {
@@ -58,6 +64,11 @@ class HarvestRepository {
   Future<HarvestSlotRecord> createOpenSlot({
     required HarvestProductOption option,
     required HarvestPredictionRecord prediction,
+    required String confirmedHarvestStart,
+    required String confirmedHarvestEnd,
+    required int confirmedReservableKg,
+    required int confirmedPrice,
+    required String customerNotice,
   }) {
     return ApiService.postData<HarvestSlotRecord>(
       '/owner/harvest-slots',
@@ -66,11 +77,11 @@ class HarvestRepository {
         'farm_id': option.farm.farmId,
         'product_id': option.product.id,
         'prediction_id': prediction.predictionId,
-        'confirmed_harvest_start': prediction.predictedHarvestStart,
-        'confirmed_harvest_end': prediction.predictedHarvestEnd,
-        'confirmed_reservable_kg': prediction.suggestedReservableMaxKg,
-        'confirmed_price': prediction.recommendedPrice,
-        'customer_notice': '${option.product.name} 예약 가능 수량을 열었습니다.',
+        'confirmed_harvest_start': confirmedHarvestStart,
+        'confirmed_harvest_end': confirmedHarvestEnd,
+        'confirmed_reservable_kg': confirmedReservableKg,
+        'confirmed_price': confirmedPrice,
+        'customer_notice': customerNotice,
         'slot_status': 'OPEN',
       },
       parser: (data) {

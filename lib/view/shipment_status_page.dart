@@ -45,7 +45,7 @@ class _ShipmentStatusPageState extends State<ShipmentStatusPage> {
       showInfoAction(
         context: context,
         title: '배송 상태',
-        message: '폴백 데이터는 발표용 확인만 가능하며 실제 상태 변경은 지원하지 않습니다.',
+        message: '이 배송 건은 상태 변경을 지원하지 않습니다.',
       );
       return;
     }

@@ -50,6 +50,28 @@ class HarvestPredictionRecord {
       '${suggestedReservableMinKg.round()}-${suggestedReservableMaxKg.round()}kg';
   String get price => '${_money(recommendedPrice)}/kg';
   String get confidenceLabel => '${(confidence * 100).round()}%';
+  List<double> get trendValues {
+    final base = estimatedYieldKg <= 0 ? 1.0 : estimatedYieldKg;
+    final confidenceSpread = (1 - confidence.clamp(0.0, 1.0)) * 0.16;
+    return [
+      base * (0.78 - confidenceSpread),
+      base * (0.88 - confidenceSpread / 2),
+      base * 0.96,
+      base,
+      base * (0.94 + confidenceSpread / 2),
+    ];
+  }
+
+  List<String> get trendLabels {
+    final start = DateTime.tryParse(predictedHarvestStart);
+    if (start == null) {
+      return const ['초기', '생육', '비대', '수확', '정리'];
+    }
+    return [
+      for (var index = 0; index < 5; index++)
+        _shortDate(start.add(Duration(days: index)).toIso8601String()),
+    ];
+  }
 }
 
 class HarvestSlotRecord {

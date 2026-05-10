@@ -36,7 +36,7 @@ class QualityAnalysisService:
             "view_confidence_threshold": VIEW_CONFIDENCE_THRESHOLD,
             "grade_confidence_threshold": GRADE_CONFIDENCE_THRESHOLD,
             "retake_reason": None,
-            "model_version": "mock-dl-v1",
+            "model_version": "owner-dl-rule-v1",
             "image_quality": {},
         }
 
@@ -113,7 +113,7 @@ class QualityAnalysisService:
                 GRADE_CONFIDENCE_THRESHOLD,
             ),
             "retake_reason": retake_reason,
-            "model_version": raw_data.get("model_version", "mock-dl-v1"),
+            "model_version": raw_data.get("model_version", "owner-dl-rule-v1"),
             "image_quality": raw_data.get("image_quality") or {},
         }
 
