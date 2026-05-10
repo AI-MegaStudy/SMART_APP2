@@ -40,20 +40,90 @@ class _ShipmentStatusPageState extends State<ShipmentStatusPage> {
     });
   }
 
+  Future<void> _openShipmentAction(OwnerStatusRecord record) async {
+    if (record.isFallback || record.shipmentId == null) {
+      showInfoAction(
+        context: context,
+        title: '배송 상태',
+        message: '폴백 데이터는 발표용 확인만 가능하며 실제 상태 변경은 지원하지 않습니다.',
+      );
+      return;
+    }
+
+    final nextStatus = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) {
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  record.title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  record.subtitle,
+                  style: const TextStyle(
+                    color: Color(0xff6F7D68),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                _ShipmentActionTile(
+                  icon: Icons.local_shipping_outlined,
+                  title: '배송 중으로 표시',
+                  subtitle: '송장 접수 후 이동 중인 상태',
+                  onTap: () => Navigator.of(context).pop('SHIPPED'),
+                ),
+                const SizedBox(height: 10),
+                _ShipmentActionTile(
+                  icon: Icons.check_circle_outline,
+                  title: '배송 완료로 표시',
+                  subtitle: '고객에게 배송이 완료된 상태',
+                  onTap: () => Navigator.of(context).pop('DELIVERED'),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (nextStatus == null || !mounted) return;
+    final updated = await repository.updateShipmentStatus(
+      shipmentId: record.shipmentId!,
+      shipmentStatus: nextStatus,
+    );
+    if (!mounted) return;
+    if (updated) {
+      await _loadRecords();
+      if (!mounted) return;
+      showOwnerSnack(context, '배송 상태를 갱신했습니다.');
+    } else {
+      showOwnerSnack(context, '배송 상태를 변경하지 못했습니다.');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final query = searchController.text.trim().toLowerCase();
-    final visible = <OwnerStatusRecord>[...shipmentStatusRecords, ...records]
-        .where((item) {
-          final matchesFilter = filter == '전체' || item.status == filter;
-          final matchesQuery =
-              query.isEmpty ||
-              '${item.title} ${item.subtitle} ${item.status}'
-                  .toLowerCase()
-                  .contains(query);
-          return matchesFilter && matchesQuery;
-        })
-        .toList();
+    final visible = records.where((item) {
+      final matchesFilter = filter == '전체' || item.status == filter;
+      final matchesQuery =
+          query.isEmpty ||
+          '${item.title} ${item.subtitle} ${item.status}'
+              .toLowerCase()
+              .contains(query);
+      return matchesFilter && matchesQuery;
+    }).toList();
 
     return Scaffold(
       body: AppScaffold(
@@ -97,6 +167,13 @@ class _ShipmentStatusPageState extends State<ShipmentStatusPage> {
               ),
             ),
           if (!loading)
+            if (visible.isEmpty)
+              const EmptyState(
+                icon: Icons.local_shipping_outlined,
+                title: '표시할 배송 현황이 없습니다.',
+                message: '배송 등록이 완료되면 송장과 배송 상태를 이곳에서 관리합니다.',
+              ),
+          if (!loading)
             for (final item in visible)
               DataTile(
                 icon: Icons.local_shipping_outlined,
@@ -104,6 +181,8 @@ class _ShipmentStatusPageState extends State<ShipmentStatusPage> {
                 subtitle: item.subtitle,
                 badge: item.status,
                 badgeColor: item.color,
+                showChevron: true,
+                onTap: () => _openShipmentAction(item),
               ),
         ],
       ),
@@ -111,18 +190,57 @@ class _ShipmentStatusPageState extends State<ShipmentStatusPage> {
   }
 }
 
-final shipmentStatusRecords = <ShipmentRecord>[];
+class _ShipmentActionTile extends StatelessWidget {
+  final IconData icon;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
 
-class ShipmentRecord extends OwnerStatusRecord {
-  const ShipmentRecord(
-    String title,
-    String subtitle,
-    String status,
-    this.overrideColor,
-  ) : super(title: title, subtitle: subtitle, status: status);
-
-  final Color overrideColor;
+  const _ShipmentActionTile({
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
 
   @override
-  Color get color => overrideColor;
+  Widget build(BuildContext context) {
+    return Material(
+      color: const Color(0xffF7FAF4),
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Row(
+            children: [
+              Icon(icon, color: const Color(0xff244330)),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(fontWeight: FontWeight.w900),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        color: Color(0xff6F7D68),
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right, color: Color(0xff6F7D68)),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }

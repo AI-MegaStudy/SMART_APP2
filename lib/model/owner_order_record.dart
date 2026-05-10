@@ -105,6 +105,13 @@ class OwnerProcurementRequestRecord {
   final int? orderId;
   final String? shipmentStatus;
 
+  Color get color => switch (status) {
+    '승인' => AppColors.mint,
+    '부분승인' => AppColors.blue,
+    '거절' => const Color(0xffFFE1DD),
+    _ => AppColors.yellow,
+  };
+
   factory OwnerProcurementRequestRecord.fromProcurementJson(
     Map<String, dynamic> json,
   ) {
@@ -163,12 +170,14 @@ class OwnerProcurementItemRecord {
     required this.productName,
     required this.requestedPackageCount,
     required this.requestedKg,
+    required this.hasQualityInspection,
   });
 
   final int procurementItemId;
   final String productName;
   final int requestedPackageCount;
   final double requestedKg;
+  final bool hasQualityInspection;
 
   factory OwnerProcurementItemRecord.fromJson(Map<String, dynamic> json) {
     return OwnerProcurementItemRecord(
@@ -179,6 +188,7 @@ class OwnerProcurementItemRecord {
         fallback: 1,
       ),
       requestedKg: _asDouble(json['requested_kg']),
+      hasQualityInspection: json['has_quality_inspection'] == true,
     );
   }
 }
@@ -217,7 +227,8 @@ double _asDouble(Object? value) {
 String _procurementStatusLabel(String status) {
   return switch (status) {
     'REQUESTED' => '승인 대기',
-    'APPROVED' || 'PARTIAL_APPROVED' => '승인',
+    'APPROVED' => '승인',
+    'PARTIAL_APPROVED' => '부분승인',
     'REJECTED' => '거절',
     _ => status.isEmpty ? '승인 대기' : status,
   };

@@ -1,6 +1,7 @@
 # SMART_APP FastAPI Integration Plan
 
 Created: 2026-05-11
+Last updated: 2026-05-11
 
 ## Goal
 
@@ -43,6 +44,25 @@ SMART_WEB은 API client, repository, model mapping 패턴만 참고한다. 파�
 
 이 데이터는 DB 스키마 변경 없이 현재 FastAPI 모델로 생성했다. 상품 API 검증 기준은 `open_slot_count=1`이 각 상품에 내려오는 것이다.
 
+2026-05-11 `고객웹_QA_더미데이터_생성정리_2026-05-11.pdf`의 QA 데이터 기준을 점주 앱 발표용 seed/fallback에 반영했다.
+
+적용 기준:
+- 예약 -> 주문 -> 결제 -> 배송 -> 반품/환불 관계가 깨지지 않는 상태 흐름을 유지한다.
+- 화면에는 `QA`, `Mock`, `DB`, `API`, `더미` 같은 개발자용 표현을 노출하지 않는다.
+- 고객명은 발표 화면에 자연스럽게 보이도록 `홍길동`, `김민지`, `박서준`, `이수현`, `최지우`, `정하윤`을 사용한다.
+- 실제 DB 데이터가 부족한 화면은 `assets/mock/*.json` fallback으로 먼저 시작하고, 현재 DB/API로 구현 가능한 API는 붙인다.
+
+owner_id=3 업무 seed:
+
+| Scenario | Customer | Main state |
+|---|---|---|
+| `REQUESTED` | `홍길동` | 신규 발주 승인 대기 |
+| `APPROVED_READY` | `김민지` | 품질 검사 완료, 배송 준비 |
+| `PARTIAL_QUALITY` | `박서준` | 부분 승인, 선별 대기 |
+| `SHIPPED` | `이수현` | 배송 중 |
+| `RETURN_REQUESTED` | `최지우` | 배송 완료 후 반품 요청 |
+| `REJECTED` | `정하윤` | 발주 거절 |
+
 ## Development Database
 
 2026-05-11 원본 DB를 보존하기 위해 개발/검증용 DB를 추가했다.
@@ -83,7 +103,7 @@ Flutter screens
   -> service / repository / SQLAlchemy models
 ```
 
-현재 앱의 실제 HTTP 호출은 `DashboardRepository.fetchDashboard()` 한 곳뿐이다. 이 호출도 `/owner/dashboard`를 쓰고 있어 실제 백엔드 prefix `/api/v1/owner/dashboard`와 맞지 않고, 공통 응답 래퍼 `data/message/error`도 풀지 않는다.
+현재 앱은 공통 `ApiService`를 통해 `/api/v1` prefix, 응답 래퍼, 토큰 인증, multipart upload를 처리한다. 부족한 데이터가 있는 업무 화면은 API 우선 호출 후 `assets/mock/*.json` fallback으로 발표 흐름을 유지한다.
 
 ## Target API Client
 
@@ -136,7 +156,7 @@ Success criteria:
 - [x] 로그인 성공 시 `Home`으로 진입한다.
 - [x] 로그인 실패 메시지가 실제 API 실패와 연결된다.
 - [x] 대시보드가 `/api/v1/owner/dashboard`의 `data`를 읽는다.
-- [x] 백엔드 미실행 시 화면이 크래시하지 않고 demo fallback을 보여준다.
+- [x] 백엔드 미실행 시 화면이 크래시하지 않고 빈 대시보드 또는 JSON fallback으로 전환한다.
 
 ### Phase 2: Product/Farm
 
@@ -182,7 +202,7 @@ Success criteria:
 - [x] 발주 품목 선택 UI 추가
 - [x] 품질 이미지 분석/저장 연결
 - [x] 배송 등록 연결
-- [ ] 배송 상태 변경 연결
+- [x] 배송 상태 변경 연결
 - [x] 배송 현황 API 우선 + JSON fallback 연결
 - [x] 반품 현황 API 우선 + JSON fallback 연결
 - [x] 반품 목록/관리 화면 API 우선 + JSON fallback 연결
@@ -192,6 +212,7 @@ Success criteria:
 - 점주가 신선도 검사 결과와 점주 판정을 분리해 저장한다.
 - READY_TO_SHIP 주문에 송장을 등록할 수 있다.
 - 반품 승인 시 approved_amount 검증 실패를 화면에 표시한다.
+- 배송 현황에서 실제 shipment_id가 있는 항목은 배송 중/배송 완료로 상태 변경할 수 있다.
 
 ### Phase 5: Profile, Signup, Recovery
 
@@ -209,14 +230,12 @@ Success criteria:
 | 비밀번호 재설정 | backend 최종본에 reset token 발급/검증 API가 없다 | `POST /auth/password/reset-request`, `POST /auth/password/reset-confirm` 설계 필요 |
 | 상품 삭제 | backend 최종본에 `DELETE /owner/products/{id}`가 없다 | 물리 삭제 대신 `PATCH /status`로 `INACTIVE` 처리 |
 | 농장 이미지 업로드 | 농장 전용 업로드 API가 명확하지 않다 | 공통 이미지 업로드 후 `farm_image_url` 저장으로 처리 가능 |
-| 배송 현황 상세 | owner shipment list 전용 API가 없다 | `GET /owner/orders` 응답에 shipment 포함 여부 확인 후 부족하면 API 추가 |
-| 배송 등록 API 연결 | `POST /owner/shipments`는 실제 `order_id`가 필요하지만 fallback 발주 승인 데이터에는 실제 order_id가 없다 | 실제 procurement/order seed가 생기면 shipment create를 API 저장으로 전환. 현재는 로컬 현황 반영 유지 |
-| 배송 상태 변경 | `PATCH /owner/shipments/{shipment_id}/status`는 shipment_id가 있는 실제 배송 데이터가 필요하다 | 배송 등록 후 생성된 실제 shipment_id를 배송 현황 상세/상태 변경 화면에 전달하도록 후속 연결 |
-| 신선도 검사 대상 데이터 | `POST /owner/quality-inspections/*`는 실제 `procurement_item_id`가 필요하다 | 승인된 실제 발주가 있으면 API 저장, 없으면 화면에서 “승인된 발주 품목 없음”으로 안내 |
+| 배송 현황 상세 전용 API | owner shipment list 전용 API는 없다 | `GET /owner/orders` 응답에 shipment fields를 추가해 현황/상태 변경 화면에서 사용한다. 별도 list API는 필요해질 때 추가 |
+| fallback 배송 상태 변경 | JSON fallback 항목은 실제 shipment_id가 없다 | 발표용 조회만 허용하고, 실제 상태 변경은 DB shipment_id가 있는 항목에서만 처리 |
+| 신선도 검사 대상 데이터 부족 | `POST /owner/quality-inspections/*`는 실제 `procurement_item_id`가 필요하다 | owner_id=3 seed에 선별 대기 품목을 추가했고, 없으면 화면에서 “승인된 발주 품목 없음”으로 안내 |
 | 회원가입 농장 정보 저장 | `POST /auth/owners/signup`는 owner 계정만 만들고 농장명/주소/사업자번호는 받지 않는다 | 가입 후 로그인 상태에서 농장 정보 수정 화면으로 저장하거나, 별도 owner signup 확장 API 검토 |
-| seed/demo data | 주문/발주/배송/반품까지 검증할 seed가 아직 부족하다 | 현재 점주/농장/상품/수확 슬롯 seed는 생성됨. 다음 단계에서 주문 계열 seed 필요 시 사전 검토 후 생성 |
-| 주문/발주 DB 데이터 없음 | 현재 DB에 PDF의 QA 주문/결제/배송/반품 seed가 없다 | `assets/mock/owner_orders.json` fallback으로 주문/발주 화면을 먼저 기능하게 하고, 실제 seed는 별도 검토 후 생성 |
-| 배송/반품 DB 데이터 없음 | 현재 DB에 배송/반품 QA seed가 없다 | `assets/mock/owner_shipments.json`, `assets/mock/owner_returns.json` fallback으로 현황 화면을 먼저 기능하게 한다 |
+| 고객웹 QA seed 원본 스크립트 | PDF에는 `seed_customer_flow_qa_data.py` 기준이 있지만 현재 로컬 프로젝트에는 스크립트 파일이 없다 | PDF의 상태 분포와 화면 노출 기준만 owner3 seed/fallback에 반영했다 |
+| fallback 데이터 | API/DB가 부족한 상태에서도 발표 흐름이 필요하다 | `assets/mock/owner_orders.json`, `owner_shipments.json`, `owner_returns.json`은 유지하되 개발자용 `QA` 노출은 제거했다 |
 | DB 스키마 변경이 필요한 기능 | 사용자 검증 전에는 DB 변경 범위를 확정하지 않는다 | 현재 DB/API로 검증 가능한 화면을 먼저 연결한 뒤 별도 승인 후 진행 |
 | 상품 수량 입력 | backend `products`에는 재고/수량 필드가 없고 실제 예약 가능 수량은 `harvest_slots`에 있다 | 상품 화면에서는 표시/데모 값으로 유지하고 실제 판매 가능 수량은 수확 슬롯 단계에서 연결 |
 | Chrome 로그인 이후 검증 | 2026-05-11 `cheng80@gmail.com` 계정으로 login -> dashboard -> product list -> product add input 확인 완료 | 농장 수정/등록 저장, 주문 계열 흐름은 연결 단계별로 추가 검증 |
@@ -234,15 +253,17 @@ Success criteria:
 - [x] Chrome manual: login -> dashboard
 - [x] Chrome manual: product list -> product add input flow
 - [x] Chrome manual: signup screen email verification UI only, no submit
+- [x] Chrome manual: login -> dashboard -> 발주 현황 -> 배송 현황 -> 배송 상태 action sheet
 - [ ] Chrome manual: farm update flow
 - [ ] iOS simulator final: login -> dashboard -> menu -> profile
 - [ ] iOS simulator final: connected owner workflow smoke test
 - [x] Manual API: `POST /api/v1/auth/login`
 - [x] Manual API: `GET /api/v1/me`
 - [x] Manual API: `GET /api/v1/owner/dashboard`
+- [x] Manual API: owner3 login -> dashboard -> products -> procurements -> quality analyze
 - [x] Manual flow: login -> dashboard -> product list
 - [ ] Manual flow: product create -> edit -> inactive
-- [ ] Manual flow: procurement decision -> shipment create -> return decision
+- [ ] Manual flow: procurement decision -> shipment create -> shipment status -> return decision
 
 ## Decision Audit Trail
 

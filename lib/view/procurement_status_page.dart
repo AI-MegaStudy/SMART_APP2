@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:smart_app/util/app_colors.dart';
+import 'package:smart_app/model/owner_order_record.dart';
+import 'package:smart_app/repositories/owner_workflow_repository.dart';
 import 'package:smart_app/widgets/owner_widgets.dart';
 
 class ProcurementStatusPage extends StatefulWidget {
@@ -10,9 +11,18 @@ class ProcurementStatusPage extends StatefulWidget {
 }
 
 class _ProcurementStatusPageState extends State<ProcurementStatusPage> {
+  final repository = OwnerWorkflowRepository();
   final searchController = TextEditingController();
   String filter = '전체';
   bool showSearch = false;
+  bool loading = true;
+  List<OwnerProcurementRequestRecord> records = const [];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRecords();
+  }
 
   @override
   void dispose() {
@@ -20,10 +30,20 @@ class _ProcurementStatusPageState extends State<ProcurementStatusPage> {
     super.dispose();
   }
 
+  Future<void> _loadRecords() async {
+    setState(() => loading = true);
+    final loaded = await repository.fetchProcurementRequests();
+    if (!mounted) return;
+    setState(() {
+      records = loaded;
+      loading = false;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final query = searchController.text.trim().toLowerCase();
-    final visible = procurementStatusRecords.where((item) {
+    final visible = records.where((item) {
       final matchesFilter = filter == '전체' || item.status == filter;
       final matchesQuery =
           query.isEmpty ||
@@ -63,49 +83,34 @@ class _ProcurementStatusPageState extends State<ProcurementStatusPage> {
               ),
             ),
           FilterTabs(
-            labels: const ['전체', '승인', '거절'],
+            labels: const ['전체', '승인 대기', '승인', '부분승인', '거절'],
             selected: filter,
             onChanged: (value) => setState(() => filter = value),
           ),
-          for (final item in visible)
-            DataTile(
-              icon: Icons.inventory_2_outlined,
-              title: item.title,
-              subtitle: item.subtitle,
-              badge: item.status,
-              badgeColor: item.color,
+          if (loading)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(32),
+                child: CircularProgressIndicator(),
+              ),
             ),
+          if (!loading && visible.isEmpty)
+            const EmptyState(
+              icon: Icons.inventory_2_outlined,
+              title: '표시할 발주 현황이 없습니다.',
+              message: '새 주문이 들어오면 발주 승인 흐름에서 바로 확인할 수 있습니다.',
+            ),
+          if (!loading)
+            for (final item in visible)
+              DataTile(
+                icon: Icons.inventory_2_outlined,
+                title: item.title,
+                subtitle: item.subtitle,
+                badge: item.status,
+                badgeColor: item.color,
+              ),
         ],
       ),
     );
   }
-}
-
-final procurementStatusRecords = <ProcurementStatusRecord>[
-  const ProcurementStatusRecord(
-    '2026-05-07 10:10',
-    '박서준 · 부사 사과 3kg · 1박스 · 68,000원',
-    '승인',
-    AppColors.mint,
-  ),
-  const ProcurementStatusRecord(
-    '2026-05-07 10:20',
-    '김민지 · 양광 사과 5kg · 1박스 · 재고 부족',
-    '거절',
-    Color(0xffFFE1DD),
-  ),
-];
-
-class ProcurementStatusRecord {
-  final String title;
-  final String subtitle;
-  final String status;
-  final Color color;
-
-  const ProcurementStatusRecord(
-    this.title,
-    this.subtitle,
-    this.status,
-    this.color,
-  );
 }

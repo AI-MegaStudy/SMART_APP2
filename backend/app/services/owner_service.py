@@ -32,10 +32,18 @@ class OwnerService:
             select(func.count(ProcurementItem.procurement_item_id))
             .join(ProcurementItem.procurement)
             .outerjoin(QualityInspection, QualityInspection.procurement_item_id == ProcurementItem.procurement_item_id)
-            .where(Procurement.owner_id == owner_id, QualityInspection.quality_inspection_id.is_(None))
+            .where(
+                Procurement.owner_id == owner_id,
+                Procurement.procurement_status.in_(
+                    [ProcurementStatus.APPROVED, ProcurementStatus.PARTIAL_APPROVED]
+                ),
+                QualityInspection.quality_inspection_id.is_(None),
+            )
         ) or 0
         ready_to_ship = self.session.scalar(
-            select(func.count(Procurement.procurement_id))
+            select(func.count(func.distinct(Procurement.procurement_id)))
+            .join(ProcurementItem, ProcurementItem.procurement_id == Procurement.procurement_id)
+            .join(QualityInspection, QualityInspection.procurement_item_id == ProcurementItem.procurement_item_id)
             .outerjoin(Shipment, Shipment.order_id == Procurement.order_id)
             .where(
                 Procurement.owner_id == owner_id,

@@ -44,17 +44,15 @@ class _ReturnStatusPageState extends State<ReturnStatusPage> {
   @override
   Widget build(BuildContext context) {
     final query = searchController.text.trim().toLowerCase();
-    final visible = <OwnerStatusRecord>[...returnStatusRecords, ...records]
-        .where((item) {
-          final matchesFilter = filter == '전체' || item.status == filter;
-          final matchesQuery =
-              query.isEmpty ||
-              '${item.title} ${item.subtitle} ${item.status}'
-                  .toLowerCase()
-                  .contains(query);
-          return matchesFilter && matchesQuery;
-        })
-        .toList();
+    final visible = records.where((item) {
+      final matchesFilter = filter == '전체' || item.status == filter;
+      final matchesQuery =
+          query.isEmpty ||
+          '${item.title} ${item.subtitle} ${item.status}'
+              .toLowerCase()
+              .contains(query);
+      return matchesFilter && matchesQuery;
+    }).toList();
 
     return Scaffold(
       body: AppScaffold(
@@ -86,7 +84,7 @@ class _ReturnStatusPageState extends State<ReturnStatusPage> {
               ),
             ),
           FilterTabs(
-            labels: const ['전체', '승인', '거절'],
+            labels: const ['전체', '접수', '승인', '거절'],
             selected: filter,
             onChanged: (value) => setState(() => filter = value),
           ),
@@ -97,6 +95,13 @@ class _ReturnStatusPageState extends State<ReturnStatusPage> {
                 child: CircularProgressIndicator(),
               ),
             ),
+          if (!loading)
+            if (visible.isEmpty)
+              const EmptyState(
+                icon: Icons.assignment_return_outlined,
+                title: '표시할 반품 현황이 없습니다.',
+                message: '고객 반품 요청이 들어오면 접수, 승인, 거절 상태를 이곳에서 확인합니다.',
+              ),
           if (!loading)
             for (final item in visible)
               DataTile(
@@ -112,33 +117,4 @@ class _ReturnStatusPageState extends State<ReturnStatusPage> {
       ),
     );
   }
-}
-
-final returnStatusRecords = <ReturnStatusRecord>[
-  const ReturnStatusRecord(
-    '2026-05-07 10:30',
-    '김민지 · 부사 사과 3kg · 1박스 · 12,000원',
-    '승인',
-    AppColors.mint,
-  ),
-  const ReturnStatusRecord(
-    '2026-05-07 11:10',
-    '박서준 · 양광 사과 7kg · 1박스 · 정책상 거절',
-    '거절',
-    AppColors.yellow,
-  ),
-];
-
-class ReturnStatusRecord extends OwnerStatusRecord {
-  const ReturnStatusRecord(
-    String title,
-    String subtitle,
-    String status,
-    this.overrideColor,
-  ) : super(title: title, subtitle: subtitle, status: status);
-
-  final Color overrideColor;
-
-  @override
-  Color get color => overrideColor;
 }

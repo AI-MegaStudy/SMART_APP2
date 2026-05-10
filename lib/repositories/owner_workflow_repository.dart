@@ -62,20 +62,23 @@ class OwnerWorkflowRepository {
         body: {
           'decision': decision,
           'items': [
-            for (final item in decisionItems ??
-                [
-                  for (final item in request.items)
-                    OwnerProcurementDecisionItem(
-                      procurementItemId: item.procurementItemId,
-                      approvedPackageCount: decision == 'REJECTED'
-                          ? 0
-                          : item.requestedPackageCount,
-                      approvedKg: decision == 'REJECTED' ? 0 : item.requestedKg,
-                      ownerMemo: decision == 'REJECTED'
-                          ? rejectedReason
-                          : '정상 수량 확인',
-                    ),
-                ])
+            for (final item
+                in decisionItems ??
+                    [
+                      for (final item in request.items)
+                        OwnerProcurementDecisionItem(
+                          procurementItemId: item.procurementItemId,
+                          approvedPackageCount: decision == 'REJECTED'
+                              ? 0
+                              : item.requestedPackageCount,
+                          approvedKg: decision == 'REJECTED'
+                              ? 0
+                              : item.requestedKg,
+                          ownerMemo: decision == 'REJECTED'
+                              ? rejectedReason
+                              : '정상 수량 확인',
+                        ),
+                    ])
               {
                 'procurement_item_id': item.procurementItemId,
                 'approved_package_count': item.approvedPackageCount,
@@ -93,7 +96,8 @@ class OwnerWorkflowRepository {
     }
   }
 
-  Future<List<OwnerProcurementRequestRecord>> fetchShippableProcurements() async {
+  Future<List<OwnerProcurementRequestRecord>>
+  fetchShippableProcurements() async {
     final records = await fetchProcurementRequests();
     return records
         .where(
@@ -101,7 +105,8 @@ class OwnerWorkflowRepository {
               !record.isFallback &&
               record.orderId != null &&
               record.orderId! > 0 &&
-              (record.status == '승인') &&
+              (record.status == '승인' || record.status == '부분승인') &&
+              record.items.any((item) => item.hasQualityInspection) &&
               (record.shipmentStatus == null || record.shipmentStatus!.isEmpty),
         )
         .toList();
@@ -127,6 +132,23 @@ class OwnerWorkflowRepository {
           'shipped_package_count': shippedPackageCount,
           'shipped_kg': shippedKg,
         },
+        parser: (data) => data as Map<String, dynamic>? ?? const {},
+      );
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> updateShipmentStatus({
+    required int shipmentId,
+    required String shipmentStatus,
+  }) async {
+    try {
+      await ApiService.patchData<Map<String, dynamic>>(
+        '/owner/shipments/$shipmentId/status',
+        requiresAuth: true,
+        body: {'shipment_status': shipmentStatus},
         parser: (data) => data as Map<String, dynamic>? ?? const {},
       );
       return true;
@@ -266,7 +288,10 @@ class OwnerWorkflowRepository {
     final decoded = jsonDecode(raw) as List<dynamic>;
     return [
       for (final item in decoded)
-        OwnerStatusRecord.fromJson(item as Map<String, dynamic>? ?? const {}),
+        OwnerStatusRecord.fromJson(
+          item as Map<String, dynamic>? ?? const {},
+          isFallback: true,
+        ),
     ];
   }
 

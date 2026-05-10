@@ -56,6 +56,7 @@ def serialize_procurement(procurement: Procurement) -> dict:
                 "approved_kg": float(item.approved_kg),
                 "approval_status": item.approval_status,
                 "owner_memo": item.owner_memo,
+                "has_quality_inspection": bool(item.quality_inspections),
             }
             for item in procurement.procurement_items
         ],

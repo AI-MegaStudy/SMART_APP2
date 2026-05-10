@@ -3,7 +3,6 @@ import 'package:smart_app/model/owner_order_record.dart';
 import 'package:smart_app/repositories/owner_workflow_repository.dart';
 import 'package:smart_app/util/app_colors.dart';
 import 'package:smart_app/view/procurement_detail_page.dart';
-import 'package:smart_app/view/procurement_status_page.dart';
 import 'package:smart_app/widgets/owner_widgets.dart';
 
 class ProcurementPage extends StatefulWidget {
@@ -54,14 +53,13 @@ class _ProcurementPageState extends State<ProcurementPage> {
     List<OwnerProcurementRequestRecord> procurements,
   ) {
     return [
-        for (final procurement in procurements) _ApprovalRequest(procurement),
-      ].where((item) => !_handledProcurementIds.contains(item.id)).toList()
-      ..sort((a, b) {
-        if (a.enabled != b.enabled) {
-          return a.enabled ? -1 : 1;
-        }
-        return a.time.compareTo(b.time);
-      });
+      for (final procurement in procurements) _ApprovalRequest(procurement),
+    ].toList()..sort((a, b) {
+      if (a.enabled != b.enabled) {
+        return a.enabled ? -1 : 1;
+      }
+      return a.time.compareTo(b.time);
+    });
   }
 
   void _toggleAll(bool? selected) {
@@ -161,22 +159,12 @@ class _ProcurementPageState extends State<ProcurementPage> {
       );
     }
     if (!mounted) return;
-    procurementStatusRecords.addAll([
-      for (final item in handled)
-        ProcurementStatusRecord(
-          '2026-05-08 ${item.time}',
-          reason == null
-              ? '${item.title} · ${_withoutDateTime(item.subtitle)}'
-              : '${item.title} · ${_boxCount(item.subtitle)} · $reason',
-          status,
-          status == '승인' ? AppColors.mint : const Color(0xffFFE1DD),
-        ),
-    ]);
     setState(() {
       requests.removeWhere((item) => selectedIds.contains(item.id));
-      _handledProcurementIds.addAll(selectedIds);
       selectedIds.clear();
     });
+    await _loadRequests();
+    if (!mounted) return;
     showOwnerSnack(context, '발주 현황을 갱신했습니다.');
   }
 
@@ -274,16 +262,6 @@ class _ProcurementPageState extends State<ProcurementPage> {
   }
 }
 
-String _withoutDateTime(String text) {
-  return text.replaceAll(RegExp(r' · \d{4}-\d{2}-\d{2} \d{2}:\d{2}$'), '');
-}
-
-String _boxCount(String text) {
-  return RegExp(r'\d+박스').firstMatch(text)?.group(0) ?? '1박스';
-}
-
-final _handledProcurementIds = <String>{};
-
 class _ApprovalTile extends StatelessWidget {
   final _ApprovalRequest request;
   final bool selected;
@@ -309,7 +287,10 @@ class _ApprovalTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            Checkbox(value: selected, onChanged: request.enabled ? onChanged : null),
+            Checkbox(
+              value: selected,
+              onChanged: request.enabled ? onChanged : null,
+            ),
             Expanded(
               child: InkWell(
                 onTap: onTap,

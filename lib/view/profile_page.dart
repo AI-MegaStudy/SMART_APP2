@@ -32,7 +32,9 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> _loadHeader() async {
     final results = await Future.wait<Object?>([
       _fetchOwnerProfile(),
-      productRepository.fetchOwnerFarms().catchError((_) => <OwnerFarmRecord>[]),
+      productRepository.fetchOwnerFarms().catchError(
+        (_) => <OwnerFarmRecord>[],
+      ),
     ]);
     if (!mounted) return;
     final farms = results[1] as List<OwnerFarmRecord>;
@@ -114,13 +116,7 @@ class _ProfilePageState extends State<ProfilePage> {
               onConfirm: () => showInfoAction(
                 context: context,
                 title: '회원 탈퇴',
-                message: '회원 탈퇴가 완료되었습니다.',
-                onConfirm: () {
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (_) => const LoginPage()),
-                    (route) => false,
-                  );
-                },
+                message: '현재 API에 회원 탈퇴 기능이 없어 처리할 수 없습니다.',
               ),
             );
           },

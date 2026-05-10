@@ -6,17 +6,29 @@ class OwnerStatusRecord {
     required this.title,
     required this.subtitle,
     required this.status,
+    this.shipmentId,
+    this.rawStatus,
+    this.isFallback = false,
   });
 
   final String title;
   final String subtitle;
   final String status;
+  final int? shipmentId;
+  final String? rawStatus;
+  final bool isFallback;
 
-  factory OwnerStatusRecord.fromJson(Map<String, dynamic> json) {
+  factory OwnerStatusRecord.fromJson(
+    Map<String, dynamic> json, {
+    bool isFallback = false,
+  }) {
     return OwnerStatusRecord(
       title: json['title']?.toString() ?? '',
       subtitle: json['subtitle']?.toString() ?? '',
       status: json['status']?.toString() ?? '',
+      shipmentId: _nullableInt(json['shipment_id']),
+      rawStatus: json['shipment_status']?.toString(),
+      isFallback: isFallback,
     );
   }
 
@@ -39,6 +51,8 @@ class OwnerStatusRecord {
       title: '$customer · $product ${kg}kg · $boxes박스',
       subtitle: '$carrier · $tracking',
       status: _shipmentStatusLabel(json['shipment_status']?.toString() ?? ''),
+      shipmentId: _nullableInt(json['shipment_id']),
+      rawStatus: json['shipment_status']?.toString(),
     );
   }
 
@@ -145,6 +159,13 @@ int _asInt(Object? value, {int fallback = 0}) {
   if (value is int) return value;
   if (value is num) return value.toInt();
   return int.tryParse(value?.toString() ?? '') ?? fallback;
+}
+
+int? _nullableInt(Object? value) {
+  if (value == null) return null;
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  return int.tryParse(value.toString());
 }
 
 String _shipmentStatusLabel(String status) {

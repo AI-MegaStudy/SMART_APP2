@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:smart_app/model/owner_status_record.dart';
 import 'package:smart_app/repositories/owner_workflow_repository.dart';
 import 'package:smart_app/util/app_colors.dart';
-import 'package:smart_app/view/return_status_page.dart';
 import 'package:smart_app/widgets/owner_widgets.dart';
 
 class ReturnPage extends StatefulWidget {
@@ -36,11 +35,8 @@ class _ReturnPageState extends State<ReturnPage> {
     final loaded = await repository.fetchReturnRequests();
     if (!mounted) return;
     setState(() {
-      requests =
-          loaded
-              .where((request) => !_handledReturnIds.contains(request.key))
-              .toList()
-            ..sort((a, b) => a.requestedAt.compareTo(b.requestedAt));
+      requests = loaded.toList()
+        ..sort((a, b) => a.requestedAt.compareTo(b.requestedAt));
       loading = false;
     });
   }
@@ -100,10 +96,7 @@ class _ReturnPageState extends State<ReturnPage> {
                     ),
                   );
                   if (handled == true) {
-                    setState(() {
-                      requests.remove(request);
-                      _handledReturnIds.add(request.key);
-                    });
+                    await _loadRequests();
                   }
                 },
               ),
@@ -114,8 +107,6 @@ class _ReturnPageState extends State<ReturnPage> {
     );
   }
 }
-
-final _handledReturnIds = <String>{};
 
 class _ReturnRequestTile extends StatelessWidget {
   final OwnerReturnRequestRecord request;
@@ -181,23 +172,19 @@ class _ReturnDetailPageState extends State<_ReturnDetailPage> {
       message: '반품 · 환불 상태를 승인 처리할까요?',
       confirmLabel: '승인',
       onConfirm: () async {
-        await repository.decideReturn(
+        final saved = await repository.decideReturn(
           request: widget.request,
           decision: 'APPROVED',
           approvedAmount: int.tryParse(approvalAmountController.text) ?? 0,
           decisionReason: '점주 승인',
         );
-        returnStatusRecords.add(
-          ReturnStatusRecord(
-            widget.request.requestedAt,
-            '${widget.request.customerName} · ${widget.request.productName} · ${approvalAmountController.text}원',
-            '승인',
-            AppColors.mint,
-          ),
-        );
         if (!context.mounted) return;
-        showOwnerSnack(context, '반품 현황을 갱신했습니다.');
-        Navigator.of(context).pop(true);
+        if (saved || widget.request.isFallback) {
+          showOwnerSnack(context, '반품 현황을 갱신했습니다.');
+          Navigator.of(context).pop(true);
+        } else {
+          showOwnerSnack(context, '반품 요청을 저장하지 못했습니다.');
+        }
       },
     );
   }
@@ -259,23 +246,19 @@ class _ReturnDetailPageState extends State<_ReturnDetailPage> {
       },
     );
     if (confirmed == true && context.mounted) {
-      await repository.decideReturn(
+      final saved = await repository.decideReturn(
         request: widget.request,
         decision: 'REJECTED',
         approvedAmount: 0,
         decisionReason: reason,
       );
-      returnStatusRecords.add(
-        ReturnStatusRecord(
-          widget.request.requestedAt,
-          '${widget.request.customerName} · ${widget.request.productName} · $reason',
-          '거절',
-          AppColors.yellow,
-        ),
-      );
       if (!context.mounted) return;
-      showOwnerSnack(context, '반품 현황을 갱신했습니다.');
-      Navigator.of(context).pop(true);
+      if (saved || widget.request.isFallback) {
+        showOwnerSnack(context, '반품 현황을 갱신했습니다.');
+        Navigator.of(context).pop(true);
+      } else {
+        showOwnerSnack(context, '반품 요청을 저장하지 못했습니다.');
+      }
     }
   }
 
