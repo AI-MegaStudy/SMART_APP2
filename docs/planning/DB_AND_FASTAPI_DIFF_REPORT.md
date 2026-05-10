@@ -7,7 +7,7 @@
 | 항목 | 기준 |
 |---|---|
 | SMART_APP 경로 | `/Users/cheng80/Desktop/smart_app` |
-| SMART_APP 커밋 | `main@c3c5772` |
+| SMART_APP 비교 작성 기준 | `main@27202f9` |
 | SMART_WEB 경로 | `/Users/cheng80/Desktop/smart_web` |
 | SMART_WEB 커밋 | `main@33bff03` |
 | 원본 DB | `harvest_slot_db` |
@@ -130,6 +130,122 @@
 | API 코드만 반영 | DB 스키마 변경 없이 FastAPI 코드 배포 | 필요 |
 | 원본 DB 스키마 migration | 현재 기준 필요 없음 | 불필요 |
 
+## SMART_WEB 엔드포인트 안전 마이그레이션
+
+SMART_APP에서 추가한 점주앱용 FastAPI 엔드포인트를 SMART_WEB backend에 옮겨야 할 때는 아래 스크립트를 사용한다.
+
+```bash
+python scripts/migrate_owner_app_endpoints_to_smart_web.py
+```
+
+기본 실행은 **dry-run**이다. SMART_WEB 파일을 수정하지 않고 변경될 diff만 출력한다.
+
+### 실제 적용 명령
+
+```bash
+python scripts/migrate_owner_app_endpoints_to_smart_web.py --apply
+```
+
+대상 backend 경로를 바꿔야 하면 `--target`을 명시한다.
+
+```bash
+python scripts/migrate_owner_app_endpoints_to_smart_web.py \
+  --target /Users/cheng80/Desktop/smart_web/backend \
+  --apply
+```
+
+### 스크립트가 변경하는 범위
+
+| 파일 | 변경 내용 |
+|---|---|
+| `app/schemas/auth_schema.py` | 이메일 찾기, 비밀번호 재설정 요청/확정 request schema 추가 |
+| `app/routers/auth_router.py` | `POST /auth/email/find`, `POST /auth/password/reset-request`, `POST /auth/password/reset-confirm` 추가 |
+| `app/services/auth_service.py` | 이메일 찾기, 비밀번호 재설정 발송/확정 service method 추가 |
+| `app/routers/owner_router.py` | `POST /owner/farms/{farm_id}/image` 추가 |
+| `app/services/product_service.py` | 농장 대표 이미지 업로드 method 추가, 슬롯 수 fallback 계산 보정 |
+| `app/routers/shipment_router.py` | `GET /owner/shipments` 추가 |
+| `app/services/shipment_service.py` | 점주 배송 목록 조회 및 owner shipment serializer 추가 |
+
+### 스크립트가 보존해야 하는 SMART_WEB 기능
+
+스크립트는 파일 전체 복사가 아니라 marker 기반 패치만 수행한다. 따라서 SMART_WEB에만 있는 아래 엔드포인트가 삭제되지 않아야 한다.
+
+| Method | Path |
+|---|---|
+| `GET` | `/me/addresses` |
+| `POST` | `/me/addresses` |
+| `PUT` | `/me/addresses/{address_id}` |
+| `PATCH` | `/me/addresses/{address_id}/default` |
+| `DELETE` | `/me/addresses/{address_id}` |
+| `PUT` | `/me` |
+
+`--apply` 실행 시 스크립트가 위 엔드포인트 보존 여부와 새 엔드포인트 존재 여부를 AST로 재검사한다. 이후 `compileall`로 Python 문법 검증까지 수행한다.
+
+### 적용 전 체크
+
+```bash
+cd /Users/cheng80/Desktop/smart_web
+git status --short
+
+cd /Users/cheng80/Desktop/smart_app
+python scripts/migrate_owner_app_endpoints_to_smart_web.py
+```
+
+SMART_WEB 작업트리에 기존 변경이 있으면 먼저 어떤 변경인지 확인한다. 스크립트는 변경 대상 파일만 백업하지만, 기존 작업 중인 변경과 같은 파일을 건드릴 수 있으므로 dry-run diff 확인이 필수다.
+
+### 적용 후 체크
+
+```bash
+cd /Users/cheng80/Desktop/smart_web/backend
+python -m compileall app
+
+# 서버 실행 후 /docs에서 엔드포인트 노출 확인
+# POST /auth/email/find
+# POST /auth/password/reset-request
+# POST /auth/password/reset-confirm
+# POST /owner/farms/{farm_id}/image
+# GET /owner/shipments
+```
+
+### 백업과 롤백
+
+`--apply` 실행 시 변경 전 파일은 기본적으로 아래 위치에 백업된다.
+
+```text
+/Users/cheng80/Desktop/smart_web/backend/.migration_backups/YYYYMMDD_HHMMSS/
+```
+
+롤백은 두 가지 방식 중 하나를 사용한다.
+
+| 방식 | 사용 조건 |
+|---|---|
+| 백업 파일 복원 | git으로 관리하지 않는 임시 검증 환경이거나 일부 파일만 되돌릴 때 |
+| `git restore` | SMART_WEB의 git 변경 전체 또는 특정 파일을 되돌릴 때 |
+
+백업 파일로 수동 복원하는 예시는 아래와 같다.
+
+```bash
+BACKUP=/Users/cheng80/Desktop/smart_web/backend/.migration_backups/YYYYMMDD_HHMMSS
+TARGET=/Users/cheng80/Desktop/smart_web/backend
+
+cp "$BACKUP/app/routers/auth_router.py" "$TARGET/app/routers/auth_router.py"
+cp "$BACKUP/app/services/auth_service.py" "$TARGET/app/services/auth_service.py"
+```
+
+## 스크립트 검증 결과
+
+2026-05-11 기준으로 아래 검증을 완료했다.
+
+| 검증 | 결과 |
+|---|---|
+| 스크립트 문법 검사 | `python -m py_compile scripts/migrate_owner_app_endpoints_to_smart_web.py` 통과 |
+| SMART_WEB 실제 폴더 dry-run | 변경 대상 7개 파일 diff 출력, 파일 수정 없음 |
+| SMART_WEB backend 임시 복사본 `--apply` | 백업 생성, 7개 파일 패치 완료 |
+| 적용 후 엔드포인트 AST 검증 | 신규 5개 엔드포인트 존재 확인 |
+| SMART_WEB 전용 엔드포인트 보존 검증 | address endpoints와 `PUT /me` 보존 확인 |
+| 적용 후 Python compile | 임시 복사본 `compileall` 통과 |
+| idempotency | 적용된 임시 복사본에 재실행 시 `changed_files=0` 확인 |
+
 ## 재확인 명령
 
 이 문서는 아래 방식으로 확인했다.
@@ -145,4 +261,3 @@ python - <<'PY'
 # ast로 app/routers/*_router.py의 @router.get/post/put/patch/delete 추출
 PY
 ```
-
