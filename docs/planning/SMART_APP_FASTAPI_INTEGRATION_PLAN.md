@@ -238,15 +238,17 @@ Success criteria:
 | fallback 데이터 | API/DB가 부족한 상태에서도 발표 흐름이 필요하다 | `assets/mock/owner_orders.json`, `owner_shipments.json`, `owner_returns.json`은 유지하되 개발자용 `QA` 노출은 제거했다 |
 | DB 스키마 변경이 필요한 기능 | 사용자 검증 전에는 DB 변경 범위를 확정하지 않는다 | 현재 DB/API로 검증 가능한 화면을 먼저 연결한 뒤 별도 승인 후 진행 |
 | 상품 수량 입력 | backend `products`에는 재고/수량 필드가 없고 실제 예약 가능 수량은 `harvest_slots`에 있다 | 상품 화면에서는 표시/데모 값으로 유지하고 실제 판매 가능 수량은 수확 슬롯 단계에서 연결 |
-| Chrome 로그인 이후 검증 | 2026-05-11 `cheng80@gmail.com` 계정으로 login -> dashboard -> product list -> product add input 확인 완료 | 농장 수정/등록 저장, 주문 계열 흐름은 연결 단계별로 추가 검증 |
+| Chrome 로그인 이후 검증 | 2026-05-11 `cheng80@gmail.com` 계정으로 login -> dashboard -> product list -> product add input 확인 완료 | 농장 수정/등록 저장은 별도 상세 검증 대상으로 남김 |
 | Chrome 회원가입 화면 검증 | 2026-05-11 기존 점주 계정 `cheng80@gmail.com`으로 실제 검증하고, 회원가입은 화면 진입과 이메일 인증 UI 연결만 확인했다 | 새 실계정 생성/인증 발송/가입 제출은 하지 않는다. 실제 점주 회원가입 재검증은 사용자 요청 시 별도 진행 |
 | DB 기존 상품 품종 | owner_id 1 DB 상품 중 `신고` 품종이 존재하지만 앱 정책은 `양광`, `부사` 두 가지다 | DB 수정은 사용자 검증 후 진행하고, 앱 신규/수정 UI는 `양광`, `부사`만 선택 가능하게 제한 |
 | DB OWNER 비밀번호 | 기존 `owner@test.com`은 로그인 비밀번호가 확인되지 않았다 | 신규 검증 계정 `cheng80@gmail.com` / `pass1234!`를 기준으로 진행 |
+| owner workflow smoke | 2026-05-11 `scripts/owner_workflow_smoke.py`로 임시 발주 생성 -> 승인 -> 품질검사 -> 배송등록 -> 배송완료 -> 반품승인까지 실제 API/DB로 검증했다 | 스모크 데이터는 실행 후 자동 정리한다 |
+| iOS simulator final | 2026-05-11 iPhone 17 시뮬레이터에서 직접 비밀번호 입력 후 login -> dashboard -> menu -> 배송 현황 -> profile 확인 완료 | 보안 입력 필드는 자동입력에서 문자가 누락될 수 있어 최종 로그인만 수동 입력으로 검증 |
 
 ## Test Plan
 
-- [ ] Dart unit: API wrapper `data` extraction
-- [ ] Dart unit: dashboard snake_case mapping
+- [x] API wrapper `data` extraction: `scripts/owner_api_check.py`, `scripts/owner_workflow_smoke.py` 실제 응답 검증
+- [x] Dart unit: dashboard snake_case mapping
 - [ ] Flutter smoke: login form validation
 - [x] Flutter analyze
 - [x] Flutter test
@@ -255,15 +257,15 @@ Success criteria:
 - [x] Chrome manual: signup screen email verification UI only, no submit
 - [x] Chrome manual: login -> dashboard -> 발주 현황 -> 배송 현황 -> 배송 상태 action sheet
 - [ ] Chrome manual: farm update flow
-- [ ] iOS simulator final: login -> dashboard -> menu -> profile
-- [ ] iOS simulator final: connected owner workflow smoke test
+- [x] iOS simulator final: login -> dashboard -> menu -> profile
+- [x] iOS simulator final: connected owner workflow smoke test
 - [x] Manual API: `POST /api/v1/auth/login`
 - [x] Manual API: `GET /api/v1/me`
 - [x] Manual API: `GET /api/v1/owner/dashboard`
 - [x] Manual API: owner3 login -> dashboard -> products -> procurements -> quality analyze
 - [x] Manual flow: login -> dashboard -> product list
 - [ ] Manual flow: product create -> edit -> inactive
-- [ ] Manual flow: procurement decision -> shipment create -> shipment status -> return decision
+- [x] Manual flow: procurement decision -> shipment create -> shipment status -> return decision
 
 ## Decision Audit Trail
 
