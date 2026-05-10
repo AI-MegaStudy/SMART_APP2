@@ -168,8 +168,8 @@ Success criteria:
 - [ ] 배송 상태 변경 연결
 - [x] 배송 현황 API 우선 + JSON fallback 연결
 - [x] 반품 현황 API 우선 + JSON fallback 연결
-- [ ] 반품 목록/관리 화면 API 연결
-- [ ] 반품 승인/거절 연결
+- [x] 반품 목록/관리 화면 API 우선 + JSON fallback 연결
+- [x] 반품 승인/거절 API 우선 + fallback 로컬 처리 연결
 
 Success criteria:
 - 점주가 신선도 검사 결과와 점주 판정을 분리해 저장한다.

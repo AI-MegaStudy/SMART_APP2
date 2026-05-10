@@ -78,6 +78,69 @@ class OwnerStatusRecord {
   };
 }
 
+class OwnerReturnRequestRecord {
+  const OwnerReturnRequestRecord({
+    required this.id,
+    required this.customerName,
+    required this.reason,
+    required this.productName,
+    required this.requestedAt,
+    required this.amount,
+    required this.detailReason,
+    required this.status,
+    required this.photoCount,
+    required this.isFallback,
+  });
+
+  final int id;
+  final String customerName;
+  final String reason;
+  final String productName;
+  final String requestedAt;
+  final String amount;
+  final String detailReason;
+  final String status;
+  final int photoCount;
+  final bool isFallback;
+
+  factory OwnerReturnRequestRecord.fromJson(
+    Map<String, dynamic> json, {
+    bool isFallback = false,
+  }) {
+    final items = json['items'] as List<dynamic>? ?? const [];
+    final firstItem = items.isEmpty
+        ? const <String, dynamic>{}
+        : items.first as Map<String, dynamic>? ?? const {};
+    final product =
+        json['product_name']?.toString() ??
+        firstItem['product_name']?.toString() ??
+        '상품';
+    final kg = _asInt(json['ordered_kg'] ?? firstItem['ordered_kg']);
+    final boxes = _asInt(
+      json['package_count'] ?? firstItem['package_count'],
+      fallback: 1,
+    );
+    return OwnerReturnRequestRecord(
+      id: _asInt(json['return_request_id']),
+      customerName: json['customer_name']?.toString() ?? '고객',
+      reason: json['reason_code']?.toString() ?? '반품 요청',
+      productName: '$product ${kg}kg · $boxes박스',
+      requestedAt: _formatDateTime(json['requested_at']),
+      amount: _asInt(json['requested_amount']).toString(),
+      detailReason: json['reason_detail']?.toString() ?? '',
+      status: _returnStatusLabel(json['return_status']?.toString() ?? ''),
+      photoCount: json['evidence_image_url']?.toString().isNotEmpty == true
+          ? 1
+          : 0,
+      isFallback: isFallback,
+    );
+  }
+
+  String get key => '$id-$customerName-$requestedAt';
+  String get title => '$customerName · $reason';
+  String get subtitle => '$productName · $requestedAt';
+}
+
 int _asInt(Object? value, {int fallback = 0}) {
   if (value is int) return value;
   if (value is num) return value.toInt();

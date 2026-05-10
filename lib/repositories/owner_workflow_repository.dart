@@ -91,6 +91,61 @@ class OwnerWorkflowRepository {
     ];
   }
 
+  Future<List<OwnerReturnRequestRecord>> fetchReturnRequests() async {
+    try {
+      final records = await ApiService.getData<List<OwnerReturnRequestRecord>>(
+        '/owner/returns',
+        requiresAuth: true,
+        parser: (data) {
+          final list = data as List<dynamic>? ?? const [];
+          return [
+            for (final item in list)
+              OwnerReturnRequestRecord.fromJson(
+                item as Map<String, dynamic>? ?? const {},
+              ),
+          ].where((item) => item.status == '접수').toList();
+        },
+      );
+      if (records.isNotEmpty) return records;
+    } catch (_) {
+      // Development fallback: keep return decision flow usable without DB seed.
+    }
+
+    final raw = await rootBundle.loadString('assets/mock/owner_returns.json');
+    final decoded = jsonDecode(raw) as List<dynamic>;
+    return [
+      for (final item in decoded)
+        OwnerReturnRequestRecord.fromJson(
+          item as Map<String, dynamic>? ?? const {},
+          isFallback: true,
+        ),
+    ].where((item) => item.status == '접수').toList();
+  }
+
+  Future<bool> decideReturn({
+    required OwnerReturnRequestRecord request,
+    required String decision,
+    required int approvedAmount,
+    String? decisionReason,
+  }) async {
+    if (request.isFallback) return false;
+    try {
+      await ApiService.patchData<Map<String, dynamic>>(
+        '/owner/returns/${request.id}/decision',
+        requiresAuth: true,
+        body: {
+          'decision': decision,
+          'approved_amount': approvedAmount,
+          'decision_reason': decisionReason,
+        },
+        parser: (data) => data as Map<String, dynamic>? ?? const {},
+      );
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   Future<List<OwnerStatusRecord>> _loadMockStatuses(String path) async {
     final raw = await rootBundle.loadString(path);
     final decoded = jsonDecode(raw) as List<dynamic>;
