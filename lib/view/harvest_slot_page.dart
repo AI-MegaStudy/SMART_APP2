@@ -16,6 +16,7 @@ class _HarvestSlotPageState extends State<HarvestSlotPage> {
   final repository = HarvestRepository();
   final noticeController = TextEditingController();
   var options = <HarvestProductOption>[];
+  var slots = <HarvestSlotRecord>[];
   HarvestProductOption? selectedOption;
   HarvestPredictionRecord? prediction;
   DateTime? confirmedStart;
@@ -50,8 +51,10 @@ class _HarvestSlotPageState extends State<HarvestSlotPage> {
 
     try {
       final loaded = await repository.fetchProductOptions();
+      final loadedSlots = await repository.fetchOwnerSlots();
       if (!mounted) return;
       options = loaded;
+      slots = loadedSlots;
       selectedOption = loaded.isEmpty ? null : loaded.first;
       _resetPredictionInputs();
       loading = false;
@@ -68,6 +71,17 @@ class _HarvestSlotPageState extends State<HarvestSlotPage> {
         loading = false;
         errorMessage = '수확 예측 정보를 불러오지 못했습니다.';
       });
+    }
+  }
+
+  Future<void> _loadSlotsOnly() async {
+    try {
+      final loadedSlots = await repository.fetchOwnerSlots();
+      if (!mounted) return;
+      setState(() => slots = loadedSlots);
+    } catch (_) {
+      if (!mounted) return;
+      showOwnerSnack(context, '수확 슬롯 목록을 갱신하지 못했습니다.');
     }
   }
 
@@ -142,6 +156,8 @@ class _HarvestSlotPageState extends State<HarvestSlotPage> {
                 : noticeController.text.trim(),
           );
           if (!mounted) return;
+          await _loadSlotsOnly();
+          if (!mounted) return;
           showInfoAction(
             context: context,
             title: '수확 슬롯 열기',
@@ -166,6 +182,127 @@ class _HarvestSlotPageState extends State<HarvestSlotPage> {
         }
       },
     );
+  }
+
+  Future<void> _changeSlotStatus(HarvestSlotRecord slot, String status) async {
+    try {
+      await repository.updateSlotStatus(slotId: slot.slotId, status: status);
+      await _loadSlotsOnly();
+      if (!mounted) return;
+      showOwnerSnack(
+        context,
+        status == 'CLOSED' ? '수확 슬롯을 마감했습니다.' : '수확 슬롯을 다시 열었습니다.',
+      );
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      showOwnerSnack(context, error.message);
+    } catch (_) {
+      if (!mounted) return;
+      showOwnerSnack(context, '수확 슬롯 상태를 변경하지 못했습니다.');
+    }
+  }
+
+  Future<void> _editSlot(HarvestSlotRecord slot) async {
+    if (slot.farmId == null || slot.productId == null) {
+      showOwnerSnack(context, '수정할 슬롯 정보를 확인하지 못했습니다.');
+      return;
+    }
+    var reservableKg = slot.confirmedReservableKg.round();
+    var price = slot.confirmedPrice;
+    final controller = TextEditingController(text: slot.customerNotice);
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return SafeArea(
+              child: Container(
+                margin: const EdgeInsets.all(12),
+                padding: EdgeInsets.only(
+                  left: 18,
+                  right: 18,
+                  top: 18,
+                  bottom: MediaQuery.of(context).viewInsets.bottom + 18,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      slot.productName,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    LabeledNumberStepper(
+                      label: '예약 가능 수량',
+                      value: reservableKg,
+                      min: slot.reservedKg.round().clamp(1, 100000),
+                      max: 100000,
+                      step: 10,
+                      suffixText: 'kg',
+                      onChanged: (value) =>
+                          setSheetState(() => reservableKg = value),
+                    ),
+                    LabeledNumberStepper(
+                      label: '확정 판매가',
+                      value: price,
+                      min: 1000,
+                      max: 300000,
+                      step: 1000,
+                      suffixText: '원/kg',
+                      onChanged: (value) => setSheetState(() => price = value),
+                    ),
+                    LabeledBox(
+                      label: '고객 안내 문구',
+                      value: '',
+                      controller: controller,
+                      maxLength: 160,
+                    ),
+                    DualActionBar(
+                      left: '취소',
+                      right: '저장',
+                      onLeftPressed: () => Navigator.of(context).pop(),
+                      onRightPressed: () async {
+                        final updated = slot.copyWith(
+                          confirmedReservableKg: reservableKg.toDouble(),
+                          confirmedPrice: price,
+                          customerNotice: controller.text.trim().isEmpty
+                              ? slot.customerNotice
+                              : controller.text.trim(),
+                        );
+                        try {
+                          await repository.updateSlot(updated);
+                          await _loadSlotsOnly();
+                          if (context.mounted) Navigator.of(context).pop();
+                        } on ApiException catch (error) {
+                          if (context.mounted) {
+                            showOwnerSnack(context, error.message);
+                          }
+                        } catch (_) {
+                          if (context.mounted) {
+                            showOwnerSnack(context, '수확 슬롯을 수정하지 못했습니다.');
+                          }
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+    controller.dispose();
   }
 
   void _applyPredictionDefaults(
@@ -251,6 +388,26 @@ class _HarvestSlotPageState extends State<HarvestSlotPage> {
           if (!loading && options.isEmpty)
             const NoticeBox(color: Color(0xffFFF1C7), text: '예측할 상품이 없습니다.'),
           if (!loading && options.isNotEmpty) ...[
+            const SectionHeader(title: '열린 슬롯 관리'),
+            if (slots.isEmpty)
+              const NoticeBox(
+                color: Color(0xffEEF6FF),
+                text: '아직 등록된 수확 슬롯이 없습니다.',
+              ),
+            for (final slot in slots.take(4))
+              _HarvestSlotManageCard(
+                slot: slot,
+                onEdit: () => _editSlot(slot),
+                onStatusPressed: () => _changeSlotStatus(
+                  slot,
+                  slot.slotStatus == 'OPEN' ? 'CLOSED' : 'OPEN',
+                ),
+              ),
+            if (slots.length > 4)
+              NoticeBox(
+                color: const Color(0xffEEF6FF),
+                text: '최근 슬롯 ${slots.length}건 중 4건을 표시합니다.',
+              ),
             LabeledDropdown(
               label: '상품',
               value: selectedOption?.product.name ?? '',
@@ -413,6 +570,161 @@ class _HarvestSlotPageState extends State<HarvestSlotPage> {
             ],
           ],
         ],
+      ),
+    );
+  }
+}
+
+class _HarvestSlotManageCard extends StatelessWidget {
+  const _HarvestSlotManageCard({
+    required this.slot,
+    required this.onEdit,
+    required this.onStatusPressed,
+  });
+
+  final HarvestSlotRecord slot;
+  final VoidCallback onEdit;
+  final VoidCallback onStatusPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final isOpen = slot.slotStatus == 'OPEN';
+    final url = slot.imageUrl ?? '';
+    final image = url.isEmpty
+        ? null
+        : url.startsWith('assets/')
+        ? Image.asset(url, fit: BoxFit.cover)
+        : Image.network(url, fit: BoxFit.cover);
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: const Color(0xffDEE8DE)),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                clipBehavior: Clip.antiAlias,
+                decoration: BoxDecoration(
+                  color: const Color(0xffDFF4E8),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child:
+                    image ??
+                    const Icon(
+                      Icons.event_available_outlined,
+                      color: Color(0xff1E6B4E),
+                    ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      slot.productName,
+                      maxLines: 2,
+                      overflow: TextOverflow.visible,
+                      style: const TextStyle(
+                        color: Color(0xff102019),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      '${slot.period} · ${slot.priceLabel}',
+                      style: const TextStyle(
+                        color: Color(0xff6F7D68),
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              StatusBadge(
+                text: slot.statusLabel,
+                color: isOpen
+                    ? const Color(0xffDFF4E8)
+                    : const Color(0xffFFE1DD),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              _SlotPill(label: '예약 가능', value: slot.reservableLabel),
+              _SlotPill(label: '잔여', value: slot.availableLabel),
+              _SlotPill(label: '예약', value: '${slot.reservedKg.round()}kg'),
+              _SlotPill(label: '판매', value: '${slot.soldKg.round()}kg'),
+            ],
+          ),
+          if (slot.customerNotice.isNotEmpty) ...[
+            const SizedBox(height: 10),
+            Text(
+              slot.customerNotice,
+              style: const TextStyle(
+                color: Color(0xff3B463F),
+                fontWeight: FontWeight.w700,
+                height: 1.35,
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.tonal(
+                  onPressed: onEdit,
+                  child: const Text('수정'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: FilledButton(
+                  onPressed: onStatusPressed,
+                  child: Text(isOpen ? '마감' : '다시 열기'),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SlotPill extends StatelessWidget {
+  const _SlotPill({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+        color: const Color(0xffF4F8F3),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        '$label $value',
+        style: const TextStyle(
+          color: Color(0xff3B463F),
+          fontSize: 12,
+          fontWeight: FontWeight.w900,
+        ),
       ),
     );
   }

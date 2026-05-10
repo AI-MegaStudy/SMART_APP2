@@ -180,6 +180,32 @@ class AuthService:
             "dev_code": verification.get("dev_code"),
         }
 
+    def confirm_password_reset(
+        self,
+        *,
+        email: str,
+        code: str,
+        new_password: str,
+        role: str = AccountRole.OWNER,
+    ) -> dict:
+        normalized_email = normalize_email(email)
+        normalized_role = role.upper()
+        account = self.repo.get_by_email(normalized_email)
+        if not account or account.role != normalized_role:
+            raise HTTPException(status_code=404, detail="account not found")
+
+        self.email_verification_service.verify_code(
+            email=normalized_email,
+            code=code,
+            purpose="RESET_PASSWORD",
+        )
+        account.password_hash = hash_password(new_password)
+        self.session.commit()
+        return {
+            "email": normalized_email,
+            "password_reset": True,
+        }
+
 
 def mask_email(email: str) -> str:
     local, _, domain = email.partition("@")

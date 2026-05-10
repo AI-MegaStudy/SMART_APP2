@@ -8,11 +8,11 @@ Last updated: 2026-05-11
 
 | 기준 | 진행도 | 판단 |
 |---|---:|---|
-| 발표용 점주 앱 완성도 | 88% | 로그인부터 상품, 수확 예측, 슬롯 오픈, 예약/주문, 발주, 신선도, 배송, 반품, 프로필까지 주요 동선 시연 가능 |
-| 실제 FastAPI 연동도 | 82% | 대부분 owner API 연결 완료. 일부 화면은 API 실패/데이터 부족 시 fallback으로 발표 흐름 유지 |
-| 실서비스 투입 준비도 | 72% | 비밀번호 재설정 확정 API, 계정 운영 API, 이미지 실기기 권한 최종검증, 운영용 데이터/마이그레이션 정리가 추가 필요 |
+| 발표용 점주 앱 완성도 | 90% | 로그인부터 상품, 수확 예측, 슬롯 오픈/관리, 예약/주문, 발주, 신선도, 배송, 반품, 프로필까지 주요 동선 시연 가능 |
+| 실제 FastAPI 연동도 | 85% | 대부분 owner API 연결 완료. 일부 화면은 API 실패/데이터 부족 시 fallback으로 발표 흐름 유지 |
+| 실서비스 투입 준비도 | 74% | 계정 운영 API, 이미지 실기기 권한 최종검증, 운영용 데이터/마이그레이션 정리가 추가 필요 |
 | Chrome 검증 상태 | 완료 | `http://127.0.0.1:3002`에서 주요 화면 확인 |
-| iOS 최종 검증 상태 | 부분 완료 | 로그인/대시보드/메뉴/프로필 확인 완료. 갤러리/이미지 선택은 재빌드 후 추가 확인 필요 |
+| iOS 최종 검증 상태 | 주요 동선 완료 | 로그인/대시보드/메뉴/수확 슬롯 관리/신선도 갤러리 선택 확인 완료 |
 
 ## 기준 계정과 데이터
 
@@ -38,12 +38,12 @@ Last updated: 2026-05-11
 | 상품 관리 | 94% | 상품 목록, 검색/필터, 상품 등록, 상품 수정, 대표 이미지 선택/업로드/썸네일, 상태 변경, 품종/박스 단위 제한, 가격/수량 stepper, 상품 소개 저장 | `GET/POST/PUT /owner/products`, `POST /owner/products/{id}/image`, `PATCH /owner/products/{id}/status` | 상품 수량은 실제 재고가 아니라 표시값. 실제 예약 가능 수량은 수확 슬롯에서 관리 | 실기기 갤러리 권한 최종 확인 |
 | 농장 정보 수정 | 94% | 농장명, 주소, 농장 대표 이미지 선택/업로드, 농장 소개, 배송 정책, 반품 정책 수정 | `GET /owner/farms/me`, `PUT /owner/farms/{farm_id}`, `POST /owner/farms/{farm_id}/image` | macOS/web 비지원 환경에서는 주소 후보 bottom sheet, 모바일은 `kpostal_plus` | 실기기 갤러리 권한 최종 확인 |
 | 수확 예측 | 90% | 농장/상품 선택, 과거 수확량/최근 날씨/재배 상태 입력, 예측 실행, 예측 카드/트렌드 표시 | `POST /owner/ml/predictions`, `GET /owner/ml/predictions` | rule 기반 owner 예측 결과로 발표 흐름 유지 | 실제 ML 모델 연동 시 feature schema 확정 |
-| 수확 슬롯 열기 | 90% | 예측값을 참고한 뒤 점주가 시작/종료일, 예약 가능 kg, 판매가, 고객 안내 문구를 확정 저장 | `POST /owner/harvest-slots` | 예측값을 그대로 열지 않고 점주 확정값 사용 | 슬롯 수정/마감 UX 세부 보강 |
+| 수확 슬롯 열기/관리 | 94% | 예측값 참고 후 슬롯 생성, 최근 슬롯 목록, 예약/잔여/판매 kg 표시, 예약 가능 kg/판매가/안내 문구 수정, 마감/재오픈 | `GET/POST/PUT /owner/harvest-slots`, `PATCH /owner/harvest-slots/{id}/status` | 예측값을 그대로 열지 않고 점주 확정값 사용 | 슬롯 상세 타임라인은 후순위 |
 | 주문 현황 | 90% | 주문/예약 탭 분리, 상태 필터, 검색, 주문/예약 카드 표시 | `GET /owner/orders`, `GET /owner/reservations` | 내부 seed 주문번호는 화면에 직접 노출하지 않음 | 예약 상세 화면이 필요하면 추가 |
 | 발주 승인 | 90% | 신규 발주 목록, 검색, 다중 선택, 일괄 승인/거절, 거절 사유 선택 | `GET /owner/procurements`, `PATCH /owner/procurements/{id}/decision` | API 데이터 부족 시 주문 fallback으로 승인 흐름 유지 | PATCH 실패 건별 상세 표시 |
 | 발주 상세 | 92% | 품목별 승인 박스/kg 조정, 점주 메모, 전체 승인/전체 거절, 부분승인 자동 판정 | `PATCH /owner/procurements/{id}/decision` | fallback 항목도 화면상 처리 완료 가능 | 다품목 발주 데이터 추가 seed |
 | 발주 현황 | 85% | 발주 상태 목록, 검색, 상태 필터 | `GET /owner/procurements` | 데이터 부족 시 workflow fallback | 상세 타임라인 추가 가능 |
-| 신선도 검사 | 88% | 검사 대상 발주 품목 선택, 이미지 카드 탭/갤러리 버튼, 이미지 업로드, 분석, 추천 등급/신선도/색상/형태/멍 확률 표시, 점주 확정 등급/판정 저장 | `GET /owner/procurements`, `POST /owner/quality-inspections/image`, `POST /owner/quality-inspections/analyze`, `POST /owner/quality-inspections` | 분석 실패 시 선택 이미지 기준 보조 판정 표시 | iOS 시뮬레이터/실기기 갤러리 권한 최종 확인 |
+| 신선도 검사 | 90% | 검사 대상 발주 품목 선택, 이미지 카드 탭/갤러리 버튼, iOS 갤러리 선택/미리보기, 이미지 업로드, 분석, 추천 등급/신선도/색상/형태/멍 확률 표시, 점주 확정 등급/판정 저장 | `GET /owner/procurements`, `POST /owner/quality-inspections/image`, `POST /owner/quality-inspections/analyze`, `POST /owner/quality-inspections` | 분석 실패 시 선택 이미지 기준 보조 판정 표시 | 실기기 사진 권한은 후속 확인 |
 | 배송 관리 | 88% | 배송 등록 가능한 발주 선택, 택배사 선택, 송장번호, 발송 중량/박스 수 입력, 바코드 버튼으로 송장 보조 입력 | `POST /owner/shipments` | 등록 조건 부족 시 안내. 송장 보조 입력으로 시연 가능 | 실제 바코드/QR 스캐너 연동 |
 | 배송 현황 | 92% | 배송 목록, 검색/필터, 배송 중/배송 완료 상태 변경 bottom sheet | `GET /owner/shipments`, `PATCH /owner/shipments/{shipment_id}/status` | 구버전 backend 호환용으로 `/owner/orders` shipment field fallback, 서버 미가동 시 JSON fallback | 배송 상세 화면 추가 가능 |
 | 반품 · 환불 관리 | 88% | 반품 요청 목록, 검색, 상세 진입, 승인 금액 입력, 승인/거절, 거절 사유 선택 | `GET /owner/returns`, `PATCH /owner/returns/{id}/decision` | fallback 항목도 화면상 처리 완료 가능 | 실제 PG 환불 API 연계 |
@@ -52,7 +52,7 @@ Last updated: 2026-05-11
 | 마이 | 85% | 점주/농장 헤더, 내 정보 수정, 농장 정보 수정, 로그아웃, 계정 지원 요청 | `GET /owner/profile`, `GET /owner/farms/me` | 회원 탈퇴 미구현 노출 대신 계정 지원 요청 UX | 실제 계정 비활성화/탈퇴 운영 API |
 | 회원가입 | 82% | 점주 회원가입 폼, 이메일 인증번호 발송/검증, 주소 검색 `kpostal_plus`, 입력 검증 | `POST /auth/owners/signup`, `POST /auth/email/send`, `POST /auth/email/verify` | 데스크톱 비지원 환경 주소 후보 제공 | 가입 시 농장/사업자 정보까지 저장하는 API 확장 |
 | 이메일 찾기 | 90% | 이름/전화번호 검증 후 마스킹 이메일 조회 | `POST /auth/email/find` | 없음 | 개인정보 노출 정책 최종 확인 |
-| 비밀번호 찾기 | 75% | 이름/이메일 검증 후 비밀번호 재설정 인증 요청 | `POST /auth/password/reset-request` | 개발 모드에서는 확인 코드 표시 | 새 비밀번호 확정 API 필요 |
+| 비밀번호 찾기 | 92% | 이름/이메일 검증, 인증번호 발송, 인증번호 확인 후 새 비밀번호 저장 | `POST /auth/password/reset-request`, `POST /auth/password/reset-confirm` | 개발 모드에서는 확인 코드 표시 | 운영용 이메일/SMS 정책 최종 확인 |
 
 ## 구현된 FastAPI 연동 기능
 
@@ -74,7 +74,10 @@ Last updated: 2026-05-11
 | 농장 | `POST /owner/farms/{farm_id}/image` | 농장 대표 이미지 업로드 | 추가 구현/연결 완료 |
 | 수확 예측 | `POST /owner/ml/predictions` | 예측 실행 | 연결 완료 |
 | 수확 예측 | `GET /owner/ml/predictions` | 최근 예측 조회 | 연결 완료 |
+| 수확 슬롯 | `GET /owner/harvest-slots` | 슬롯 목록/관리 | 연결 완료 |
 | 수확 슬롯 | `POST /owner/harvest-slots` | 슬롯 열기 | 연결 완료 |
+| 수확 슬롯 | `PUT /owner/harvest-slots/{slot_id}` | 슬롯 수량/가격/안내문 수정 | 연결 완료 |
+| 수확 슬롯 | `PATCH /owner/harvest-slots/{slot_id}/status` | 슬롯 마감/재오픈 | 연결 완료 |
 | 예약 | `GET /owner/reservations` | 주문 현황 예약 탭 | 연결 완료 |
 | 주문 | `GET /owner/orders` | 주문 현황, 배송 현황 | 연결 완료 |
 | 발주 | `GET /owner/procurements` | 발주 승인/현황/신선도 대상 | 연결 완료 |
@@ -123,7 +126,7 @@ Last updated: 2026-05-11
 | 프로필 | 실제 API만 사용 | 없음 | 대체 완료 |
 | 회원가입/이메일 인증 | 실제 API 사용 | 주소 검색 플랫폼 보조 fallback | 계정 생성은 대체 완료 |
 | 이메일 찾기 | 실제 `POST /auth/email/find` 사용 | 없음 | 대체 완료 |
-| 비밀번호 찾기 | 실제 `POST /auth/password/reset-request` 사용 | 새 비밀번호 확정은 미구현 | 부분 대체 완료 |
+| 비밀번호 찾기 | 실제 `POST /auth/password/reset-request`, `POST /auth/password/reset-confirm` 사용 | 없음 | 대체 완료 |
 
 ## fallback 대체 검토 결과
 
@@ -140,7 +143,7 @@ Last updated: 2026-05-11
 | 신선도 분석 local estimate | 부분 가능 | backend 분석 API는 존재하지만 실제 외부 DL 모델은 없음 | 외부 DL 모델 전까지 보조 판정 fallback 필요 |
 | 주소 후보 fallback | 부분 가능 | 모바일은 `kpostal_plus`, 데스크톱/web 비지원 환경만 후보 사용 | 플랫폼 보조 fallback 필요 |
 | 이메일 찾기 안내 UX | 가능 | `POST /auth/email/find` 추가 및 화면 연결 | 대체 완료 |
-| 비밀번호 찾기 안내 UX | 가능 | `POST /auth/password/reset-request` 추가 및 화면 연결 | 부분 대체 완료. 확정 API는 후속 |
+| 비밀번호 찾기 안내 UX | 가능 | 인증번호 발송과 새 비밀번호 저장까지 실제 API 연결 | 대체 완료 |
 | 상품/농장 이미지 UI 부재 | 가능 | 상품/농장 대표 이미지 선택, 업로드, asset seed 이미지 표시 구현 | 대체 완료 |
 
 ## 검증 완료 항목
@@ -148,6 +151,8 @@ Last updated: 2026-05-11
 | 검증 | 결과 |
 |---|---|
 | `flutter analyze` | 통과 |
+| `POST /auth/password/reset-confirm` | known verification code로 새 비밀번호 저장 후 `pass1234!` 로그인 재검증 |
+| `GET /owner/harvest-slots`, `PATCH /owner/harvest-slots/{id}/status` | owner_id=3 기준 3건 조회 및 상태 PATCH smoke 통과 |
 | `flutter test` | 통과 |
 | `python -m compileall backend scripts` | 통과 |
 | `python scripts/owner_workflow_smoke.py` | 통과 |
@@ -155,14 +160,14 @@ Last updated: 2026-05-11
 | `flutter build web --dart-define=API_BASE_URL=http://127.0.0.1:8000/api/v1` | 성공 |
 | Chrome 홈/메뉴/주문/예약 | 확인 완료 |
 | Chrome 신선도 검사 화면 | 품목 선택, 이미지 카드 UX, 4개 분석 metric 표시 확인 |
-| iOS 시뮬레이터 | 로그인/대시보드/메뉴/프로필 확인 완료 |
+| iOS 시뮬레이터 | 로그인/대시보드/메뉴/수확 슬롯 관리/신선도 갤러리 선택 확인 완료 |
 
 ## 남은 작업
 
 | 우선순위 | 작업 | 이유 |
 |---|---|---|
-| P0 | iOS 갤러리 이미지 선택 최종 검증 | 사용자 지적 사항이 있었고, `image_picker` 권한/시뮬레이터 동작 확인 필요 |
-| P1 | 비밀번호 재설정 확정 API 구현 | 요청/인증번호 발송까지는 구현. 새 비밀번호 저장 API가 필요 |
+| P1 | 실기기 이미지 권한 확인 | iOS 시뮬레이터 갤러리 선택은 확인. 실제 iPhone 사진 권한은 후속 확인 |
+| P1 | 주문/예약/발주 상세 화면 보강 | 목록 중심 화면을 발표용 앱처럼 보이게 상세 동선 추가 필요 |
 | P2 | 실제 바코드/QR 스캔 연동 | 지금은 송장 입력 보조 액션으로 발표 흐름 유지 |
 | P2 | 배송 상세 화면 추가 | 배송 전용 목록 API는 추가 완료. 다음 보강은 송장/고객/상품 상세 화면 |
 | P2 | 실제 PG 환불 연계 | 반품 승인은 처리되지만 PG 환불은 별도 운영 연계 필요 |
@@ -174,7 +179,7 @@ Last updated: 2026-05-11
 
 | 구분 | 항목 | 현재 상태 | 미구현 내용 | 필요한 작업 | 차단/보류 사유 |
 |---|---|---|---|---|---|
-| 인증 | 비밀번호 재설정 | 요청 API 연결 완료 | 인증번호 발송 요청은 가능. 새 비밀번호 저장 API 없음 | `POST /auth/password/reset-confirm` 추가 | 비밀번호 변경 정책 필요 |
+| 인증 | 비밀번호 재설정 | 구현 완료 | 인증번호 발송과 새 비밀번호 저장 모두 가능 | 없음 | 운영 이메일/SMS 정책만 후속 |
 | 인증 | 이메일 찾기 | 구현 완료 | 이름/전화번호 기반 점주 계정 조회와 마스킹 이메일 반환 | 없음 | 완료 |
 | 인증 | 회원가입 후 농장/사업자 정보 자동 저장 | 회원가입은 owner 계정 생성까지만 연결 | 가입 폼의 농장명/주소/사업자번호가 signup API payload에 완전 반영되지 않음 | owner signup API 확장 또는 가입 후 농장 생성/수정 flow 연결 | 현재 `POST /auth/owners/signup` 스키마가 계정 중심 |
 | 인증 | 비밀번호 변경 | 내 정보 화면에는 표시 문구만 있음 | 로그인 상태에서 기존 비밀번호 확인 후 새 비밀번호 변경 API/화면 없음 | `PUT /owner/profile/password` 등 추가 | backend API 없음 |
@@ -188,8 +193,8 @@ Last updated: 2026-05-11
 | 주소 | 주소 검색 web 완전 연동 | 모바일은 `kpostal_plus`, 데스크톱/web은 후보 bottom sheet | web에서 실제 우편번호 검색 팝업까지 완전 동작 검증 부족 | web 대응 방식 확인 또는 별도 주소 검색 web bridge | 패키지/플랫폼 동작 차이 |
 | 수확 예측 | 실제 ML 모델 | rule 기반 예측 | 실제 모델 서버/학습 모델 호출 없음 | 모델 API URL, feature schema, timeout/fallback 정책 확정 | 외부 ML 모델 미제공 |
 | 수확 예측 | 예측 이력 상세 | 최근 예측 조회는 있음 | 예측별 상세 비교/삭제/재실행 UX 없음 | 예측 이력 화면 추가 | 발표 핵심 동선은 생성/참고 위주 |
-| 수확 슬롯 | 슬롯 목록/상세 관리 | 생성 중심 | 열린 슬롯 목록, 수정, 마감, 삭제, 예약량 상세 화면 부족 | `GET/PUT/PATCH /owner/harvest-slots` UI 추가 | 생성/시연 우선 |
-| 수확 슬롯 | 예약량 초과 방지 UI | backend 검증 중심 | 점주 입력 단계에서 실시간 예약 가능량/초과 위험 표시 부족 | 슬롯별 reserved/sold kg 표시 강화 | API 응답/모델 확장 필요 |
+| 수확 슬롯 | 슬롯 목록/상세 관리 | 목록/수정/마감 구현 | 슬롯 상세 타임라인, 삭제/숨김 정책 없음 | 상세 화면은 후순위 | 발표 핵심 동선은 관리 카드로 대응 |
+| 수확 슬롯 | 예약량 초과 방지 UI | reserved/sold/available kg 표시 | 예약량 변화 실시간 push는 없음 | 필요 시 polling 또는 notification 추가 | 발표 범위 밖 |
 | 예약 | 예약 상세 | 목록 탭만 있음 | 예약 상세, 고객 연락처, 예약 만료 처리 UI 없음 | 예약 상세 화면 및 status action 추가 | 현재 요구사항은 현황 확인 중심 |
 | 예약 | 예약 취소/만료 처리 | 표시만 함 | 점주가 예약 취소/만료를 처리하는 API/UI 없음 | reservation status patch API 검토 | 운영 정책 필요 |
 | 주문 | 주문 상세 | 목록 중심 | 주문 상세, 배송지, 결제 내역, 품목 다중 표시 상세 부족 | 주문 상세 화면 추가 | 발표 동선은 현황/발주 처리 중심 |
@@ -197,7 +202,7 @@ Last updated: 2026-05-11
 | 발주 | PATCH 실패 건별 표시 | 일괄 처리 후 전체 갱신 | 다중 선택 중 일부 실패 시 행별 실패 사유 표시 없음 | batch result UI 추가 | 현재 순차 PATCH 중심 |
 | 발주 | 다품목 발주 seed | 단일 품목 중심 seed | 다품목 발주 UI 검증 데이터 부족 | seed에 다품목 procurement 추가 | DB seed 추가 필요 |
 | 발주 | 발주 상세 타임라인 | 없음 | 요청/승인/선별/배송까지 timeline 표시 없음 | procurement timeline model/UI 추가 | 발표 필수 범위 밖 |
-| 신선도 | iOS 갤러리 최종 검증 | web/Chrome UI 확인 | iOS 시뮬레이터에서 갤러리 선택 최종 통과 확인 필요 | iOS 재빌드 후 `image_picker` 권한/선택 검증 | 사용자 지적 사항, 실기기 검증 필요 |
+| 신선도 | iOS 갤러리 최종 검증 | iOS 시뮬레이터 확인 완료 | 실제 iPhone 사진 권한 확인은 남음 | 실기기에서 사진 선택 1회 확인 | 발표 시뮬레이터 기준은 통과 |
 | 신선도 | 실제 DL 모델 | rule/mock-style backend 결과 + localEstimate | 실제 이미지 분석 모델 호출 없음 | `DL_QUALITY_API_URL` 등 외부 모델 연동 | 외부 모델 미제공 |
 | 신선도 | 검사 이미지 저장 정책 | 업로드 API 있음 | 영구 스토리지/S3/CDN/보존기간 정책 미확정 | `ImageStorageService` 운영 저장소 연결 | 로컬/개발 저장소 기준 |
 | 신선도 | 재촬영/부적합 flow | 일부 판단값만 있음 | RETAKE 사유, 재촬영 강제, 다중 이미지 비교 부족 | 분석 결과 action_required 기반 UX 강화 | 현재는 점주 보조 판정 중심 |
@@ -234,6 +239,7 @@ Last updated: 2026-05-11
 | Commit | 내용 |
 |---|---|
 | `3d0debd` | 점주 앱 fallback 업무 흐름/완성도 보강 |
+| `25fda82` | 점주 앱 생성 이미지/계정 찾기/이미지 업로드 연결 |
 | `68a91ad` | 요구사항 기반 점주 업무 화면 보강 |
 | `23afa0e` | 상품 API 검증 문서화 |
 | `3cbbd0d` | owner workflow smoke 검증 추가 |

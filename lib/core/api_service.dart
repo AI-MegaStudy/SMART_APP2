@@ -85,7 +85,9 @@ class ApiService {
     bool requiresAuth = false,
   }) async {
     final request = http.MultipartRequest('POST', _uri(path));
-    request.headers.addAll(_headers(requiresAuth: requiresAuth)..remove('Content-Type'));
+    request.headers.addAll(
+      _headers(requiresAuth: requiresAuth)..remove('Content-Type'),
+    );
     request.fields.addAll(fields);
     request.files.add(
       http.MultipartFile.fromBytes(fileField, fileBytes, filename: fileName),
@@ -181,6 +183,12 @@ class ApiService {
       'forbidden' => '점주 권한으로만 접근할 수 있습니다.',
       'email already exists' => '이미 가입된 이메일입니다.',
       'email verification required' => '이메일 인증을 먼저 완료해주세요.',
+      'verification request not found' => '인증번호 발송 내역을 찾을 수 없습니다.',
+      'verification code already used' => '이미 사용한 인증번호입니다.',
+      'verification code expired' => '인증번호가 만료되었습니다.',
+      'verification attempts exceeded' => '인증번호 입력 횟수를 초과했습니다.',
+      'invalid verification code' => '인증번호를 확인해주세요.',
+      'verification resend cooldown' => '잠시 후 인증번호를 다시 요청해주세요.',
       'product not found' => '상품 정보를 찾을 수 없습니다.',
       'farm not found' => '농장 정보를 찾을 수 없습니다.',
       'harvest slot not found' => '수확 슬롯 정보를 찾을 수 없습니다.',

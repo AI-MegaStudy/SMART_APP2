@@ -116,6 +116,13 @@ class PasswordResetRequest(BaseModel):
     role: str = Field(default="OWNER", json_schema_extra={"example": "OWNER"})
 
 
+class PasswordResetConfirmRequest(BaseModel):
+    email: str
+    code: str = Field(min_length=6, max_length=6, json_schema_extra={"example": "123456"})
+    new_password: str = Field(min_length=8)
+    role: str = Field(default="OWNER", json_schema_extra={"example": "OWNER"})
+
+
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str = "bearer"

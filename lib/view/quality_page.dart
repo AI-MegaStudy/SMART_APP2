@@ -258,7 +258,7 @@ class _QualityPageState extends State<QualityPage> {
           ),
           CameraPreviewCard(
             icon: Icons.image_search_outlined,
-            label: hasImage ? selectedImageName : null,
+            label: null,
             hasImage: hasImage,
             imageBytes: selectedImageBytes,
             inspectionAnchor: inspectionAnchor,

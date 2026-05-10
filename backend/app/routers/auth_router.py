@@ -14,6 +14,7 @@ from backend.app.schemas.auth_schema import (
     EmailVerificationSendRequest,
     EmailVerifyRequest,
     LoginRequest,
+    PasswordResetConfirmRequest,
     PasswordResetRequest,
     SignupRequest,
 )
@@ -102,6 +103,11 @@ def find_email(payload: EmailFindRequest, db: Session = Depends(get_db)) -> dict
 @router.post("/auth/password/reset-request")
 def request_password_reset(payload: PasswordResetRequest, db: Session = Depends(get_db)) -> dict:
     return success_response(AuthService(db).request_password_reset(**payload.model_dump()))
+
+
+@router.post("/auth/password/reset-confirm")
+def confirm_password_reset(payload: PasswordResetConfirmRequest, db: Session = Depends(get_db)) -> dict:
+    return success_response(AuthService(db).confirm_password_reset(**payload.model_dump()))
 
 
 @router.post(

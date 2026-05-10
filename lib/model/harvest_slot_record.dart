@@ -79,19 +79,106 @@ class HarvestSlotRecord {
     required this.slotId,
     required this.productName,
     required this.slotStatus,
+    required this.confirmedHarvestStart,
+    required this.confirmedHarvestEnd,
+    required this.confirmedReservableKg,
+    required this.reservedKg,
+    required this.soldKg,
+    required this.availableKg,
+    required this.confirmedPrice,
+    required this.customerNotice,
+    this.farmId,
+    this.productId,
+    this.farmName,
+    this.imageUrl,
+    this.packageUnitKg,
+    this.predictionId,
   });
 
   final int slotId;
   final String productName;
   final String slotStatus;
+  final int? farmId;
+  final int? productId;
+  final String? farmName;
+  final String? imageUrl;
+  final double? packageUnitKg;
+  final int? predictionId;
+  final String confirmedHarvestStart;
+  final String confirmedHarvestEnd;
+  final double confirmedReservableKg;
+  final double reservedKg;
+  final double soldKg;
+  final double availableKg;
+  final int confirmedPrice;
+  final String customerNotice;
 
   factory HarvestSlotRecord.fromJson(Map<String, dynamic> json) {
     return HarvestSlotRecord(
       slotId: _asInt(json['slot_id']),
       productName: json['product_name']?.toString() ?? '',
       slotStatus: json['slot_status']?.toString() ?? '',
+      farmId: _asIntOrNull(json['farm_id']),
+      productId: _asIntOrNull(json['product_id']),
+      farmName: json['farm_name']?.toString(),
+      imageUrl: json['image_url']?.toString(),
+      packageUnitKg: _asDoubleOrNull(json['package_unit_kg']),
+      predictionId: _asIntOrNull(json['prediction_id']),
+      confirmedHarvestStart: json['confirmed_harvest_start']?.toString() ?? '',
+      confirmedHarvestEnd: json['confirmed_harvest_end']?.toString() ?? '',
+      confirmedReservableKg: _asDouble(json['confirmed_reservable_kg']),
+      reservedKg: _asDouble(json['reserved_kg']),
+      soldKg: _asDouble(json['sold_kg']),
+      availableKg: _asDouble(json['available_kg']),
+      confirmedPrice: _asInt(json['confirmed_price']),
+      customerNotice: json['customer_notice']?.toString() ?? '',
     );
   }
+
+  HarvestSlotRecord copyWith({
+    String? confirmedHarvestStart,
+    String? confirmedHarvestEnd,
+    double? confirmedReservableKg,
+    int? confirmedPrice,
+    String? customerNotice,
+    String? slotStatus,
+  }) {
+    return HarvestSlotRecord(
+      slotId: slotId,
+      productName: productName,
+      slotStatus: slotStatus ?? this.slotStatus,
+      confirmedHarvestStart:
+          confirmedHarvestStart ?? this.confirmedHarvestStart,
+      confirmedHarvestEnd: confirmedHarvestEnd ?? this.confirmedHarvestEnd,
+      confirmedReservableKg:
+          confirmedReservableKg ?? this.confirmedReservableKg,
+      reservedKg: reservedKg,
+      soldKg: soldKg,
+      availableKg: availableKg,
+      confirmedPrice: confirmedPrice ?? this.confirmedPrice,
+      customerNotice: customerNotice ?? this.customerNotice,
+      farmId: farmId,
+      productId: productId,
+      farmName: farmName,
+      imageUrl: imageUrl,
+      packageUnitKg: packageUnitKg,
+      predictionId: predictionId,
+    );
+  }
+
+  String get statusLabel => switch (slotStatus) {
+    'OPEN' => '예약 중',
+    'CLOSED' => '마감',
+    'DRAFT' => '준비 중',
+    _ => slotStatus,
+  };
+
+  String get period =>
+      '${_shortDate(confirmedHarvestStart)}-${_shortDate(confirmedHarvestEnd)}';
+
+  String get reservableLabel => '${confirmedReservableKg.round()}kg';
+  String get availableLabel => '${availableKg.round()}kg 남음';
+  String get priceLabel => '${_money(confirmedPrice)}/kg';
 }
 
 class HarvestProductOption {
@@ -107,10 +194,24 @@ int _asInt(Object? value) {
   return int.tryParse(value?.toString() ?? '') ?? 0;
 }
 
+int? _asIntOrNull(Object? value) {
+  if (value == null) return null;
+  if (value is int) return value;
+  if (value is num) return value.toInt();
+  return int.tryParse(value.toString());
+}
+
 double _asDouble(Object? value) {
   if (value is double) return value;
   if (value is num) return value.toDouble();
   return double.tryParse(value?.toString() ?? '') ?? 0;
+}
+
+double? _asDoubleOrNull(Object? value) {
+  if (value == null) return null;
+  if (value is double) return value;
+  if (value is num) return value.toDouble();
+  return double.tryParse(value.toString());
 }
 
 String _shortDate(String value) {

@@ -90,4 +90,57 @@ class HarvestRepository {
       },
     );
   }
+
+  Future<List<HarvestSlotRecord>> fetchOwnerSlots() {
+    return ApiService.getData<List<HarvestSlotRecord>>(
+      '/owner/harvest-slots',
+      requiresAuth: true,
+      parser: (data) {
+        final list = data as List<dynamic>? ?? const [];
+        return [
+          for (final item in list)
+            HarvestSlotRecord.fromJson(
+              item as Map<String, dynamic>? ?? const {},
+            ),
+        ];
+      },
+    );
+  }
+
+  Future<HarvestSlotRecord> updateSlotStatus({
+    required int slotId,
+    required String status,
+  }) {
+    return ApiService.patchData<HarvestSlotRecord>(
+      '/owner/harvest-slots/$slotId/status',
+      requiresAuth: true,
+      body: {'slot_status': status},
+      parser: (data) {
+        final json = data as Map<String, dynamic>? ?? const {};
+        return HarvestSlotRecord.fromJson(json);
+      },
+    );
+  }
+
+  Future<HarvestSlotRecord> updateSlot(HarvestSlotRecord slot) {
+    return ApiService.putData<HarvestSlotRecord>(
+      '/owner/harvest-slots/${slot.slotId}',
+      requiresAuth: true,
+      body: {
+        'farm_id': slot.farmId,
+        'product_id': slot.productId,
+        'prediction_id': slot.predictionId,
+        'confirmed_harvest_start': slot.confirmedHarvestStart,
+        'confirmed_harvest_end': slot.confirmedHarvestEnd,
+        'confirmed_reservable_kg': slot.confirmedReservableKg,
+        'confirmed_price': slot.confirmedPrice,
+        'customer_notice': slot.customerNotice,
+        'slot_status': slot.slotStatus,
+      },
+      parser: (data) {
+        final json = data as Map<String, dynamic>? ?? const {};
+        return HarvestSlotRecord.fromJson(json);
+      },
+    );
+  }
 }

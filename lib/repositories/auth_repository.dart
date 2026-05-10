@@ -128,6 +128,23 @@ class AuthRepository {
       },
     );
   }
+
+  Future<void> confirmPasswordReset({
+    required String email,
+    required String code,
+    required String newPassword,
+  }) {
+    return ApiService.postData<void>(
+      '/auth/password/reset-confirm',
+      body: {
+        'email': email,
+        'code': code,
+        'new_password': newPassword,
+        'role': 'OWNER',
+      },
+      parser: (_) {},
+    );
+  }
 }
 
 int _asInt(Object? value) {

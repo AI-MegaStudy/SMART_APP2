@@ -1323,7 +1323,7 @@ class CameraPreviewCard extends StatelessWidget {
                   size: hasImage ? 118 : 82,
                 ),
               ),
-            if (label != null)
+            if (label != null && !hasImage)
               Positioned(
                 left: 16,
                 right: 16,
