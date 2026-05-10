@@ -179,8 +179,8 @@ Success criteria:
 ### Phase 5: Profile, Signup, Recovery
 
 - [x] 점주 프로필 조회/수정 연결
-- [ ] 회원가입 API 연결
-- [ ] 이메일 인증 요청/검증 연결
+- [x] 회원가입 API 연결
+- [x] 이메일 인증 요청/검증 연결
 - [ ] 이메일 찾기 API 없음 문서화 유지
 - [ ] 비밀번호 재설정 API 없음 문서화 유지
 
@@ -194,6 +194,7 @@ Success criteria:
 | 농장 이미지 업로드 | 농장 전용 업로드 API가 명확하지 않다 | 공통 이미지 업로드 후 `farm_image_url` 저장으로 처리 가능 |
 | 배송 현황 상세 | owner shipment list 전용 API가 없다 | `GET /owner/orders` 응답에 shipment 포함 여부 확인 후 부족하면 API 추가 |
 | 배송 등록 API 연결 | `POST /owner/shipments`는 실제 `order_id`가 필요하지만 fallback 발주 승인 데이터에는 실제 order_id가 없다 | 실제 procurement/order seed가 생기면 shipment create를 API 저장으로 전환. 현재는 로컬 현황 반영 유지 |
+| 회원가입 농장 정보 저장 | `POST /auth/owners/signup`는 owner 계정만 만들고 농장명/주소/사업자번호는 받지 않는다 | 가입 후 로그인 상태에서 농장 정보 수정 화면으로 저장하거나, 별도 owner signup 확장 API 검토 |
 | seed/demo data | 주문/발주/배송/반품까지 검증할 seed가 아직 부족하다 | 현재 점주/농장/상품/수확 슬롯 seed는 생성됨. 다음 단계에서 주문 계열 seed 필요 시 사전 검토 후 생성 |
 | 주문/발주 DB 데이터 없음 | 현재 DB에 PDF의 QA 주문/결제/배송/반품 seed가 없다 | `assets/mock/owner_orders.json` fallback으로 주문/발주 화면을 먼저 기능하게 하고, 실제 seed는 별도 검토 후 생성 |
 | 배송/반품 DB 데이터 없음 | 현재 DB에 배송/반품 QA seed가 없다 | `assets/mock/owner_shipments.json`, `assets/mock/owner_returns.json` fallback으로 현황 화면을 먼저 기능하게 한다 |

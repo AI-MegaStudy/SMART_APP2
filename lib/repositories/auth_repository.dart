@@ -67,6 +67,40 @@ class AuthRepository {
       },
     );
   }
+
+  Future<void> sendEmailVerification(String email) {
+    return ApiService.postData<void>(
+      '/auth/email/send',
+      body: {'email': email, 'purpose': 'SIGNUP'},
+      parser: (_) {},
+    );
+  }
+
+  Future<void> verifyEmail({required String email, required String code}) {
+    return ApiService.postData<void>(
+      '/auth/email/verify',
+      body: {'email': email, 'code': code, 'purpose': 'SIGNUP'},
+      parser: (_) {},
+    );
+  }
+
+  Future<void> signupOwner({
+    required String email,
+    required String password,
+    required String name,
+    required String phone,
+  }) {
+    return ApiService.postData<void>(
+      '/auth/owners/signup',
+      body: {
+        'email': email,
+        'password': password,
+        'name': name,
+        'phone': phone,
+      },
+      parser: (_) {},
+    );
+  }
 }
 
 int _asInt(Object? value) {

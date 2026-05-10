@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:kpostal_plus/kpostal_plus.dart';
+import 'package:smart_app/core/api_exception.dart';
+import 'package:smart_app/repositories/auth_repository.dart';
 import 'package:smart_app/util/app_colors.dart';
 import 'package:smart_app/widgets/owner_widgets.dart';
 
@@ -12,6 +14,7 @@ class SignupPage extends StatefulWidget {
 }
 
 class _SignupPageState extends State<SignupPage> {
+  final repository = AuthRepository();
   final formKey = GlobalKey<FormState>();
   final nameController = TextEditingController();
   final emailLocalController = TextEditingController();
@@ -21,9 +24,12 @@ class _SignupPageState extends State<SignupPage> {
   final businessController = TextEditingController();
   final farmController = TextEditingController();
   final addressController = TextEditingController();
+  final verificationCodeController = TextEditingController();
   final emailFocusNode = FocusNode();
 
-  bool emailChecked = false;
+  bool verificationSent = false;
+  bool emailVerified = false;
+  bool submitting = false;
 
   static const fallbackAddresses = [
     '충북 충주시 산척면 과수원길 24',
@@ -41,13 +47,14 @@ class _SignupPageState extends State<SignupPage> {
     businessController.dispose();
     farmController.dispose();
     addressController.dispose();
+    verificationCodeController.dispose();
     emailFocusNode.dispose();
     super.dispose();
   }
 
   String get fullEmail => emailLocalController.text.trim();
 
-  void _checkEmail() {
+  Future<void> _sendVerification() async {
     final missingLocal = emailLocalController.text.trim().isEmpty;
     final invalidEmail = emailValidator(emailLocalController.text) != null;
     if (missingLocal || invalidEmail) {
@@ -55,15 +62,62 @@ class _SignupPageState extends State<SignupPage> {
       emailFocusNode.requestFocus();
       return;
     }
-    final used = fullEmail == 'owner@harvestslot.kr';
-    setState(() {
-      emailChecked = !used;
-    });
-    showInfoAction(
-      context: context,
-      title: '이메일 중복 확인',
-      message: used ? '사용 중인 이메일입니다.' : '사용 가능한 이메일입니다.',
-    );
+
+    try {
+      await repository.sendEmailVerification(fullEmail);
+      if (!mounted) return;
+      setState(() {
+        verificationSent = true;
+        emailVerified = false;
+      });
+      showInfoAction(
+        context: context,
+        title: '이메일 인증',
+        message: '인증번호를 발송했습니다.',
+      );
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      showInfoAction(context: context, title: '이메일 인증', message: error.message);
+    } catch (_) {
+      if (!mounted) return;
+      showInfoAction(
+        context: context,
+        title: '이메일 인증',
+        message: '인증번호를 발송하지 못했습니다.',
+      );
+    }
+  }
+
+  Future<void> _verifyEmail() async {
+    final code = verificationCodeController.text.trim();
+    if (code.isEmpty) {
+      showInfoAction(
+        context: context,
+        title: '이메일 인증',
+        message: '인증번호를 입력하세요.',
+      );
+      return;
+    }
+    try {
+      await repository.verifyEmail(email: fullEmail, code: code);
+      if (!mounted) return;
+      setState(() => emailVerified = true);
+      showInfoAction(
+        context: context,
+        title: '이메일 인증',
+        message: '이메일 인증이 완료되었습니다.',
+      );
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      showInfoAction(context: context, title: '이메일 인증', message: error.message);
+    } catch (_) {
+      if (!mounted) return;
+      showInfoAction(
+        context: context,
+        title: '이메일 인증',
+        message: '이메일 인증을 완료하지 못했습니다.',
+      );
+    }
   }
 
   Future<void> _searchAddress() async {
@@ -118,11 +172,11 @@ class _SignupPageState extends State<SignupPage> {
       }
       return;
     }
-    if (!emailChecked) {
+    if (!emailVerified) {
       showInfoAction(
         context: context,
-        title: '이메일 중복 확인',
-        message: '이메일 중복 확인을 진행하세요.',
+        title: '이메일 인증',
+        message: '이메일 인증을 먼저 완료하세요.',
       );
       return;
     }
@@ -131,13 +185,39 @@ class _SignupPageState extends State<SignupPage> {
       title: '회원가입',
       message: '입력한 정보로 계정을 생성할까요?',
       confirmLabel: '확인',
-      onConfirm: () => showInfoAction(
+      onConfirm: _submitSignup,
+    );
+  }
+
+  Future<void> _submitSignup() async {
+    setState(() => submitting = true);
+    try {
+      await repository.signupOwner(
+        email: fullEmail,
+        password: passwordController.text,
+        name: nameController.text.trim(),
+        phone: phoneController.text.trim(),
+      );
+      if (!mounted) return;
+      showInfoAction(
         context: context,
         title: '회원가입',
-        message: '회원가입이 완료되었습니다.',
+        message: '회원가입이 완료되었습니다. 로그인 후 농장 정보를 확인하세요.',
         onConfirm: () => Navigator.of(context).pop(),
-      ),
-    );
+      );
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      showInfoAction(context: context, title: '회원가입', message: error.message);
+    } catch (_) {
+      if (!mounted) return;
+      showInfoAction(
+        context: context,
+        title: '회원가입',
+        message: '회원가입을 완료하지 못했습니다.',
+      );
+    } finally {
+      if (mounted) setState(() => submitting = false);
+    }
   }
 
   @override
@@ -176,7 +256,10 @@ class _SignupPageState extends State<SignupPage> {
                         keyboardType: TextInputType.emailAddress,
                         validator: emailValidator,
                         onChanged: (_) {
-                          setState(() => emailChecked = false);
+                          setState(() {
+                            verificationSent = false;
+                            emailVerified = false;
+                          });
                         },
                       ),
                     ),
@@ -187,14 +270,29 @@ class _SignupPageState extends State<SignupPage> {
                   width: double.infinity,
                   height: 48,
                   child: FilledButton.tonal(
-                    onPressed: _checkEmail,
-                    child: const Text(
-                      '이메일 중복 확인',
-                      maxLines: 1,
-                      softWrap: false,
-                    ),
+                    onPressed: _sendVerification,
+                    child: const Text('인증번호 발송', maxLines: 1, softWrap: false),
                   ),
                 ),
+                if (verificationSent) ...[
+                  const SizedBox(height: 8),
+                  LabeledField(
+                    label: '인증번호',
+                    value: '',
+                    controller: verificationCodeController,
+                    hintText: '인증번호',
+                    keyboardType: TextInputType.number,
+                    inputFormatters: const [DigitsOnlyInputFormatter()],
+                  ),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: FilledButton.tonal(
+                      onPressed: emailVerified ? null : _verifyEmail,
+                      child: Text(emailVerified ? '인증 완료' : '인증 확인'),
+                    ),
+                  ),
+                ],
               ],
             ),
             LabeledField(
@@ -263,9 +361,9 @@ class _SignupPageState extends State<SignupPage> {
             ),
             DualActionBar(
               left: '취소',
-              right: '회원가입',
+              right: submitting ? '처리 중' : '회원가입',
               onLeftPressed: () => Navigator.of(context).pop(),
-              onRightPressed: _submit,
+              onRightPressed: submitting ? null : _submit,
             ),
           ],
         ),
