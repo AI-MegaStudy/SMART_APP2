@@ -4,13 +4,24 @@ Last updated: 2026-05-11
 
 ## 요약
 
-현재 점주 앱은 발표/시연 기준으로 핵심 업무 흐름 대부분이 동작한다. 실제 DB/API가 있는 기능은 FastAPI에 연결했고, 데이터가 부족하거나 전용 API가 약한 부분은 fallback/seed를 사용해 화면 흐름이 끊기지 않게 구성했다. 화면에는 `더미`, `Mock`, `fallback`, `API 없음` 같은 개발자용 표현을 노출하지 않는다.
+현재 점주 앱은 발표/시연 기준으로 핵심 업무 흐름 대부분이 동작한다. 실제 DB/API가 있는 기능은 FastAPI에 연결했고, 데이터가 부족하거나 외부 연동이 없는 부분은 fallback/seed를 사용해 화면 흐름이 끊기지 않게 구성했다. 화면에는 `더미`, `Mock`, `fallback`, `API 없음` 같은 개발자용 표현을 노출하지 않는다.
+
+현재 기준점:
+
+| 항목 | 값 |
+|---|---|
+| SMART_APP 기능 구현 기준 커밋 | `28b5269` |
+| 주요 작업 DB | `harvest_slot_db2` |
+| SMART_WEB 반영 상태 | 실제 폴더 수정 없음. 엔드포인트 마이그레이션 dry-run/임시 적용 검증 완료 |
+| 최신 산출물 | `docs/planning/DB_AND_FASTAPI_DIFF_REPORT.md`, `scripts/migrate_owner_app_endpoints_to_smart_web.py` |
 
 | 기준 | 진행도 | 판단 |
 |---|---:|---|
-| 발표용 점주 앱 완성도 | 90% | 로그인부터 상품, 수확 예측, 슬롯 오픈/관리, 예약/주문, 발주, 신선도, 배송, 반품, 프로필까지 주요 동선 시연 가능 |
-| 실제 FastAPI 연동도 | 85% | 대부분 owner API 연결 완료. 일부 화면은 API 실패/데이터 부족 시 fallback으로 발표 흐름 유지 |
-| 실서비스 투입 준비도 | 74% | 계정 운영 API, 이미지 실기기 권한 최종검증, 운영용 데이터/마이그레이션 정리가 추가 필요 |
+| 발표용 점주 앱 완성도 | 92% | 로그인부터 상품, 농장, 수확 예측, 슬롯 오픈/관리, 예약/주문, 발주, 신선도, 배송, 반품, 프로필까지 주요 동선 시연 가능 |
+| 실제 FastAPI 연동도 | 88% | 대부분 owner API 연결 완료. 계정 찾기/비밀번호 재설정/농장 이미지/배송 전용 API까지 추가 구현 |
+| DB/API 대체 진척도 | 86% | DB/API로 채울 수 있는 주요 fallback은 실제 API 또는 seed로 대체. 외부 ML/PG/택배/푸시 같은 외부 연동성 기능은 fallback 또는 안내 UX 유지 |
+| 운영/SMART_WEB 이식 준비도 | 80% | DB 스키마 차이 없음 확인, FastAPI 차이 문서화, SMART_WEB 엔드포인트 마이그레이션 스크립트 작성 및 임시 적용 검증 완료 |
+| 실서비스 투입 준비도 | 76% | 운영 계정 정책, 실제 사진 권한/스토리지, 외부 ML/PG/택배 연동, 운영 seed/migration 승인 필요 |
 | Chrome 검증 상태 | 완료 | `http://127.0.0.1:3002`에서 주요 화면 확인 |
 | iOS 최종 검증 상태 | 주요 동선 완료 | 로그인/대시보드/메뉴/수확 슬롯 관리/신선도 갤러리 선택 확인 완료 |
 
@@ -106,6 +117,18 @@ Last updated: 2026-05-11
 | 배송 fallback local 처리 | shipment_id 없는 항목도 발표상 상태 변경 | 처리 완료 UX | 실제 DB 저장은 shipment_id가 있는 항목에서 수행 |
 | 반품 fallback local 처리 | return seed 부족 시 승인/거절 흐름 유지 | 처리 완료 UX | 실제 DB 저장은 return_request_id가 있는 항목에서 수행 |
 
+## 마이그레이션 / 운영 반영 준비 현황
+
+| 항목 | 상태 | 비고 |
+|---|---|---|
+| `harvest_slot_db` 대비 `harvest_slot_db2` 스키마 비교 | 완료 | 테이블/컬럼/인덱스/FK 변경 없음 |
+| `harvest_slot_db2` 데이터 차이 정리 | 완료 | 발표/검증용 seed 데이터 증가분 문서화 |
+| SMART_APP vs SMART_WEB FastAPI endpoint 차이 정리 | 완료 | SMART_APP 추가 5개, SMART_WEB 전용 6개 확인 |
+| SMART_WEB endpoint 마이그레이션 스크립트 | 완료 | dry-run 기본, `--apply` 시 백업/AST 검증/compileall 수행 |
+| SMART_WEB 실제 프로젝트 적용 | 미적용 | 이전 지시에 따라 SMART_WEB 실제 폴더는 수정하지 않음. 적용 준비만 완료 |
+| rollback 경로 | 준비 완료 | `.migration_backups/YYYYMMDD_HHMMSS` 백업 또는 git restore |
+| 운영 DB seed/migration | 미작성 | DB 스키마 변경은 없지만 운영 반영용 insert/update SQL은 승인 후 작성 필요 |
+
 ## DB/API 대체 가능 여부 감사
 
 2026-05-11 기준으로 DB/API로 대체 가능한 기능은 대부분 대체했다. 다만 fallback 파일은 발표 안정성을 위해 남겨둔다. 현재 정책은 `API 정상 응답 > 실제 DB 데이터 표시`, `API 실패 > fallback 표시`이다. 즉, API가 살아 있는데 DB 데이터가 비어 있는 경우에는 더 이상 mock JSON으로 자동 대체하지 않는다.
@@ -157,6 +180,8 @@ Last updated: 2026-05-11
 | `python -m compileall backend scripts` | 통과 |
 | `python scripts/owner_workflow_smoke.py` | 통과 |
 | `python scripts/seed_owner3_workflows.py` | `created_scenarios=0`, seed 존재 확인 |
+| `python scripts/migrate_owner_app_endpoints_to_smart_web.py` | SMART_WEB 실제 폴더 dry-run 성공, 파일 수정 없음 |
+| SMART_WEB backend 임시 복사본 migration `--apply` | 백업 생성, 신규 5개 endpoint 확인, SMART_WEB 전용 endpoint 보존, compileall 통과 |
 | `flutter build web --dart-define=API_BASE_URL=http://127.0.0.1:8000/api/v1` | 성공 |
 | Chrome 홈/메뉴/주문/예약 | 확인 완료 |
 | Chrome 신선도 검사 화면 | 품목 선택, 이미지 카드 UX, 4개 분석 metric 표시 확인 |
@@ -168,10 +193,11 @@ Last updated: 2026-05-11
 |---|---|---|
 | P1 | 실기기 이미지 권한 확인 | iOS 시뮬레이터 갤러리 선택은 확인. 실제 iPhone 사진 권한은 후속 확인 |
 | P1 | 주문/예약/발주 상세 화면 보강 | 목록 중심 화면을 발표용 앱처럼 보이게 상세 동선 추가 필요 |
+| P1 | SMART_WEB 엔드포인트 실제 적용 여부 결정 | 스크립트는 준비됐지만 SMART_WEB 실제 프로젝트에는 아직 적용하지 않음 |
 | P2 | 실제 바코드/QR 스캔 연동 | 지금은 송장 입력 보조 액션으로 발표 흐름 유지 |
 | P2 | 배송 상세 화면 추가 | 배송 전용 목록 API는 추가 완료. 다음 보강은 송장/고객/상품 상세 화면 |
 | P2 | 실제 PG 환불 연계 | 반품 승인은 처리되지만 PG 환불은 별도 운영 연계 필요 |
-| P3 | DB 마이그레이션/운영 seed 정리 | `harvest_slot_db2` 개발 DB 기준 작업을 운영 반영하려면 승인된 SQL/마이그레이션 필요 |
+| P3 | DB 운영 seed 정리 | `harvest_slot_db2` 개발 DB 기준 작업을 운영 반영하려면 승인된 SQL/seed patch 필요. 스키마 migration은 현재 불필요 |
 
 ## 미구현 / 부분구현 상세
 
@@ -238,8 +264,11 @@ Last updated: 2026-05-11
 
 | Commit | 내용 |
 |---|---|
-| `3d0debd` | 점주 앱 fallback 업무 흐름/완성도 보강 |
+| `28b5269` | SMART_WEB 엔드포인트 안전 마이그레이션 스크립트와 절차 문서화 |
+| `27202f9` | `harvest_slot_db2` / FastAPI 차이 보고서 작성 |
+| `c3c5772` | 비밀번호 재설정과 수확 슬롯 관리 API/화면 보강 |
 | `25fda82` | 점주 앱 생성 이미지/계정 찾기/이미지 업로드 연결 |
+| `0f3e6fb` | 점주 배송 목록 전용 API 추가 |
+| `92bcf06` | 전체 구현 진행도 문서화 |
+| `3d0debd` | 점주 앱 fallback 업무 흐름/완성도 보강 |
 | `68a91ad` | 요구사항 기반 점주 업무 화면 보강 |
-| `23afa0e` | 상품 API 검증 문서화 |
-| `3cbbd0d` | owner workflow smoke 검증 추가 |
