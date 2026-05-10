@@ -10,12 +10,11 @@ class OwnerWorkflowRepository {
 
   Future<List<OwnerOrderRecord>> fetchOrders() async {
     try {
-      final orders = await ApiService.getData<List<OwnerOrderRecord>>(
+      return await ApiService.getData<List<OwnerOrderRecord>>(
         '/owner/orders',
         requiresAuth: true,
         parser: _parseOrders,
       );
-      if (orders.isNotEmpty) return orders;
     } catch (_) {
       // Development fallback: keep owner flows usable while backend data is sparse.
     }
@@ -59,7 +58,7 @@ class OwnerWorkflowRepository {
               ];
             },
           );
-      if (records.isNotEmpty) return records;
+      return records;
     } catch (_) {
       // Development fallback: order seed exists before procurement seed.
     }
@@ -218,7 +217,7 @@ class OwnerWorkflowRepository {
           return records;
         },
       );
-      if (records.isNotEmpty) return records;
+      return records;
     } catch (_) {
       // Development fallback: shipment list API does not exist yet.
     }
@@ -240,7 +239,7 @@ class OwnerWorkflowRepository {
           ];
         },
       );
-      if (records.isNotEmpty) return records;
+      return records;
     } catch (_) {
       // Development fallback: keep return status QA usable without DB seed.
     }
@@ -270,7 +269,7 @@ class OwnerWorkflowRepository {
           ].where((item) => item.status == '접수').toList();
         },
       );
-      if (records.isNotEmpty) return records;
+      return records;
     } catch (_) {
       // Development fallback: keep return decision flow usable without DB seed.
     }
