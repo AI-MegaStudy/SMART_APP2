@@ -43,6 +43,21 @@ SMART_WEB은 API client, repository, model mapping 패턴만 참고한다. 파�
 
 이 데이터는 DB 스키마 변경 없이 현재 FastAPI 모델로 생성했다. 상품 API 검증 기준은 `open_slot_count=1`이 각 상품에 내려오는 것이다.
 
+## Development Database
+
+2026-05-11 원본 DB를 보존하기 위해 개발/검증용 DB를 추가했다.
+
+| Item | Value |
+|---|---|
+| Source DB | `harvest_slot_db` |
+| Development DB | `harvest_slot_db2` |
+| Clone scope | schema + data |
+| Copied tables | `19` |
+| Views / triggers | `0 / 0` |
+| `.env` backup | `.env.harvest_slot_db.backup.20260511-041743` |
+
+현재 로컬 `.env`는 `DATABASE_NAME=harvest_slot_db2`로 전환했다. 이후 DB 스키마 변경, 추가 seed, 기능 검증은 `harvest_slot_db2` 기준으로 진행한다. 원본 `harvest_slot_db` 반영이 필요한 변경은 별도 SQL 또는 마이그레이션으로 문서화한 뒤 사용자 승인 후 적용한다.
+
 ## Premises
 
 1. 백엔드 API는 `backend/app`이 최종본이다.
