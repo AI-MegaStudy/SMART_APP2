@@ -203,6 +203,24 @@ class OwnerWorkflowRepository {
   Future<List<OwnerStatusRecord>> fetchShipmentStatuses() async {
     try {
       final records = await ApiService.getData<List<OwnerStatusRecord>>(
+        '/owner/shipments',
+        requiresAuth: true,
+        parser: (data) {
+          final list = data as List<dynamic>? ?? const [];
+          return [
+            for (final item in list)
+              OwnerStatusRecord.fromShipmentJson(
+                item as Map<String, dynamic>? ?? const {},
+              ),
+          ];
+        },
+      );
+      return records;
+    } catch (_) {
+      // Compatibility fallback: older backend builds expose shipment fields on owner orders only.
+    }
+    try {
+      final records = await ApiService.getData<List<OwnerStatusRecord>>(
         '/owner/orders',
         requiresAuth: true,
         parser: (data) {
@@ -219,7 +237,7 @@ class OwnerWorkflowRepository {
       );
       return records;
     } catch (_) {
-      // Development fallback: shipment list API does not exist yet.
+      // Last-resort presentation fallback when the API server is unavailable.
     }
     return _loadMockStatuses('assets/mock/owner_shipments.json');
   }

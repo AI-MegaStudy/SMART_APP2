@@ -45,7 +45,7 @@ Last updated: 2026-05-11
 | 발주 현황 | 85% | 발주 상태 목록, 검색, 상태 필터 | `GET /owner/procurements` | 데이터 부족 시 workflow fallback | 상세 타임라인 추가 가능 |
 | 신선도 검사 | 88% | 검사 대상 발주 품목 선택, 이미지 카드 탭/갤러리 버튼, 이미지 업로드, 분석, 추천 등급/신선도/색상/형태/멍 확률 표시, 점주 확정 등급/판정 저장 | `GET /owner/procurements`, `POST /owner/quality-inspections/image`, `POST /owner/quality-inspections/analyze`, `POST /owner/quality-inspections` | 분석 실패 시 선택 이미지 기준 보조 판정 표시 | iOS 시뮬레이터/실기기 갤러리 권한 최종 확인 |
 | 배송 관리 | 88% | 배송 등록 가능한 발주 선택, 택배사 선택, 송장번호, 발송 중량/박스 수 입력, 바코드 버튼으로 송장 보조 입력 | `POST /owner/shipments` | 등록 조건 부족 시 안내. 송장 보조 입력으로 시연 가능 | 실제 바코드/QR 스캐너 연동 |
-| 배송 현황 | 88% | 배송 목록, 검색/필터, 배송 중/배송 완료 상태 변경 bottom sheet | `GET /owner/orders`, `PATCH /owner/shipments/{shipment_id}/status` | fallback 항목도 화면상 상태 변경 가능 | 배송 전용 list API가 있으면 매핑 단순화 |
+| 배송 현황 | 92% | 배송 목록, 검색/필터, 배송 중/배송 완료 상태 변경 bottom sheet | `GET /owner/shipments`, `PATCH /owner/shipments/{shipment_id}/status` | 구버전 backend 호환용으로 `/owner/orders` shipment field fallback, 서버 미가동 시 JSON fallback | 배송 상세 화면 추가 가능 |
 | 반품 · 환불 관리 | 88% | 반품 요청 목록, 검색, 상세 진입, 승인 금액 입력, 승인/거절, 거절 사유 선택 | `GET /owner/returns`, `PATCH /owner/returns/{id}/decision` | fallback 항목도 화면상 처리 완료 가능 | 실제 PG 환불 API 연계 |
 | 반품 · 환불 현황 | 85% | 반품 처리 상태 목록, 검색/필터 | `GET /owner/returns` | fallback 상태 데이터 유지 | 환불 금액/처리일 상세 강화 |
 | 내 정보 수정 | 90% | 점주명, 이메일, 전화번호, 사업자번호 조회/수정 | `GET /owner/profile`, `PUT /owner/profile` | 없음 | 비밀번호 변경 API가 있으면 통합 |
@@ -82,6 +82,7 @@ Last updated: 2026-05-11
 | 신선도 | `POST /owner/quality-inspections/analyze` | 품질 분석 | 연결 완료 |
 | 신선도 | `POST /owner/quality-inspections` | 점주 판정 저장 | 연결 완료 |
 | 배송 | `POST /owner/shipments` | 배송 등록 | 연결 완료 |
+| 배송 | `GET /owner/shipments` | 배송 현황 전용 목록 | 추가 구현/연결 완료 |
 | 배송 | `PATCH /owner/shipments/{shipment_id}/status` | 배송 상태 변경 | 연결 완료 |
 | 반품 | `GET /owner/returns` | 반품 관리/현황 | 연결 완료 |
 | 반품 | `PATCH /owner/returns/{id}/decision` | 반품 승인/거절 | 연결 완료 |
@@ -93,7 +94,7 @@ Last updated: 2026-05-11
 | 위치 | 목적 | 사용자 화면 노출 | 비고 |
 |---|---|---|---|
 | `assets/mock/owner_orders.json` | 주문/발주 흐름이 서버 오류로 막히지 않게 보조 | 개발자용 표현 노출 없음 | API 정상 응답 시 빈 목록도 그대로 사용. 서버/네트워크 실패 때만 사용 |
-| `assets/mock/owner_shipments.json` | 배송 현황 보조 | 개발자용 표현 노출 없음 | API 정상 응답 시 빈 목록도 그대로 사용. 서버/네트워크 실패 때만 사용 |
+| `assets/mock/owner_shipments.json` | 배송 현황 최후 보조 | 개발자용 표현 노출 없음 | `GET /owner/shipments`와 `/owner/orders`가 모두 실패할 때만 사용 |
 | `assets/mock/owner_returns.json` | 반품 관리/현황 보조 | 개발자용 표현 노출 없음 | API 정상 응답 시 빈 목록도 그대로 사용. 서버/네트워크 실패 때만 사용 |
 | `scripts/seed_owner3_workflows.py` | owner_id=3 발표용 상태 데이터 구성 | 자연스러운 고객명/상품명으로 표시 | 현재 `created_scenarios=0`, 이미 seed 존재 |
 | `QualityAnalysisRecord.localEstimate()` | 품질 분석 API 실패 시 보조 판정 | “선택 이미지 기준 보조 판정” 정도로 안내 | 추천등급/신선도/색상/형태/멍 확률 산출 |
@@ -116,11 +117,28 @@ Last updated: 2026-05-11
 | 발주 목록/결정 | 실제 `GET/PATCH /owner/procurements` 사용 | API 실패 시 주문 JSON 기반 보조 | 대부분 대체, 서버 장애용 fallback 유지 |
 | 신선도 검사 대상/저장 | 실제 procurement/quality API 사용 | 분석 실패 시 local estimate | 저장은 API, 분석 보조 fallback 유지 |
 | 배송 등록 | 실제 `POST /owner/shipments` 사용 | 없음 | 대체 완료 |
-| 배송 현황/상태 | 실제 주문 응답 shipment field + 상태 PATCH 사용 | API 실패 시 JSON fallback | 대부분 대체, 배송 list 전용 API는 없음 |
+| 배송 현황/상태 | 실제 `GET /owner/shipments` + 상태 PATCH 사용 | 구버전 API 호환/서버 장애 fallback | 대체 완료 |
 | 반품 관리/현황 | 실제 `GET/PATCH /owner/returns` 사용 | API 실패 시 JSON fallback | 대체 완료, fallback 축소 완료 |
 | 프로필 | 실제 API만 사용 | 없음 | 대체 완료 |
 | 회원가입/이메일 인증 | 실제 API 사용 | 주소 검색 플랫폼 보조 fallback | 계정 생성은 대체 완료 |
 | 이메일 찾기/비밀번호 찾기 | 전용 API 없음 | 안내 UX | 미대체, API 필요 |
+
+## fallback 대체 검토 결과
+
+사용자 요청 기준은 fallback 제거가 아니라, fallback으로 남아 있는 기능 중 DB/API 구현으로 채울 수 있는 것을 최대한 실제 구현으로 끌어올리는 것이다.
+
+| fallback/보조 흐름 | DB/API 대체 가능성 | 이번 조치 | 현재 판정 |
+|---|---|---|---|
+| 배송 현황 JSON fallback | 가능 | `GET /owner/shipments` FastAPI endpoint 추가, Flutter 배송 현황에서 우선 호출 | 대체 완료. JSON은 서버 장애 최후 보조 |
+| 배송 현황을 `/owner/orders`에서 파생 | 가능 | 전용 배송 목록 API로 이동. 구버전 backend 호환 fallback으로만 유지 | 대체 완료 |
+| 주문 목록 JSON fallback | 이미 `GET /owner/orders` 존재 | owner_id=3 seed가 실제 주문을 보유. API 실패 시에만 JSON fallback | 추가 API 불필요 |
+| 예약 목록 빈 화면 | 이미 `GET /owner/reservations` 존재 | 주문 현황에 예약 탭 연결 완료 | 대체 완료 |
+| 발주 목록이 없을 때 주문 fallback | 대부분 대체 가능 | owner_id=3 seed에 실제 procurement 시나리오 생성. API 실패 시에만 fallback | API/DB 대체 완료, 서버 장애 fallback 유지 |
+| 반품 목록 JSON fallback | 이미 `GET /owner/returns` 존재 | owner_id=3 seed에 반품 요청 생성. API 실패 시에만 JSON fallback | 추가 API 불필요 |
+| 신선도 분석 local estimate | 부분 가능 | backend 분석 API는 존재하지만 실제 외부 DL 모델은 없음 | 외부 DL 모델 전까지 보조 판정 fallback 필요 |
+| 주소 후보 fallback | 부분 가능 | 모바일은 `kpostal_plus`, 데스크톱/web 비지원 환경만 후보 사용 | 플랫폼 보조 fallback 필요 |
+| 이메일 찾기/비밀번호 찾기 안내 UX | 가능하지만 API 없음 | 문서에 미구현으로 기록 | 신규 API 필요 |
+| 상품/농장 이미지 UI 부재 | 가능 | backend 상품 이미지 API는 있으나 UI 미구현으로 기록 | 다음 구현 후보 |
 
 ## 검증 완료 항목
 
@@ -146,7 +164,7 @@ Last updated: 2026-05-11
 | P1 | 비밀번호 재설정 API 설계/구현 | 현재는 안내 UX만 있고 실서비스 기능은 없음 |
 | P2 | 이메일 찾기 API 설계/구현 | 현재는 안내 UX만 있고 실서비스 기능은 없음 |
 | P2 | 실제 바코드/QR 스캔 연동 | 지금은 송장 입력 보조 액션으로 발표 흐름 유지 |
-| P2 | 배송 전용 목록 API 추가 검토 | 현재는 주문 응답의 shipment field 기반 |
+| P2 | 배송 상세 화면 추가 | 배송 전용 목록 API는 추가 완료. 다음 보강은 송장/고객/상품 상세 화면 |
 | P2 | 실제 PG 환불 연계 | 반품 승인은 처리되지만 PG 환불은 별도 운영 연계 필요 |
 | P3 | DB 마이그레이션/운영 seed 정리 | `harvest_slot_db2` 개발 DB 기준 작업을 운영 반영하려면 승인된 SQL/마이그레이션 필요 |
 
@@ -184,7 +202,7 @@ Last updated: 2026-05-11
 | 신선도 | 검사 이미지 저장 정책 | 업로드 API 있음 | 영구 스토리지/S3/CDN/보존기간 정책 미확정 | `ImageStorageService` 운영 저장소 연결 | 로컬/개발 저장소 기준 |
 | 신선도 | 재촬영/부적합 flow | 일부 판단값만 있음 | RETAKE 사유, 재촬영 강제, 다중 이미지 비교 부족 | 분석 결과 action_required 기반 UX 강화 | 현재는 점주 보조 판정 중심 |
 | 배송 | 실제 바코드/QR 스캐너 | 버튼이 송장 자동 입력 보조로 동작 | 카메라 기반 바코드/QR scan 없음 | 모바일 scanner 패키지 도입 및 권한 설정 | 발표용으로는 송장 보조 입력 처리 |
-| 배송 | 배송 전용 list API | 주문 API 기반 매핑 | `/owner/shipments` list API 없음 | FastAPI shipment list endpoint 추가 | 현재 주문 응답 shipment field 사용 |
+| 배송 | 배송 전용 list API | 구현 완료 | `GET /owner/shipments` 추가, 앱 배송 현황에서 우선 사용 | 없음 | 완료 |
 | 배송 | 택배사 송장 검증 | 입력 형식 검증만 있음 | 택배사별 송장 자리수/배송조회 연동 없음 | carrier별 validation, tracking URL/API 추가 | 외부 택배 API 미연동 |
 | 배송 | 배송 라벨/출력 | 없음 | 포장 라벨, 송장 출력, 운송장 PDF 없음 | 라벨 템플릿/출력 flow 추가 | 발표 범위 밖 |
 | 반품 | 실제 PG 환불 | 반품 승인/거절 상태 처리 | 결제 취소/부분환불 PG API 연동 없음 | payment/refund service 연계 | 결제 운영 연계 필요 |

@@ -74,6 +74,29 @@ class OwnerStatusRecord {
     );
   }
 
+  factory OwnerStatusRecord.fromShipmentJson(Map<String, dynamic> json) {
+    final product = json['product_name']?.toString() ?? '상품';
+    final customer = json['customer_name']?.toString() ?? '고객';
+    final kg = _asInt(json['ordered_kg'] ?? json['shipped_kg']);
+    final boxes = _asInt(
+      json['package_count'] ?? json['shipped_package_count'],
+      fallback: 1,
+    );
+    final carrier = json['carrier_name']?.toString().isNotEmpty == true
+        ? json['carrier_name'].toString()
+        : '택배사 미정';
+    final tracking = json['tracking_no']?.toString().isNotEmpty == true
+        ? json['tracking_no'].toString()
+        : '송장 미등록';
+    return OwnerStatusRecord(
+      title: '$customer · $product ${kg}kg · $boxes박스',
+      subtitle: '$carrier · $tracking',
+      status: _shipmentStatusLabel(json['shipment_status']?.toString() ?? ''),
+      shipmentId: _nullableInt(json['shipment_id']),
+      rawStatus: json['shipment_status']?.toString(),
+    );
+  }
+
   factory OwnerStatusRecord.fromReturnJson(Map<String, dynamic> json) {
     final items = json['items'] as List<dynamic>? ?? const [];
     final firstItem = items.isEmpty

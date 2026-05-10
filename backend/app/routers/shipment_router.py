@@ -20,6 +20,14 @@ def create_shipment(
     return success_response(ShipmentService(db).create_shipment(current_user.owner_id, payload.model_dump()))
 
 
+@router.get("/owner/shipments")
+def list_owner_shipments(
+    current_user: AuthenticatedUser = Depends(require_owner),
+    db: Session = Depends(get_db),
+) -> dict:
+    return success_response(ShipmentService(db).list_owner_shipments(current_user.owner_id))
+
+
 @router.patch("/owner/shipments/{shipment_id}/status")
 def update_shipment_status(
     shipment_id: int,

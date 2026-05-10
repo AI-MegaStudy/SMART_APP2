@@ -66,8 +66,40 @@ class ShipmentService:
         self.session.refresh(shipment)
         return serialize_shipment(shipment)
 
+    def list_owner_shipments(self, owner_id: int) -> list[dict]:
+        rows = self.session.query(Shipment).order_by(Shipment.created_at.desc()).all()
+        filtered = [
+            shipment
+            for shipment in rows
+            if shipment.order and shipment.order.procurement and shipment.order.procurement.owner_id == owner_id
+        ]
+        return [serialize_owner_shipment(shipment) for shipment in filtered]
+
     def get_my_shipment(self, customer_id: int, order_id: int) -> dict:
         shipment = self.shipment_repo.get_by_order(order_id)
         if not shipment or shipment.order.reservation.customer_id != customer_id:
             raise HTTPException(status_code=404, detail="shipment not found")
         return serialize_shipment(shipment)
+
+
+def serialize_owner_shipment(shipment: Shipment) -> dict:
+    data = serialize_shipment(shipment)
+    order = shipment.order
+    first_item = order.order_items[0] if order and order.order_items else None
+    reservation_item = first_item.reservation_item if first_item else None
+    slot = reservation_item.slot if reservation_item else None
+    product = slot.product if slot else None
+    customer = order.reservation.customer if order and order.reservation else None
+    data.update(
+        {
+            "order_no": order.order_no if order else None,
+            "order_status": order.order_status if order else None,
+            "customer_name": customer.customer_name if customer else None,
+            "product_name": product.product_name if product else None,
+            "package_count": first_item.package_count if first_item else shipment.shipped_package_count,
+            "ordered_kg": float(first_item.ordered_kg) if first_item else float(shipment.shipped_kg),
+            "total_amount": order.total_amount if order else None,
+            "ordered_at": order.ordered_at if order else None,
+        }
+    )
+    return data
