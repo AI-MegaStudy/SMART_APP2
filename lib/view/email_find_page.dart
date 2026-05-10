@@ -25,7 +25,7 @@ class _EmailFindPageState extends State<EmailFindPage> {
     showInfoAction(
       context: context,
       title: '이메일 찾기',
-      message: '가입 이메일은 owner@harvestslot.kr 입니다.',
+      message: '현재 백엔드에 이메일 찾기 API가 없어 처리할 수 없습니다. 관리자에게 계정 확인을 요청하세요.',
     );
   }
 

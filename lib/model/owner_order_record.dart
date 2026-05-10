@@ -89,6 +89,8 @@ class OwnerProcurementRequestRecord {
     required this.amount,
     required this.isFallback,
     required this.items,
+    this.orderId,
+    this.shipmentStatus,
   });
 
   final String id;
@@ -100,6 +102,8 @@ class OwnerProcurementRequestRecord {
   final String amount;
   final bool isFallback;
   final List<OwnerProcurementItemRecord> items;
+  final int? orderId;
+  final String? shipmentStatus;
 
   factory OwnerProcurementRequestRecord.fromProcurementJson(
     Map<String, dynamic> json,
@@ -131,6 +135,8 @@ class OwnerProcurementRequestRecord {
       amount: _money(totalAmount),
       isFallback: false,
       items: parsedItems,
+      orderId: _asInt(json['order_id']),
+      shipmentStatus: json['shipment_status']?.toString(),
     );
   }
 
@@ -145,6 +151,8 @@ class OwnerProcurementRequestRecord {
       amount: order.amount,
       isFallback: true,
       items: const [],
+      orderId: int.tryParse(order.id),
+      shipmentStatus: null,
     );
   }
 }

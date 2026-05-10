@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 import 'package:smart_app/core/api_exception.dart';
@@ -71,6 +72,27 @@ class ApiService {
         )
         .timeout(requestTimeout);
 
+    return _decodeData(response, parser);
+  }
+
+  static Future<T> postMultipartData<T>(
+    String path, {
+    required String fileField,
+    required String fileName,
+    required Uint8List fileBytes,
+    required T Function(Object? data) parser,
+    Map<String, String> fields = const {},
+    bool requiresAuth = false,
+  }) async {
+    final request = http.MultipartRequest('POST', _uri(path));
+    request.headers.addAll(_headers(requiresAuth: requiresAuth)..remove('Content-Type'));
+    request.fields.addAll(fields);
+    request.files.add(
+      http.MultipartFile.fromBytes(fileField, fileBytes, filename: fileName),
+    );
+
+    final streamed = await request.send().timeout(requestTimeout);
+    final response = await http.Response.fromStream(streamed);
     return _decodeData(response, parser);
   }
 

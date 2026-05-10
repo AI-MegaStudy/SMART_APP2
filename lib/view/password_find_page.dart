@@ -25,7 +25,7 @@ class _PasswordFindPageState extends State<PasswordFindPage> {
     showInfoAction(
       context: context,
       title: '비밀번호 찾기',
-      message: '비밀번호 재설정 안내를 발송했습니다.',
+      message: '현재 백엔드에 비밀번호 재설정 API가 없어 처리할 수 없습니다. 관리자에게 초기화를 요청하세요.',
     );
   }
 

@@ -83,6 +83,48 @@ class OwnerWorkflowRepository {
     }
   }
 
+  Future<List<OwnerProcurementRequestRecord>> fetchShippableProcurements() async {
+    final records = await fetchProcurementRequests();
+    return records
+        .where(
+          (record) =>
+              !record.isFallback &&
+              record.orderId != null &&
+              record.orderId! > 0 &&
+              (record.status == '승인') &&
+              (record.shipmentStatus == null || record.shipmentStatus!.isEmpty),
+        )
+        .toList();
+  }
+
+  Future<bool> createShipment({
+    required OwnerProcurementRequestRecord request,
+    required String carrierName,
+    required String trackingNo,
+    required int shippedPackageCount,
+    required double shippedKg,
+  }) async {
+    final orderId = request.orderId;
+    if (request.isFallback || orderId == null || orderId <= 0) return false;
+    try {
+      await ApiService.postData<Map<String, dynamic>>(
+        '/owner/shipments',
+        requiresAuth: true,
+        body: {
+          'order_id': orderId,
+          'carrier_name': carrierName,
+          'tracking_no': trackingNo,
+          'shipped_package_count': shippedPackageCount,
+          'shipped_kg': shippedKg,
+        },
+        parser: (data) => data as Map<String, dynamic>? ?? const {},
+      );
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
   List<OwnerOrderRecord> _parseOrders(Object? data) {
     final list = data as List<dynamic>? ?? const [];
     return [

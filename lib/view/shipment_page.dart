@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:smart_app/model/owner_order_record.dart';
+import 'package:smart_app/repositories/owner_workflow_repository.dart';
 import 'package:smart_app/util/app_colors.dart';
-import 'package:smart_app/view/procurement_status_page.dart';
-import 'package:smart_app/view/shipment_status_page.dart';
 import 'package:smart_app/widgets/owner_widgets.dart';
 
 class ShipmentPage extends StatefulWidget {
@@ -16,9 +16,19 @@ class _ShipmentPageState extends State<ShipmentPage> {
   final invoiceController = TextEditingController();
   final boxesController = TextEditingController();
   final weightController = TextEditingController();
+  final repository = OwnerWorkflowRepository();
+  List<OwnerProcurementRequestRecord> shippableProcurements = const [];
   String selectedProduct = '';
   String courier = '';
-  final registeredShipmentProducts = <String>{};
+  bool isLoading = false;
+  bool isSubmitting = false;
+  String? loadError;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadShippableProcurements();
+  }
 
   @override
   void dispose() {
@@ -26,6 +36,23 @@ class _ShipmentPageState extends State<ShipmentPage> {
     boxesController.dispose();
     weightController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadShippableProcurements() async {
+    setState(() {
+      isLoading = true;
+      loadError = null;
+    });
+    try {
+      final loaded = await repository.fetchShippableProcurements();
+      if (!mounted) return;
+      setState(() => shippableProcurements = loaded);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => loadError = '배송 등록 가능한 발주를 불러오지 못했습니다.');
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
   }
 
   void _selectProduct(String value) {
@@ -37,19 +64,27 @@ class _ShipmentPageState extends State<ShipmentPage> {
       });
       return;
     }
-    final product = _ShipmentProduct.approvedItems.firstWhere(
-      (item) => item.name == value,
+    final request = shippableProcurements.firstWhere(
+      (item) => item.title == value,
     );
+    final item = request.items.isEmpty ? null : request.items.first;
     setState(() {
-      selectedProduct = product.name;
-      boxesController.text = product.boxes;
-      weightController.text = product.weight;
+      selectedProduct = request.title;
+      boxesController.text = '${item?.requestedPackageCount ?? 1}';
+      weightController.text = '${item?.requestedKg.round() ?? 0}';
     });
   }
 
-  void _registerShipment() {
+  Future<void> _registerShipment() async {
     if (!(formKey.currentState?.validate() ?? false)) {
       showOwnerSnack(context, '모든 정보를 입력해야 등록이 가능합니다.');
+      return;
+    }
+    final selected = shippableProcurements.where(
+      (item) => item.title == selectedProduct,
+    );
+    if (selected.isEmpty) {
+      showOwnerSnack(context, '배송 등록할 발주를 선택하세요.');
       return;
     }
 
@@ -58,25 +93,32 @@ class _ShipmentPageState extends State<ShipmentPage> {
       title: '등록',
       message: '배송 정보를 등록할까요?',
       confirmLabel: '등록',
-      onConfirm: () {
-        final registeredProduct = selectedProduct;
-        shipmentStatusRecords.add(
-          ShipmentRecord(
-            registeredProduct,
-            '$courier · ${invoiceController.text}',
-            '배송 대기',
-            AppColors.yellow,
-          ),
+      onConfirm: () async {
+        setState(() => isSubmitting = true);
+        final request = selected.first;
+        final saved = await repository.createShipment(
+          request: request,
+          carrierName: courier,
+          trackingNo: invoiceController.text.trim(),
+          shippedPackageCount: int.parse(boxesController.text.trim()),
+          shippedKg: double.parse(weightController.text.trim()),
         );
+        if (!mounted) return;
         setState(() {
-          registeredShipmentProducts.add(registeredProduct);
+          isSubmitting = false;
           selectedProduct = '';
           courier = '';
           invoiceController.clear();
           boxesController.clear();
           weightController.clear();
         });
-        showOwnerSnack(context, '$registeredProduct 배송 정보를 등록했습니다.');
+        if (saved) {
+          await _loadShippableProcurements();
+          if (!mounted) return;
+          showOwnerSnack(context, '${request.title} 배송 정보를 등록했습니다.');
+        } else {
+          showOwnerSnack(context, '실제 발주/주문 데이터가 없어 배송 정보를 저장하지 못했습니다.');
+        }
       },
     );
   }
@@ -97,14 +139,18 @@ class _ShipmentPageState extends State<ShipmentPage> {
             onPressed: () => showOwnerSnack(context, '포장 바코드 스캔을 준비합니다.'),
           ),
           children: [
+            if (isLoading) const LinearProgressIndicator(minHeight: 3),
+            if (loadError != null)
+              NoticeBox(color: AppColors.yellow, text: loadError!),
+            if (!isLoading && shippableProcurements.isEmpty)
+              const NoticeBox(
+                color: AppColors.yellow,
+                text: '배송 등록 가능한 승인 발주가 없습니다. 발주 승인 후 배송 등록이 가능합니다.',
+              ),
             LabeledDropdown(
               label: '발주 승인 상품',
               value: selectedProduct,
-              items: [
-                for (final product in _ShipmentProduct.approvedItems)
-                  if (!registeredShipmentProducts.contains(product.name))
-                    product.name,
-              ],
+              items: [for (final item in shippableProcurements) item.title],
               onChanged: (value) {
                 if (value != null) {
                   _selectProduct(value);
@@ -162,42 +208,13 @@ class _ShipmentPageState extends State<ShipmentPage> {
             ),
             DualActionBar(
               left: '취소',
-              right: '등록',
+              right: isSubmitting ? '등록 중' : '등록',
               onLeftPressed: () => Navigator.of(context).pop(),
-              onRightPressed: _registerShipment,
+              onRightPressed: isSubmitting ? null : _registerShipment,
             ),
           ],
         ),
       ),
     );
-  }
-}
-
-class _ShipmentProduct {
-  final String name;
-  final String boxes;
-  final String weight;
-
-  const _ShipmentProduct(this.name, this.boxes, this.weight);
-
-  static List<_ShipmentProduct> get approvedItems {
-    final approved = procurementStatusRecords.where(
-      (record) => record.status == '승인',
-    );
-    return [
-      for (final record in approved)
-        _ShipmentProduct.fromProcurement(record.subtitle),
-    ];
-  }
-
-  factory _ShipmentProduct.fromProcurement(String text) {
-    final parts = text.split(' · ');
-    final namePartCount = parts.length > 2 && parts[2].contains('박스') ? 3 : 2;
-    final name = parts.take(namePartCount).join(' · ');
-    final boxMatch = RegExp(r'(\d+)박스').firstMatch(text);
-    final weightMatch = RegExp(r'(\d+)kg').firstMatch(text);
-    final boxCount = boxMatch?.group(1) ?? '1';
-    final weight = weightMatch?.group(1) ?? '5';
-    return _ShipmentProduct(name, boxCount, weight);
   }
 }
