@@ -824,6 +824,75 @@ class LabeledDropdown extends StatelessWidget {
   }
 }
 
+class LabeledNumberStepper extends StatelessWidget {
+  final String label;
+  final int value;
+  final int min;
+  final int max;
+  final int step;
+  final String suffixText;
+  final ValueChanged<int> onChanged;
+
+  const LabeledNumberStepper({
+    super.key,
+    required this.label,
+    required this.value,
+    required this.onChanged,
+    this.min = 0,
+    this.max = 999999,
+    this.step = 1,
+    this.suffixText = '',
+  });
+
+  void _change(int next) {
+    onChanged(next.clamp(min, max).toInt());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _FieldLabel(label),
+        const SizedBox(height: 7),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            border: Border.all(color: AppColors.line),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Row(
+            children: [
+              IconButton.outlined(
+                onPressed: value <= min ? null : () => _change(value - step),
+                icon: const Icon(Icons.remove),
+                tooltip: '$label 줄이기',
+              ),
+              Expanded(
+                child: Text(
+                  suffixText.isEmpty ? '$value' : '$value$suffixText',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w900,
+                    color: AppColors.text,
+                  ),
+                ),
+              ),
+              IconButton.filled(
+                onPressed: value >= max ? null : () => _change(value + step),
+                icon: const Icon(Icons.add),
+                tooltip: '$label 늘리기',
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _FieldLabel extends StatelessWidget {
   final String text;
 

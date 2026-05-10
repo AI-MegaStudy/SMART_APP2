@@ -16,33 +16,32 @@ class ProductEditPage extends StatefulWidget {
 
 class _ProductEditPageState extends State<ProductEditPage> {
   final formKey = GlobalKey<FormState>();
-  final packageController = TextEditingController();
-  final priceController = TextEditingController();
-  final stockController = TextEditingController();
   final repository = ProductRepository();
-  late String productName;
+  late String variety;
+  late double packageUnitKg;
+  late int price;
+  late int stockBoxes;
   late String status;
   bool isSaving = false;
 
   @override
   void initState() {
     super.initState();
-    productName = widget.product.name;
-    packageController.text = widget.product.packageUnit.replaceAll(
-      RegExp(r'\D'),
-      '',
-    );
-    priceController.text = widget.product.price.toString();
-    stockController.text = widget.product.stockKg.toString();
+    final rawVariety = widget.product.variety.isEmpty
+        ? ProductRecord.varietyFromProductName(widget.product.name)
+        : widget.product.variety;
+    variety = ProductRecord.appleVarieties.contains(rawVariety)
+        ? rawVariety
+        : ProductRecord.appleVarieties.first;
+    packageUnitKg =
+        ProductRecord.packageUnitKgOptions.contains(
+          widget.product.packageUnitKg,
+        )
+        ? widget.product.packageUnitKg
+        : 5;
+    price = widget.product.price;
+    stockBoxes = widget.product.stockKg;
     status = widget.product.status;
-  }
-
-  @override
-  void dispose() {
-    packageController.dispose();
-    priceController.dispose();
-    stockController.dispose();
-    super.dispose();
   }
 
   Future<void> _save() async {
@@ -56,19 +55,18 @@ class _ProductEditPageState extends State<ProductEditPage> {
       message: '상품 정보를 수정할까요?',
       confirmLabel: '수정',
       onConfirm: () async {
+        final productName = ProductRecord.productNameFromVariety(variety);
         final product = ProductRecord(
           productName,
-          '${packageController.text}kg 박스',
-          int.parse(priceController.text),
-          int.parse(stockController.text),
+          ProductRecord.packageLabel(packageUnitKg),
+          price,
+          stockBoxes,
           status,
           _statusColor(status),
           id: widget.product.id,
           farmId: widget.product.farmId,
-          fruitType: widget.product.fruitType,
-          variety: widget.product.variety.isEmpty
-              ? _variety(productName)
-              : widget.product.variety,
+          fruitType: '사과',
+          variety: variety,
           description: widget.product.description,
           imageUrl: widget.product.imageUrl,
         );
@@ -95,12 +93,6 @@ class _ProductEditPageState extends State<ProductEditPage> {
     );
   }
 
-  String _variety(String productName) {
-    return productName.replaceAll('사과', '').trim().isEmpty
-        ? productName
-        : productName.replaceAll('사과', '').trim();
-  }
-
   Color _statusColor(String status) {
     return switch (status) {
       '판매 중' => AppColors.mint,
@@ -122,59 +114,45 @@ class _ProductEditPageState extends State<ProductEditPage> {
           ),
           children: [
             LabeledDropdown(
-              label: '상품명',
-              value: productName,
-              items: const ['양광 사과', '부사 사과'],
+              label: '사과 품종',
+              value: variety,
+              items: ProductRecord.appleVarieties,
               onChanged: (value) {
                 if (value != null) {
-                  setState(() => productName = value);
+                  setState(() => variety = value);
                 }
               },
             ),
-            LabeledField(
+            LabeledDropdown(
               label: '포장 단위',
-              value: '',
-              controller: packageController,
-              keyboardType: TextInputType.number,
-              inputFormatters: const [DigitsOnlyInputFormatter()],
-              validator: (text) {
-                final required = requiredValidator('포장 단위', text);
-                if (required != null) return required;
-                return RegExp(r'^\d+$').hasMatch(text!.trim())
-                    ? null
-                    : '포장 단위에는 숫자만 입력하세요.';
+              value: ProductRecord.packageLabel(packageUnitKg),
+              items: [
+                for (final value in ProductRecord.packageUnitKgOptions)
+                  ProductRecord.packageLabel(value),
+              ],
+              onChanged: (value) {
+                if (value == null) return;
+                final parsed = value.replaceAll(RegExp(r'[^0-9.]'), '');
+                setState(() => packageUnitKg = double.tryParse(parsed) ?? 5);
               },
-              suffixText: 'kg 박스',
             ),
-            LabeledField(
+            LabeledNumberStepper(
               label: '기본 판매가',
-              value: '',
-              controller: priceController,
-              keyboardType: TextInputType.number,
-              inputFormatters: const [DigitsOnlyInputFormatter()],
-              validator: (text) {
-                final required = requiredValidator('기본 판매가', text);
-                if (required != null) return required;
-                return RegExp(r'^\d+$').hasMatch(text!.trim())
-                    ? null
-                    : '기본 판매가에는 숫자만 입력하세요.';
-              },
+              value: price,
+              min: 1000,
+              max: 300000,
+              step: 1000,
               suffixText: '원',
+              onChanged: (value) => setState(() => price = value),
             ),
-            LabeledField(
-              label: '상품 수량',
-              value: '',
-              controller: stockController,
-              keyboardType: TextInputType.number,
-              inputFormatters: const [DigitsOnlyInputFormatter()],
-              validator: (text) {
-                final required = requiredValidator('상품 수량', text);
-                if (required != null) return required;
-                return RegExp(r'^\d+$').hasMatch(text!.trim())
-                    ? null
-                    : '상품 수량에는 숫자만 입력하세요.';
-              },
+            LabeledNumberStepper(
+              label: '표시 수량',
+              value: stockBoxes,
+              min: 0,
+              max: 999,
+              step: 1,
               suffixText: '박스',
+              onChanged: (value) => setState(() => stockBoxes = value),
             ),
             const NoticeBox(
               color: AppColors.yellow,

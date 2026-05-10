@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 
 class ProductRecord {
+  static const appleVarieties = ['양광', '부사'];
+  static const packageUnitKgOptions = [1.0, 3.0, 5.0, 7.5, 10.0];
+
   final int? id;
   final int? farmId;
   final String name;
@@ -114,6 +117,23 @@ class ProductRecord {
       '판매 중지' => 'HIDDEN',
       _ => status,
     };
+  }
+
+  static String productNameFromVariety(String variety) {
+    return '$variety 사과';
+  }
+
+  static String varietyFromProductName(String productName) {
+    for (final variety in appleVarieties) {
+      if (productName.contains(variety)) {
+        return variety;
+      }
+    }
+    return appleVarieties.first;
+  }
+
+  static String packageLabel(double packageUnitKg) {
+    return '${_formatKg(packageUnitKg)}kg 박스';
   }
 
   static Color statusColor(String status) {

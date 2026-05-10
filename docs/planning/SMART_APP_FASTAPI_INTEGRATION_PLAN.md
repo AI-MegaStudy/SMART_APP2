@@ -14,6 +14,23 @@ Created: 2026-05-11
 
 SMART_WEB은 API client, repository, model mapping 패턴만 참고한다. 파일은 수정하지 않는다.
 
+## Local Verification Account
+
+2026-05-11 생성한 점주 검증 계정:
+
+| Field | Value |
+|---|---|
+| Email | `cheng80@gmail.com` |
+| Password | `pass1234!` |
+| Role | `OWNER` |
+| Account ID | `12` |
+| Owner ID | `3` |
+| Owner name | `cheng80` |
+| Phone | `01000000000` |
+| Email verified | `true` |
+
+현재 이 계정은 농장 데이터가 없다. DB 수정은 사용자 검증 후 진행하기로 했으므로, 이 계정으로는 로그인/대시보드/농장 없음 상태까지 우선 검증한다. 상품/농장 CRUD 검증은 owner_id `3`에 농장 데이터가 생긴 뒤 진행한다.
+
 ## Premises
 
 1. 백엔드 API는 `backend/app`이 최종본이다.
@@ -23,6 +40,10 @@ SMART_WEB은 API client, repository, model mapping 패턴만 참고한다. 파�
 5. 앱 내부 상태명은 화면 표시용 한글과 백엔드 enum을 분리한다.
 6. DB 수정이 필요한 작업은 후순위로 미루고, 사용자 검증을 받은 뒤 진행한다.
 7. 기능 검증은 먼저 Chrome으로 빠르게 확인하고, 최종 앱 검증은 iOS 시뮬레이터에서 진행한다.
+8. 사과 품종은 `양광`, `부사` 두 가지로 제한한다.
+9. 상품 박스 단위는 SMART_WEB과 동일하게 `1kg`, `3kg`, `5kg`, `7.5kg`, `10kg`만 사용한다.
+10. 입력 필드가 필요한 화면은 가능한 경우 수동 입력보다 dropdown, stepper, selector를 우선 사용한다.
+11. 사용자 주소 입력은 `kpostal_plus` 패키지를 사용한다.
 
 ## Current Architecture
 
@@ -98,6 +119,9 @@ Success criteria:
 - [x] 상품 등록/수정 연결
 - [x] 상품 상태 enum 매핑: `ACTIVE`, `HIDDEN`, `SOLD_OUT`
 - [x] 농장 조회/수정 연결
+- [x] 상품 품종 selector를 `양광`, `부사`로 제한
+- [x] 상품 포장 단위를 SMART_WEB 기준 `1kg`, `3kg`, `5kg`, `7.5kg`, `10kg` dropdown으로 제한
+- [x] 상품 가격/표시 수량을 수동 입력에서 stepper로 변경
 - [x] `flutter analyze` 통과
 - [x] `flutter test` 통과
 
@@ -157,6 +181,8 @@ Success criteria:
 | DB 스키마 변경이 필요한 기능 | 사용자 검증 전에는 DB 변경 범위를 확정하지 않는다 | 현재 DB/API로 검증 가능한 화면을 먼저 연결한 뒤 별도 승인 후 진행 |
 | 상품 수량 입력 | backend `products`에는 재고/수량 필드가 없고 실제 예약 가능 수량은 `harvest_slots`에 있다 | 상품 화면에서는 표시/데모 값으로 유지하고 실제 판매 가능 수량은 수확 슬롯 단계에서 연결 |
 | Chrome 로그인 이후 검증 | 현재 문서의 테스트 계정과 앱 기본 계정이 실제 DB 로그인에 실패한다 | 사용자 검증용 점주 계정을 확인받은 뒤 Chrome에서 login -> dashboard -> product/farm 흐름 검증 |
+| DB 기존 상품 품종 | owner_id 1 DB 상품 중 `신고` 품종이 존재하지만 앱 정책은 `양광`, `부사` 두 가지다 | DB 수정은 사용자 검증 후 진행하고, 앱 신규/수정 UI는 `양광`, `부사`만 선택 가능하게 제한 |
+| DB OWNER 비밀번호 | `owner@test.com`은 farm/product 데이터가 있어 검증 대상 계정으로 적합하지만 `demo1234!`, `pass1234!` 모두 로그인 실패 | DB 수정 없이 JWT 발급으로 API owner flow를 확인하고, 실제 Chrome 로그인 검증은 비밀번호 확인 후 진행 |
 
 ## Test Plan
 
@@ -185,3 +211,5 @@ Success criteria:
 | 5 | Eng | DB 수정이 필요한 작업은 사용자 검증 후로 미룬다 | Mechanical | Bias toward action | 현재 DB/API로 검증 가능한 기능부터 붙여야 실제 앱 흐름을 빨리 확인할 수 있다 | 검증 전 DB 스키마/seed 변경 병행 |
 | 6 | QA | Chrome으로 빠른 검증 후 iOS 시뮬레이터로 최종 검증한다 | Mechanical | Pragmatic | Chrome은 반복 확인이 빠르고 iOS 시뮬레이터는 실제 앱 타깃에 가깝다 | 매번 iOS만 실행해서 반복 속도를 늦추기 |
 | 7 | QA | 실제 DB 계정 생성 없이 Chrome 로그인 이후 검증은 보류한다 | Mechanical | Pragmatic | 서버와 DB health는 정상이나 문서상 계정이 로그인 실패하므로 DB 데이터 생성 없이 진행할 수 없다 | 임의 회원가입/seed 생성으로 DB 데이터 변경 |
+| 8 | Product | 상품 등록/수정 UI는 `양광`, `부사`와 SMART_WEB 포장 단위만 허용한다 | Mechanical | DRY | SMART_WEB 고객 예약 단위와 점주 상품 단위가 같아야 주문/발주 수량 계산이 맞는다 | 자유 텍스트 품종/포장 단위 입력 |
+| 9 | UX | 가격과 표시 수량은 수동 입력 대신 stepper로 조정한다 | Mechanical | Explicit over clever | 숫자 오타를 줄이고 모바일에서 반복 조작하기 쉽다 | 키보드 숫자 입력 유지 |
