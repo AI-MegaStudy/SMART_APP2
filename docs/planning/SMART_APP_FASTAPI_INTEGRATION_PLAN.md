@@ -201,6 +201,7 @@ Success criteria:
 | DB 스키마 변경이 필요한 기능 | 사용자 검증 전에는 DB 변경 범위를 확정하지 않는다 | 현재 DB/API로 검증 가능한 화면을 먼저 연결한 뒤 별도 승인 후 진행 |
 | 상품 수량 입력 | backend `products`에는 재고/수량 필드가 없고 실제 예약 가능 수량은 `harvest_slots`에 있다 | 상품 화면에서는 표시/데모 값으로 유지하고 실제 판매 가능 수량은 수확 슬롯 단계에서 연결 |
 | Chrome 로그인 이후 검증 | 2026-05-11 `cheng80@gmail.com` 계정으로 login -> dashboard -> product list -> product add input 확인 완료 | 농장 수정/등록 저장, 주문 계열 흐름은 연결 단계별로 추가 검증 |
+| Chrome 회원가입 화면 검증 | 2026-05-11 기존 점주 계정 `cheng80@gmail.com`으로 실제 검증하고, 회원가입은 화면 진입과 이메일 인증 UI 연결만 확인했다 | 새 실계정 생성/인증 발송/가입 제출은 하지 않는다. 실제 점주 회원가입 재검증은 사용자 요청 시 별도 진행 |
 | DB 기존 상품 품종 | owner_id 1 DB 상품 중 `신고` 품종이 존재하지만 앱 정책은 `양광`, `부사` 두 가지다 | DB 수정은 사용자 검증 후 진행하고, 앱 신규/수정 UI는 `양광`, `부사`만 선택 가능하게 제한 |
 | DB OWNER 비밀번호 | 기존 `owner@test.com`은 로그인 비밀번호가 확인되지 않았다 | 신규 검증 계정 `cheng80@gmail.com` / `pass1234!`를 기준으로 진행 |
 
@@ -213,6 +214,7 @@ Success criteria:
 - [x] Flutter test
 - [x] Chrome manual: login -> dashboard
 - [x] Chrome manual: product list -> product add input flow
+- [x] Chrome manual: signup screen email verification UI only, no submit
 - [ ] Chrome manual: farm update flow
 - [ ] iOS simulator final: login -> dashboard -> menu -> profile
 - [ ] iOS simulator final: connected owner workflow smoke test
