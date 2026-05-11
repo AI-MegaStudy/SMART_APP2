@@ -10,18 +10,18 @@ Last updated: 2026-05-11
 
 | 항목 | 값 |
 |---|---|
-| SMART_APP 기능 구현 기준 커밋 | `28b5269` |
+| SMART_APP 기능 구현 기준 커밋 | `b64d1a8` |
 | 주요 작업 DB | `harvest_slot_db2` |
 | SMART_WEB 반영 상태 | 실제 폴더 수정 없음. 엔드포인트 마이그레이션 dry-run/임시 적용 검증 완료 |
-| 최신 산출물 | `docs/planning/DB_AND_FASTAPI_DIFF_REPORT.md`, `scripts/migrate_owner_app_endpoints_to_smart_web.py` |
+| 최신 산출물 | `docs/planning/DB_AND_FASTAPI_DIFF_REPORT.md`, `docs/planning/OWNER_APP_ML_PREDICTION_MAPPING.md`, `docs/planning/OWNER_APP_DL_QUALITY_INTEGRATION.md`, `scripts/migrate_owner_app_endpoints_to_smart_web.py` |
 
 | 기준 | 진행도 | 판단 |
 |---|---:|---|
-| 발표용 점주 앱 완성도 | 94% | 로그인 이후 상품, 농장, 수확 예측, 슬롯 오픈/관리, 예약/주문, 발주, 신선도, 배송, 반품, 프로필까지 실패 화면 없이 주요 동선 시연 가능 |
-| 실제 FastAPI 연동도 | 88% | 대부분 owner API 연결 완료. 계정 찾기/비밀번호 재설정/농장 이미지/배송 전용 API까지 추가 구현 |
-| DB/API 대체 진척도 | 90% | DB/API가 실패하는 점주 업무 화면은 발표용 보조 데이터와 로컬 성공 처리로 흐름 유지. 외부 ML/PG/택배/푸시 같은 운영 연동성 기능은 fallback 또는 안내 UX 유지 |
+| 발표용 점주 앱 완성도 | 95% | 로그인 이후 상품, 농장, ML 수확 예측 결과, 슬롯 오픈/관리, 예약/주문, 발주, DL 신선도, 배송, 반품, 프로필까지 주요 동선 시연 가능 |
+| 실제 FastAPI 연동도 | 91% | 대부분 owner API 연결 완료. 계정 찾기/비밀번호 재설정/농장 이미지/배송 전용 API, ML 예측, 신선도 저장 확장까지 구현 |
+| DB/API 대체 진척도 | 92% | DB/API가 실패하는 점주 업무 화면은 발표용 보조 데이터와 로컬 성공 처리로 흐름 유지. DL 신선도는 ngrok 성공 시 실제 모델값, 실패 시 백엔드/앱 보조 판정 |
 | 운영/SMART_WEB 이식 준비도 | 80% | DB 스키마 차이 없음 확인, FastAPI 차이 문서화, SMART_WEB 엔드포인트 마이그레이션 스크립트 작성 및 임시 적용 검증 완료 |
-| 실서비스 투입 준비도 | 76% | 운영 계정 정책, 실제 사진 권한/스토리지, 외부 ML/PG/택배 연동, 운영 seed/migration 승인 필요 |
+| 실서비스 투입 준비도 | 79% | 운영 계정 정책, 실제 사진 권한/스토리지, DL ngrok 상시 운영화, PG/택배 연동, 운영 seed/migration 승인 필요 |
 | Chrome 검증 상태 | 완료 | `http://127.0.0.1:3002`에서 주요 화면 확인 |
 | iOS 최종 검증 상태 | 주요 동선 완료 | 로그인/대시보드/메뉴/수확 슬롯 관리/신선도 갤러리 선택 확인 완료 |
 
@@ -43,18 +43,18 @@ Last updated: 2026-05-11
 
 | 화면 | 진행도 | 실제 구현 기능 | 연결 API / 데이터 | fallback / 보완 | 남은 작업 |
 |---|---:|---|---|---|---|
-| 로그인 | 100% | 이메일/비밀번호 로그인, OWNER role 검증, 토큰 저장, 세션 복원 | `POST /auth/login`, `GET /me` | 없음 | 운영 오류 메시지 세분화 정도 |
+| 로그인 | 100% | 이메일/비밀번호 로그인, OWNER role 검증, 토큰 저장, 세션 복원, debug 세션 만료 로그 | `POST /auth/login`, `GET /me` | 없음. 기본 토큰 만료 30일 | 운영 오류 메시지 세분화 정도 |
 | 대시보드 | 95% | 점주명/농장명 표시, 선별 대기/신규 발주/배송 준비/반품 요청 카운트, 카드 이동 | `GET /owner/dashboard` | API 실패 시 빈 대시보드로 크래시 방지 | 카운트 기준을 운영 정책과 최종 대조 |
 | 메뉴 | 95% | 업무 그룹별 메뉴, 검색, 주요 화면 이동 | Flutter local navigation | 없음 | 세부 메뉴명 최종 문구 검수 |
 | 상품 관리 | 95% | 상품 목록, 검색/필터, 상품 등록, 상품 수정, 대표 이미지 선택/업로드/썸네일, 상태 변경, 품종/박스 단위 제한, 가격/수량 stepper, 상품 소개 저장 | `GET/POST/PUT /owner/products`, `POST /owner/products/{id}/image`, `PATCH /owner/products/{id}/status` | API 실패 시 양광/부사 상품과 로컬 저장 성공 처리로 발표 흐름 유지 | 실기기 갤러리 권한 최종 확인 |
 | 농장 정보 수정 | 95% | 농장명, 주소, 농장 대표 이미지 선택/업로드, 농장 소개, 배송 정책, 반품 정책 수정 | `GET /owner/farms/me`, `PUT /owner/farms/{farm_id}`, `POST /owner/farms/{farm_id}/image` | API 실패 시 청주 햇살농원 정보와 로컬 저장 성공 처리. macOS/web 비지원 환경에서는 주소 후보 bottom sheet, 모바일은 `kpostal_plus` | 실기기 갤러리 권한 최종 확인 |
-| 수확 예측 | 92% | 농장/상품 선택, 과거 수확량/최근 날씨/재배 상태 입력, 예측 실행, 예측 카드/트렌드 표시 | `POST /owner/ml/predictions`, `GET /owner/ml/predictions` | API/세션 실패 시 양광/부사 발표용 예측 fallback으로 흐름 유지 | 실제 ML 모델 연동 시 feature schema 확정 |
+| 수확 예측 | 95% | 농장/상품 선택, 과거 수확량/최근 날씨/재배 상태 입력, 예측 기준 카드, 예측 실행, 차트 kg 수치, 권장 예약량/판매가/표준면적 수확량/신뢰도 표시 | `POST /owner/ml/predictions`, `GET /owner/ml/predictions` | API/세션 실패 시 양광/부사 발표용 예측 fallback으로 흐름 유지 | 모델 feature schema 변경 시 앱 매핑 동기화 |
 | 수확 슬롯 열기/관리 | 94% | 예측값 참고 후 슬롯 생성, 최근 슬롯 목록, 예약/잔여/판매 kg 표시, 예약 가능 kg/판매가/안내 문구 수정, 마감/재오픈 | `GET/POST/PUT /owner/harvest-slots`, `PATCH /owner/harvest-slots/{id}/status` | 예측값을 그대로 열지 않고 점주 확정값 사용 | 슬롯 상세 타임라인은 후순위 |
 | 주문 현황 | 90% | 주문/예약 탭 분리, 상태 필터, 검색, 주문/예약 카드 표시 | `GET /owner/orders`, `GET /owner/reservations` | 내부 seed 주문번호는 화면에 직접 노출하지 않음 | 예약 상세 화면이 필요하면 추가 |
 | 발주 승인 | 90% | 신규 발주 목록, 검색, 다중 선택, 일괄 승인/거절, 거절 사유 선택 | `GET /owner/procurements`, `PATCH /owner/procurements/{id}/decision` | API 데이터 부족 시 주문 fallback으로 승인 흐름 유지 | PATCH 실패 건별 상세 표시 |
 | 발주 상세 | 92% | 품목별 승인 박스/kg 조정, 점주 메모, 전체 승인/전체 거절, 부분승인 자동 판정 | `PATCH /owner/procurements/{id}/decision` | fallback 항목도 화면상 처리 완료 가능 | 다품목 발주 데이터 추가 seed |
 | 발주 현황 | 85% | 발주 상태 목록, 검색, 상태 필터 | `GET /owner/procurements` | 데이터 부족 시 workflow fallback | 상세 타임라인 추가 가능 |
-| 신선도 검사 | 94% | 검사 대상 발주 품목 선택, 이미지 카드 탭/갤러리 버튼, iOS 갤러리 선택/미리보기, 이미지 업로드, 분석, 추천 등급/신선도/색상/형태/멍 확률 표시, 점주 확정 등급/판정 저장 | `GET /owner/procurements`, `POST /owner/quality-inspections/image`, `POST /owner/quality-inspections/analyze`, `POST /owner/quality-inspections` | API/세션/갤러리 실패 시 검사 대상과 샘플 이미지 기준 보조 판정 표시, 저장은 완료 흐름 유지 | 실기기 사진 권한은 후속 확인 |
+| 신선도 검사 | 96% | 검사 대상 발주 품목 선택, 이미지 카드 탭/갤러리 버튼, 이미지 전체 표시, 이미지 업로드, 외부 DL 분석 우선 호출, 추천 등급/신선도/색상/형태/멍 확률/판정 표시, 점주 확정 등급/판정 저장 | 외부 `DL_QUALITY_API_URL`, `GET /owner/procurements`, `POST /owner/quality-inspections/image`, `POST /owner/quality-inspections/analyze`, `POST /owner/quality-inspections` | DL 실패 시 백엔드 분석, 백엔드 실패 시 앱 보조 판정. 저장 실패 시 화면 흐름 유지 | ngrok/Kaggle 상시 운영 URL 필요 |
 | 배송 관리 | 92% | 배송 등록 가능한 발주 선택, 택배사 선택, 송장번호, 발송 중량/박스 수 입력, 바코드 버튼으로 송장 보조 입력 | `POST /owner/shipments` | 배송 대상이 부족하거나 API 실패 시 승인 발주 보조 데이터와 로컬 등록 완료 처리 | 실제 바코드/QR 스캐너 연동 |
 | 배송 현황 | 92% | 배송 목록, 검색/필터, 배송 중/배송 완료 상태 변경 bottom sheet | `GET /owner/shipments`, `PATCH /owner/shipments/{shipment_id}/status` | 구버전 backend 호환용으로 `/owner/orders` shipment field fallback, 서버 미가동 시 JSON fallback | 배송 상세 화면 추가 가능 |
 | 반품 · 환불 관리 | 91% | 반품 요청 목록, 검색, 상세 진입, 고객 첨부 이미지 표시/확대, 승인 금액 입력, 승인/거절, 거절 사유 선택 | `GET /owner/returns`, `PATCH /owner/returns/{id}/decision`, `return_requests.evidence_image_url` | fallback 항목도 화면상 처리 완료 가능 | 실제 PG 환불 API 연계 |
@@ -94,8 +94,9 @@ Last updated: 2026-05-11
 | 발주 | `GET /owner/procurements` | 발주 승인/현황/신선도 대상 | 연결 완료 |
 | 발주 | `PATCH /owner/procurements/{id}/decision` | 발주 승인/부분승인/거절 | 연결 완료 |
 | 신선도 | `POST /owner/quality-inspections/image` | 이미지 업로드 | 연결 완료 |
-| 신선도 | `POST /owner/quality-inspections/analyze` | 품질 분석 | 연결 완료 |
-| 신선도 | `POST /owner/quality-inspections` | 점주 판정 저장 | 연결 완료 |
+| 신선도 | 외부 `DL_QUALITY_API_URL` | 실제 사과 이미지 DL 품질 분석 | 연결 완료. 실패 시 backend analyze로 전환 |
+| 신선도 | `POST /owner/quality-inspections/analyze` | 백엔드 품질 분석 fallback | 연결 완료 |
+| 신선도 | `POST /owner/quality-inspections` | 점주 판정과 실제 분석값 저장 | 연결 완료. DL 결과 필드 선택 저장 지원 |
 | 배송 | `POST /owner/shipments` | 배송 등록 | 연결 완료 |
 | 배송 | `GET /owner/shipments` | 배송 현황 전용 목록 | 추가 구현/연결 완료 |
 | 배송 | `PATCH /owner/shipments/{shipment_id}/status` | 배송 상태 변경 | 연결 완료 |
@@ -113,10 +114,10 @@ Last updated: 2026-05-11
 | `assets/mock/owner_returns.json` | 반품 관리/현황 보조 | 개발자용 표현 노출 없음 | API 정상 응답 시 빈 목록도 그대로 사용. 서버/네트워크 실패 때만 사용 |
 | `scripts/seed_owner3_workflows.py` | owner_id=3 발표용 상태 데이터 구성 | 자연스러운 고객명/상품명으로 표시 | 현재 `created_scenarios=0`, 이미 seed 존재 |
 | 수확 예측 repository fallback | 세션 만료/API 실패 시 발표 흐름 유지 | 개발자용 표현 노출 없음 | 양광/부사 상품, 슬롯, 예측값을 보조 생성 |
-| 신선도 검사 repository fallback | 세션 만료/API 실패 시 검사 대상/분석/저장 흐름 유지 | 개발자용 표현 노출 없음 | 검사 대상 2건과 선택 이미지 기준 보조 판정 제공 |
+| 신선도 검사 repository fallback | DL/ngrok/API/세션 실패 시 검사 대상/분석/저장 흐름 유지 | 개발자용 표현 노출 없음 | 외부 DL -> 백엔드 분석 -> 앱 보조 판정 순서로 전환 |
 | 상품/농장/profile repository fallback | 상품·농장·내 정보 API 실패 시 업무 화면 유지 | 개발자용 표현 노출 없음 | 양광/부사 상품, 청주 햇살농원, 기준 점주 정보 제공. 저장/상태 변경은 화면상 완료 처리 |
 | 배송 등록 repository fallback | 배송 대상/API 실패 시 등록 동선 유지 | 개발자용 표현 노출 없음 | 승인 발주 2건과 로컬 등록 완료 처리 |
-| `QualityAnalysisRecord.localEstimate()` | 품질 분석 API 실패 시 보조 판정 | “선택 이미지 기준 보조 판정” 정도로 안내 | 추천등급/신선도/색상/형태/멍 확률 산출 |
+| `QualityAnalysisRecord.localEstimate()` | 외부 DL과 백엔드 분석이 모두 실패했을 때 최후 보조 판정 | “선택 이미지 기준 보조 판정” 정도로 안내 | 추천등급/신선도/색상/형태/멍 확률 산출 |
 | 발주 fallback local 처리 | 실제 procurement 부족 시 승인 흐름 유지 | 처리 완료 UX | 로컬 세션 내 처리 항목 숨김 |
 | 배송 fallback local 처리 | shipment_id 없는 항목도 발표상 상태 변경 | 처리 완료 UX | 실제 DB 저장은 shipment_id가 있는 항목에서 수행 |
 | 반품 fallback local 처리 | return seed 부족 시 승인/거절 흐름 유지 | 처리 완료 UX | 실제 DB 저장은 return_request_id가 있는 항목에서 수행 |
@@ -146,7 +147,7 @@ Last updated: 2026-05-11
 | 주문 목록 | 실제 `GET /owner/orders` 사용 | API 실패 시 JSON fallback | 대체 완료, fallback 축소 완료 |
 | 예약 목록 | 실제 `GET /owner/reservations` 사용 | 없음 | 대체 완료 |
 | 발주 목록/결정 | 실제 `GET/PATCH /owner/procurements` 사용 | API 실패 시 주문 JSON 기반 보조 | 대부분 대체, 서버 장애용 fallback 유지 |
-| 신선도 검사 대상/저장 | 실제 procurement/quality API 우선 사용 | API/세션 실패 시 검사 대상/분석/저장 fallback | 저장은 API 우선, 발표 안전 fallback 유지 |
+| 신선도 검사 대상/분석/저장 | 실제 procurement/quality API와 외부 DL 우선 사용 | DL/ngrok/API/세션 실패 시 검사 대상/분석/저장 fallback | 외부 DL 성공 시 실제 분석값 표시/저장, 실패 시 발표 안전 fallback 유지 |
 | 배송 등록 | 실제 `POST /owner/shipments` 사용 | 없음 | 대체 완료 |
 | 배송 현황/상태 | 실제 `GET /owner/shipments` + 상태 PATCH 사용 | 구버전 API 호환/서버 장애 fallback | 대체 완료 |
 | 반품 관리/현황 | 실제 `GET/PATCH /owner/returns` 사용 | API 실패 시 JSON fallback | 대체 완료, fallback 축소 완료 |
@@ -167,10 +168,10 @@ Last updated: 2026-05-11
 | 예약 목록 빈 화면 | 이미 `GET /owner/reservations` 존재 | 주문 현황에 예약 탭 연결 완료 | 대체 완료 |
 | 발주 목록이 없을 때 주문 fallback | 대부분 대체 가능 | owner_id=3 seed에 실제 procurement 시나리오 생성. API 실패 시에만 fallback | API/DB 대체 완료, 서버 장애 fallback 유지 |
 | 반품 목록 JSON fallback | 이미 `GET /owner/returns` 존재 | owner_id=3 seed에 반품 요청 생성. API 실패 시에만 JSON fallback | 추가 API 불필요 |
-| 신선도 분석 local estimate | 부분 가능 | backend 분석 API는 존재하지만 실제 외부 DL 모델은 없음 | 외부 DL 모델 전까지 보조 판정 fallback 필요 |
+| 신선도 분석 local estimate | 대부분 대체 | 외부 ngrok DL 분석을 우선 호출하고, 실패 시 backend 분석, 최후에 local estimate 사용 | ngrok/Kaggle 세션 장애 대비 최후 fallback 유지 |
 | 주소 후보 fallback | 부분 가능 | 모바일은 `kpostal_plus`, 데스크톱/web 비지원 환경만 후보 사용 | 플랫폼 보조 fallback 필요 |
 | 수확 예측 세션 만료 메시지 | 가능 | API/세션 실패 시 repository에서 발표용 예측/슬롯 fallback 반환 | 화면에 로그인 만료 문구 노출 방지 |
-| 신선도 검사 세션 만료 메시지 | 가능 | API/세션 실패 시 검사 대상과 local 분석 fallback 반환 | 화면에 로그인 만료 문구 노출 방지 |
+| 신선도 검사 세션 만료 메시지 | 가능 | API/세션 실패 시 검사 대상과 backend/local 분석 fallback 반환 | 화면에 로그인 만료 문구 노출 방지 |
 | 이메일 찾기 안내 UX | 가능 | `POST /auth/email/find` 추가 및 화면 연결 | 대체 완료 |
 | 비밀번호 찾기 안내 UX | 가능 | 인증번호 발송과 새 비밀번호 저장까지 실제 API 연결 | 대체 완료 |
 | 상품/농장 이미지 UI 부재 | 가능 | 상품/농장 대표 이미지 선택, 업로드, asset seed 이미지 표시 구현 | 대체 완료 |
@@ -224,7 +225,7 @@ Last updated: 2026-05-11
 | 농장 | 농장 대표 이미지 업로드 | 구현 완료 | 농장 이미지 파일 선택/업로드 UI, `POST /owner/farms/{farm_id}/image` API 추가 | 없음 | 완료 |
 | 농장 | farm 생성 flow | 기존 농장 조회/수정 중심 | 신규 점주가 농장이 없을 때 농장 생성 API/UI 없음 | `POST /owner/farms` 추가 또는 signup 확장 | 현재 검증 계정은 farm seed 존재 |
 | 주소 | 주소 검색 web 완전 연동 | 모바일은 `kpostal_plus`, 데스크톱/web은 후보 bottom sheet | web에서 실제 우편번호 검색 팝업까지 완전 동작 검증 부족 | web 대응 방식 확인 또는 별도 주소 검색 web bridge | 패키지/플랫폼 동작 차이 |
-| 수확 예측 | 실제 ML 모델 | rule 기반 예측 | 실제 모델 서버/학습 모델 호출 없음 | 모델 API URL, feature schema, timeout/fallback 정책 확정 | 외부 ML 모델 미제공 |
+| 수확 예측 | 실제 ML 예측 API | `POST /owner/ml/predictions` 호출, API 응답의 수확량/예약량/가격/신뢰도/표준면적 수확량 표시 | 모델 파일/feature schema 변경 시 앱 request mapping 재검증 필요 | `OWNER_APP_ML_PREDICTION_MAPPING.md` 기준 유지 |
 | 수확 예측 | 예측 이력 상세 | 최근 예측 조회는 있음 | 예측별 상세 비교/삭제/재실행 UX 없음 | 예측 이력 화면 추가 | 발표 핵심 동선은 생성/참고 위주 |
 | 수확 슬롯 | 슬롯 목록/상세 관리 | 목록/수정/마감 구현 | 슬롯 상세 타임라인, 삭제/숨김 정책 없음 | 상세 화면은 후순위 | 발표 핵심 동선은 관리 카드로 대응 |
 | 수확 슬롯 | 예약량 초과 방지 UI | reserved/sold/available kg 표시 | 예약량 변화 실시간 push는 없음 | 필요 시 polling 또는 notification 추가 | 발표 범위 밖 |
@@ -236,7 +237,7 @@ Last updated: 2026-05-11
 | 발주 | 다품목 발주 seed | 단일 품목 중심 seed | 다품목 발주 UI 검증 데이터 부족 | seed에 다품목 procurement 추가 | DB seed 추가 필요 |
 | 발주 | 발주 상세 타임라인 | 없음 | 요청/승인/선별/배송까지 timeline 표시 없음 | procurement timeline model/UI 추가 | 발표 필수 범위 밖 |
 | 신선도 | iOS 갤러리 최종 검증 | iOS 시뮬레이터 확인 완료 | 실제 iPhone 사진 권한 확인은 남음 | 실기기에서 사진 선택 1회 확인 | 발표 시뮬레이터 기준은 통과 |
-| 신선도 | 실제 DL 모델 | rule/mock-style backend 결과 + localEstimate | 실제 이미지 분석 모델 호출 없음 | `DL_QUALITY_API_URL` 등 외부 모델 연동 | 외부 모델 미제공 |
+| 신선도 | 실제 DL 모델 | 외부 ngrok/Kaggle DL API를 앱에서 multipart 호출, 결과 표시 및 저장 | ngrok URL이 바뀌거나 내려가면 backend/local fallback 사용 | 상시 운영 URL/인프라 필요 |
 | 신선도 | 검사 이미지 저장 정책 | 업로드 API 있음 | 영구 스토리지/S3/CDN/보존기간 정책 미확정 | `ImageStorageService` 운영 저장소 연결 | 로컬/개발 저장소 기준 |
 | 신선도 | 재촬영/부적합 flow | 일부 판단값만 있음 | RETAKE 사유, 재촬영 강제, 다중 이미지 비교 부족 | 분석 결과 action_required 기반 UX 강화 | 현재는 점주 보조 판정 중심 |
 | 배송 | 실제 바코드/QR 스캐너 | 버튼이 송장 자동 입력 보조로 동작 | 카메라 기반 바코드/QR scan 없음 | 모바일 scanner 패키지 도입 및 권한 설정 | 발표용으로는 송장 보조 입력 처리 |

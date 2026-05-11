@@ -7,7 +7,7 @@
 | 항목 | 기준 |
 |---|---|
 | SMART_APP 경로 | `/Users/cheng80/Desktop/smart_app` |
-| SMART_APP 비교 작성 기준 | `main@27202f9` |
+| SMART_APP 비교 작성 기준 | `main@b64d1a8` |
 | SMART_WEB 경로 | `/Users/cheng80/Desktop/smart_web` |
 | SMART_WEB 커밋 | `main@33bff03` |
 | 원본 DB | `harvest_slot_db` |
@@ -75,6 +75,17 @@
 | SMART_APP에만 있는 엔드포인트 | 5 |
 | SMART_WEB에만 있는 엔드포인트 | 6 |
 
+### 후속 FastAPI 동작 변경
+
+2026-05-11 후속 작업에서 엔드포인트 개수는 변하지 않았지만, 아래 동작이 SMART_APP backend에 추가/변경됐다.
+
+| 영역 | 변경 | DB 스키마 영향 | 앱 영향 |
+|---|---|---|---|
+| 인증 | 기본 access token 만료 시간을 `60분`에서 `43200분(30일)`로 변경 | 없음 | 앱을 재실행해도 30일 동안 세션 유지. 기존 발급 토큰은 재로그인해야 새 만료시간 적용 |
+| 신선도 저장 | `POST /owner/quality-inspections`가 `model_grade`, `freshness_score`, `color_score`, `roundness_score`, `bruise_probability`, `model_decision`, `model_version` 선택 입력을 받음 | 없음 | 앱이 외부 DL 분석 결과를 화면 표시값 그대로 저장 가능 |
+| 신선도 분석 fallback | 외부 DL 결과가 앱에서 전달되면 backend가 다시 mock/rule 분석을 실행하지 않고 전달값을 저장 | 없음 | ngrok/Kaggle DL 성공 시 실제 모델 결과가 DB에 남고, 실패 시 기존 백엔드 분석/앱 보조 판정으로 흐름 유지 |
+| 수확 예측 응답 표시 | `unit_yield_kg_10a`, `confidence`, `warning_message`를 점주용 문구로 분리 표시 | 없음 | 화면에는 `1,000㎡ 기준 수확량`, `신뢰도`, `정상/주의`처럼 업무 표현으로 노출 |
+
 ### SMART_APP에 추가된 엔드포인트
 
 | Method | Path | 파일 | 목적 |
@@ -106,7 +117,7 @@
 | 점주 | `owner_router.py`, `owner_service.py` | 농장 이미지 업로드 endpoint 추가, dashboard/profile 응답 보강 |
 | 상품/농장 | `product_service.py` | farm/product image URL 직렬화 및 업로드 처리 |
 | 배송 | `shipment_router.py`, `shipment_service.py` | 점주 배송 현황 전용 list API 추가 |
-| ML/주문/발주/품질 | `ml_service.py`, `order_service.py`, `procurement_service.py`, `quality_analysis_service.py` | owner 앱 발표 흐름을 위한 응답/판정/fallback 보강 |
+| ML/주문/발주/품질 | `ml_service.py`, `order_service.py`, `procurement_service.py`, `quality_analysis_service.py`, `quality_service.py`, `quality_schema.py` | owner 앱 발표 흐름을 위한 응답/판정/fallback 보강. 신선도 저장 API는 외부 DL 분석 결과 필드도 선택적으로 수용 |
 | 라우터 구성 | `router.py` | SMART_APP에는 address router include가 없음 |
 
 ## 엔드포인트 차이의 앱 영향

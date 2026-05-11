@@ -103,7 +103,7 @@ Flutter screens
   -> service / repository / SQLAlchemy models
 ```
 
-현재 앱은 공통 `ApiService`를 통해 `/api/v1` prefix, 응답 래퍼, 토큰 인증, multipart upload를 처리한다. 부족한 데이터가 있는 업무 화면은 API 우선 호출 후 `assets/mock/*.json` fallback으로 발표 흐름을 유지한다.
+현재 앱은 공통 `ApiService`를 통해 `/api/v1` prefix, 응답 래퍼, 토큰 인증, multipart upload를 처리한다. 부족한 데이터가 있는 업무 화면은 API 우선 호출 후 `assets/mock/*.json` fallback으로 발표 흐름을 유지한다. 신선도 검사는 앱에서 외부 `DL_QUALITY_API_URL`로 multipart 이미지를 먼저 전송하고, 실패하면 백엔드 분석 API와 앱 보조 판정으로 순차 전환한다.
 
 ## Target API Client
 
@@ -113,30 +113,31 @@ Flutter screens
 - 공통 응답 래퍼에서 `data` 추출
 - 실패 응답의 `message`, `error`, status code를 화면에 전달
 - access token 저장 및 `Authorization: Bearer <token>` 자동 주입
-- 401 또는 403 발생 시 로그인 만료 상태로 전환할 수 있는 구조
+- JWT 세션 복원/로그인 시 debug console에 만료 시각과 남은 기간 출력
+- 백엔드 기본 access token 만료 시간은 30일
 
 ## Page/API Map
 
 | Priority | Flutter page | User outcome | Backend API | Current state | Plan |
 |---|---|---|---|---|---|
-| P0 | `login_page.dart` | 점주 로그인 | `POST /api/v1/auth/login`, `GET /api/v1/me` | 하드코딩 계정 검사 | 실제 로그인, 토큰 저장, role OWNER 검증 |
-| P0 | `dashboard_page.dart` | 오늘 업무량 확인 | `GET /api/v1/owner/dashboard` | 일부 repository, 경로/래퍼/필드명 불일치 | API client 교체, snake_case 필드 매핑 |
-| P1 | `product_page.dart` | 상품 목록 확인 | `GET /api/v1/owner/products` | 로컬 리스트 | repository + model 추가, 상태 enum 매핑 |
-| P1 | `product_add_page.dart` | 상품 등록 | `POST /api/v1/owner/products` | local pop result | farm_id 선택/기본값 연결 후 등록 |
-| P1 | `product_edit_page.dart` | 상품 수정/상태 변경 | `PUT /api/v1/owner/products/{id}`, `PATCH /status` | local edit | id 기반 update, status enum 변환 |
-| P1 | `farm_detail_page.dart` | 농장 정보 수정 | `GET /api/v1/owner/farms/me`, `PUT /api/v1/owner/farms/{farm_id}` | 하드코딩 폼 | 첫 농장 조회 후 수정 저장 |
-| P2 | `harvest_slot_page.dart` | ML 참고 후 슬롯 생성 | `POST /api/v1/owner/ml/predictions`, `GET /api/v1/owner/ml/predictions`, `POST /api/v1/owner/harvest-slots` | 정적 입력 | 농장/상품 선택, 예측 생성, 점주 확정 슬롯 생성 |
-| P2 | `orders_page.dart` | 예약/주문 조회 | `GET /api/v1/owner/reservations`, `GET /api/v1/owner/orders` | `sampleOrders` | 예약과 주문 모델 분리, 화면에서는 합산 또는 탭 분리 |
-| P2 | `procurement_page.dart` | 발주 승인/거절 | `GET /api/v1/owner/procurements`, `GET /api/v1/owner/procurements/{id}`, `PATCH /decision` | 주문 더미 재사용 | procurement_id 단위 결정, 일괄 선택은 순차 PATCH |
-| P3 | `quality_page.dart` | 신선도 검사 저장 | `GET /api/v1/owner/procurements`, `POST /api/v1/owner/quality-inspections/analyze`, `POST /api/v1/owner/quality-inspections` | 이미지 선택만 | 발주 품목 선택 UI 추가 후 분석/저장 |
-| P3 | `shipment_page.dart` | 배송 등록 | `POST /api/v1/owner/shipments`, `PATCH /api/v1/owner/shipments/{id}/status` | 로컬 문자열 파싱 | READY_TO_SHIP 주문 선택 후 송장 등록 |
-| P3 | `shipment_status_page.dart` | 배송 상태 확인 | `GET /api/v1/owner/orders` plus shipment fields | 로컬 상태 | 주문 응답의 shipment 포함 여부 확인 후 매핑 |
-| P3 | `return_page.dart` | 반품 승인/거절 | `GET /api/v1/owner/returns`, `PATCH /api/v1/owner/returns/{id}/decision` | 로컬 리스트 | return_request_id 기반 결정 |
-| P3 | `return_status_page.dart` | 처리 결과 확인 | `GET /api/v1/owner/returns` | 로컬 상태 | 상태 필터 매핑 |
-| P4 | `owner_detail_page.dart` | 점주 정보 수정 | `GET /api/v1/owner/profile`, `PUT /api/v1/owner/profile` | 하드코딩 폼 | owner_name, owner_phone, business_number만 수정 |
-| P4 | `signup_page.dart` | 점주 회원가입 | `POST /api/v1/auth/owners/signup`, email APIs | 로컬 이메일 중복 검사 | 회원가입 + 이메일 인증 흐름 연결 |
-| Deferred | `email_find_page.dart` | 이메일 찾기 | 없음 | 폼만 있음 | 별도 API 필요 |
-| Deferred | `password_find_page.dart` | 비밀번호 재설정 | 없음 | 폼만 있음 | 별도 API 필요 |
+| P0 | `login_page.dart` | 점주 로그인 | `POST /api/v1/auth/login`, `GET /api/v1/me` | 완료 | 실제 로그인, 토큰 저장, role OWNER 검증, 세션 기간 로그 |
+| P0 | `dashboard_page.dart` | 오늘 업무량 확인 | `GET /api/v1/owner/dashboard` | 완료 | snake_case 필드 매핑, API 실패 시 발표용 보조 카운트 |
+| P1 | `product_page.dart` | 상품 목록 확인 | `GET /api/v1/owner/products` | 완료 | 상태 enum 매핑, 대표 이미지 전체 표시 |
+| P1 | `product_add_page.dart` | 상품 등록 | `POST /api/v1/owner/products` | 완료 | farm_id 연결, 품종/박스/이미지/가격 입력 |
+| P1 | `product_edit_page.dart` | 상품 수정/상태 변경 | `PUT /api/v1/owner/products/{id}`, `PATCH /status` | 완료 | id 기반 update, status enum 변환 |
+| P1 | `farm_detail_page.dart` | 농장 정보 수정 | `GET /api/v1/owner/farms/me`, `PUT /api/v1/owner/farms/{farm_id}`, `POST /owner/farms/{farm_id}/image` | 완료 | 첫 농장 조회 후 수정 저장, 대표 이미지 업로드 |
+| P2 | `harvest_slot_page.dart` | ML 참고 후 슬롯 생성 | `POST /api/v1/owner/ml/predictions`, `GET /api/v1/owner/ml/predictions`, `POST /api/v1/owner/harvest-slots` | 완료 | 입력 기준 카드, 차트 수치, 권장값, 표준면적 수확량, 신뢰도 표시 |
+| P2 | `orders_page.dart` | 예약/주문 조회 | `GET /api/v1/owner/reservations`, `GET /api/v1/owner/orders` | 완료 | 예약/주문 탭 분리 |
+| P2 | `procurement_page.dart` | 발주 승인/거절 | `GET /api/v1/owner/procurements`, `GET /api/v1/owner/procurements/{id}`, `PATCH /decision` | 완료 | procurement_id 단위 결정, 상세 품목별 수량 조정 |
+| P3 | `quality_page.dart` | 신선도 검사 저장 | 외부 `DL_QUALITY_API_URL`, `GET /api/v1/owner/procurements`, `POST /api/v1/owner/quality-inspections/analyze`, `POST /api/v1/owner/quality-inspections` | 완료 | 발주 품목 선택, 이미지 전체 표시, 외부 DL 분석 우선, 결과값 저장 |
+| P3 | `shipment_page.dart` | 배송 등록 | `POST /api/v1/owner/shipments`, `PATCH /api/v1/owner/shipments/{id}/status` | 완료 | READY_TO_SHIP 발주 상품 선택 후 송장 등록 |
+| P3 | `shipment_status_page.dart` | 배송 상태 확인 | `GET /api/v1/owner/shipments` | 완료 | 전용 shipment 목록 API 우선, 구버전 orders fallback |
+| P3 | `return_page.dart` | 반품 승인/거절 | `GET /api/v1/owner/returns`, `PATCH /api/v1/owner/returns/{id}/decision` | 완료 | return_request_id 기반 결정, 첨부 이미지 확대 |
+| P3 | `return_status_page.dart` | 처리 결과 확인 | `GET /api/v1/owner/returns` | 완료 | 상태 필터 매핑 |
+| P4 | `owner_detail_page.dart` | 점주 정보 수정 | `GET /api/v1/owner/profile`, `PUT /api/v1/owner/profile` | 완료 | owner_name, owner_phone, business_number 수정 |
+| P4 | `signup_page.dart` | 점주 회원가입 | `POST /api/v1/auth/owners/signup`, email APIs | 완료 | 회원가입 + 이메일 인증 흐름 연결 |
+| P4 | `email_find_page.dart` | 이메일 찾기 | `POST /auth/email/find` | 완료 | 이름/전화번호 기반 마스킹 이메일 조회 |
+| P4 | `password_find_page.dart` | 비밀번호 재설정 | `POST /auth/password/reset-request`, `POST /auth/password/reset-confirm` | 완료 | 인증번호 발송 후 새 비밀번호 저장 |
 
 ## Implementation Phases
 
@@ -200,7 +201,7 @@ Success criteria:
 ### Phase 4: Quality, Shipment, Return
 
 - [x] 발주 품목 선택 UI 추가
-- [x] 품질 이미지 분석/저장 연결
+- [x] 외부 DL 품질 이미지 분석/저장 연결
 - [x] 배송 등록 연결
 - [x] 배송 상태 변경 연결
 - [x] 배송 현황 API 우선 + JSON fallback 연결
@@ -210,6 +211,7 @@ Success criteria:
 
 Success criteria:
 - 점주가 신선도 검사 결과와 점주 판정을 분리해 저장한다.
+- 외부 DL 서버가 살아 있으면 실제 모델 결과를 표시하고, 실패하면 백엔드 분석/앱 보조 판정으로 흐름을 유지한다.
 - READY_TO_SHIP 주문에 송장을 등록할 수 있다.
 - 반품 승인 시 approved_amount 검증 실패를 화면에 표시한다.
 - 배송 현황에서 실제 shipment_id가 있는 항목은 배송 중/배송 완료로 상태 변경할 수 있다.
@@ -219,20 +221,17 @@ Success criteria:
 - [x] 점주 프로필 조회/수정 연결
 - [x] 회원가입 API 연결
 - [x] 이메일 인증 요청/검증 연결
-- [x] 이메일 찾기 API 없음 문서화 유지
-- [x] 비밀번호 재설정 API 없음 문서화 유지
+- [x] 이메일 찾기 API 추가 및 화면 연결
+- [x] 비밀번호 재설정 API 추가 및 화면 연결
 
 ## Deferred / Missing Data
 
 | Item | Reason | Later action |
 |---|---|---|
-| 이메일 찾기 | backend 최종본에 이름/전화번호 기반 이메일 찾기 API가 없다 | `POST /auth/email/find` 또는 운영 정책 결정 후 구현 |
-| 비밀번호 재설정 | backend 최종본에 reset token 발급/검증 API가 없다 | `POST /auth/password/reset-request`, `POST /auth/password/reset-confirm` 설계 필요 |
 | 상품 삭제 | backend 최종본에 `DELETE /owner/products/{id}`가 없다 | 물리 삭제 대신 `PATCH /status`로 `INACTIVE` 처리 |
-| 농장 이미지 업로드 | 농장 전용 업로드 API가 명확하지 않다 | 공통 이미지 업로드 후 `farm_image_url` 저장으로 처리 가능 |
-| 배송 현황 상세 전용 API | owner shipment list 전용 API는 없다 | `GET /owner/orders` 응답에 shipment fields를 추가해 현황/상태 변경 화면에서 사용한다. 별도 list API는 필요해질 때 추가 |
+| DL 신선도 상시 운영 URL | 현재 외부 ngrok/Kaggle 세션 의존 | 발표 전 `DL_QUALITY_API_URL` 최신값 확인. 운영은 고정 HTTPS endpoint 필요 |
 | fallback 배송 상태 변경 | JSON fallback 항목은 실제 shipment_id가 없다 | 발표용 조회만 허용하고, 실제 상태 변경은 DB shipment_id가 있는 항목에서만 처리 |
-| 신선도 검사 대상 데이터 부족 | `POST /owner/quality-inspections/*`는 실제 `procurement_item_id`가 필요하다 | owner_id=3 seed에 선별 대기 품목을 추가했고, 없으면 화면에서 “승인된 발주 품목 없음”으로 안내 |
+| 신선도 검사 대상 데이터 부족 | `POST /owner/quality-inspections/*`는 실제 `procurement_item_id`가 필요하다 | owner_id=3 seed에 선별 대기 품목을 추가했고, 없으면 화면에서 “승인된 발주 품목 없음”으로 안내. 외부 DL 실패 시에도 앱 보조 판정 유지 |
 | 회원가입 농장 정보 저장 | `POST /auth/owners/signup`는 owner 계정만 만들고 농장명/주소/사업자번호는 받지 않는다 | 가입 후 로그인 상태에서 농장 정보 수정 화면으로 저장하거나, 별도 owner signup 확장 API 검토 |
 | 고객웹 QA seed 원본 스크립트 | PDF에는 `seed_customer_flow_qa_data.py` 기준이 있지만 현재 로컬 프로젝트에는 스크립트 파일이 없다 | PDF의 상태 분포와 화면 노출 기준만 owner3 seed/fallback에 반영했다 |
 | fallback 데이터 | API/DB가 부족한 상태에서도 발표 흐름이 필요하다 | `assets/mock/owner_orders.json`, `owner_shipments.json`, `owner_returns.json`은 유지하되 개발자용 `QA` 노출은 제거했다 |
