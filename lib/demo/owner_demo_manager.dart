@@ -40,7 +40,17 @@ class DemoTargetKeys {
   static final productAddSave = GlobalKey(debugLabel: 'demo.product.add.save');
   static final harvestProduct = GlobalKey(debugLabel: 'demo.harvest.product');
   static final harvestYield = GlobalKey(debugLabel: 'demo.harvest.yield');
+  static final harvestFeatures = GlobalKey(debugLabel: 'demo.harvest.features');
   static final harvestPredict = GlobalKey(debugLabel: 'demo.harvest.predict');
+  static final harvestResultChart = GlobalKey(
+    debugLabel: 'demo.harvest.result.chart',
+  );
+  static final harvestResultMetrics = GlobalKey(
+    debugLabel: 'demo.harvest.result.metrics',
+  );
+  static final harvestConfidence = GlobalKey(
+    debugLabel: 'demo.harvest.confidence',
+  );
   static final harvestOpenSlot = GlobalKey(
     debugLabel: 'demo.harvest.open.slot',
   );
@@ -72,6 +82,7 @@ class DemoTargetKeys {
   static final qualityImage = GlobalKey(debugLabel: 'demo.quality.image');
   static final qualityAnalyze = GlobalKey(debugLabel: 'demo.quality.analyze');
   static final qualityResult = GlobalKey(debugLabel: 'demo.quality.result');
+  static final qualityDecision = GlobalKey(debugLabel: 'demo.quality.decision');
   static final qualityOwnerGrade = GlobalKey(
     debugLabel: 'demo.quality.owner.grade',
   );
@@ -149,7 +160,14 @@ class OwnerDemoManager {
       await _push(const HarvestSlotPage(demoAutoPredict: true));
       await _focus(key: DemoTargetKeys.harvestProduct);
       await _focus(key: DemoTargetKeys.harvestYield);
+      await _focus(key: DemoTargetKeys.harvestFeatures);
       await _focus(key: DemoTargetKeys.harvestPredict);
+      await _focus(key: DemoTargetKeys.harvestResultChart, contextAttempts: 70);
+      await _focus(
+        key: DemoTargetKeys.harvestResultMetrics,
+        contextAttempts: 70,
+      );
+      await _focus(key: DemoTargetKeys.harvestConfidence, contextAttempts: 70);
       await _focus(key: DemoTargetKeys.harvestOpenSlot);
 
       await root();
@@ -184,7 +202,8 @@ class OwnerDemoManager {
       await _focus(key: DemoTargetKeys.qualityTarget);
       await _focus(key: DemoTargetKeys.qualityImage);
       await _focus(key: DemoTargetKeys.qualityAnalyze);
-      await _focus(key: DemoTargetKeys.qualityResult);
+      await _focus(key: DemoTargetKeys.qualityResult, contextAttempts: 120);
+      await _focus(key: DemoTargetKeys.qualityDecision, contextAttempts: 120);
       await _focus(key: DemoTargetKeys.qualityOwnerGrade);
       await _focus(key: DemoTargetKeys.qualityOwnerDecision);
       await _focus(key: DemoTargetKeys.qualitySave);
@@ -230,10 +249,14 @@ class OwnerDemoManager {
   Future<void> _focus({
     required GlobalKey key,
     Duration beforeDelay = Duration.zero,
+    int contextAttempts = 20,
   }) async {
     if (beforeDelay > Duration.zero) await _wait(beforeDelay);
     _hideHighlight();
-    final targetContext = await _waitForContext(key);
+    final targetContext = await _waitForContext(
+      key,
+      maxAttempts: contextAttempts,
+    );
     if (targetContext != null) {
       await Scrollable.ensureVisible(
         targetContext,
@@ -249,8 +272,11 @@ class OwnerDemoManager {
     await _wait(const Duration(seconds: 4));
   }
 
-  Future<BuildContext?> _waitForContext(GlobalKey key) async {
-    for (var attempt = 0; attempt < 20; attempt++) {
+  Future<BuildContext?> _waitForContext(
+    GlobalKey key, {
+    int maxAttempts = 20,
+  }) async {
+    for (var attempt = 0; attempt < maxAttempts; attempt++) {
       final current = key.currentContext;
       if (current != null) return current;
       await _wait(const Duration(milliseconds: 120));

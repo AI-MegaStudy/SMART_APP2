@@ -484,6 +484,7 @@ class _HarvestSlotPageState extends State<HarvestSlotPage> {
               },
             ),
             _MlFeatureCard(
+              key: DemoTargetKeys.harvestFeatures,
               request: _predictionRequest,
               weatherPreset: recentWeather,
               cultivationPreset: cultivationStatus,
@@ -506,11 +507,15 @@ class _HarvestSlotPageState extends State<HarvestSlotPage> {
                 text: '상품과 입력값을 확인한 뒤 수확 예측을 실행하세요.',
               ),
             if (!predicting && currentPrediction != null) ...[
-              YieldChart(
-                values: currentPrediction.trendValues,
-                labels: currentPrediction.trendLabels,
+              KeyedSubtree(
+                key: DemoTargetKeys.harvestResultChart,
+                child: YieldChart(
+                  values: currentPrediction.trendValues,
+                  labels: currentPrediction.trendLabels,
+                ),
               ),
               GridCards(
+                key: DemoTargetKeys.harvestResultMetrics,
                 children: [
                   MetricCard(
                     icon: Icons.calendar_month_outlined,
@@ -541,10 +546,11 @@ class _HarvestSlotPageState extends State<HarvestSlotPage> {
                 ],
               ),
               DataTile(
+                key: DemoTargetKeys.harvestConfidence,
                 icon: Icons.verified_outlined,
                 title: '신뢰도 ${currentPrediction.confidenceLabel}',
                 subtitle: currentPrediction.warningMessage,
-                badge: currentPrediction.standardAreaYieldLabel,
+                badge: currentPrediction.standardAreaYieldBadge,
                 badgeColor: const Color(0xffDFF4E8),
               ),
               const NoticeBox(
@@ -766,6 +772,7 @@ class _SlotPill extends StatelessWidget {
 
 class _MlFeatureCard extends StatelessWidget {
   const _MlFeatureCard({
+    super.key,
     required this.request,
     required this.weatherPreset,
     required this.cultivationPreset,

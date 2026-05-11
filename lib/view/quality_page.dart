@@ -354,6 +354,7 @@ class _QualityPageState extends State<QualityPage> {
             ],
           ),
           DataTile(
+            key: DemoTargetKeys.qualityDecision,
             icon: Icons.check_circle_outline,
             title: analysis?.bruiseLabel ?? '분석 대기',
             subtitle: analysis == null

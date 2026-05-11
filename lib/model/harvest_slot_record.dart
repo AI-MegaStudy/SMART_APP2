@@ -63,6 +63,8 @@ class HarvestPredictionRecord {
       unitYieldKg10a == null ? '' : '${unitYieldKg10a!.round()}kg';
   String get standardAreaYieldLabel =>
       unitYieldKg10a == null ? '' : '1,000㎡ 기준 수확량';
+  String get standardAreaYieldBadge =>
+      unitYieldKg10a == null ? '' : '${unitYieldKg10a!.round()}kg/1,000㎡';
   List<double> get trendValues {
     final base = estimatedYieldKg <= 0 ? 1.0 : estimatedYieldKg;
     final confidenceSpread = (1 - confidence.clamp(0.0, 1.0)) * 0.16;
