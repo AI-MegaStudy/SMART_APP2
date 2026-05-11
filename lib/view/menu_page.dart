@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smart_app/demo/owner_demo_manager.dart';
 import 'package:smart_app/util/app_colors.dart';
 import 'package:smart_app/view/harvest_slot_page.dart';
 import 'package:smart_app/view/orders_page.dart';
@@ -23,7 +24,7 @@ class _MenuPageState extends State<MenuPage> {
   final searchController = TextEditingController();
   bool showSearch = false;
 
-  static const sections = [
+  static final sections = [
     MenuSectionData(
       title: '기본 관리',
       items: [
@@ -32,18 +33,21 @@ class _MenuPageState extends State<MenuPage> {
           title: '상품 관리',
           subtitle: '판매 상품 등록, 포장 단위, 가격 관리',
           page: ProductPage(),
+          demoKey: DemoTargetKeys.menuProduct,
         ),
         MenuEntry(
           icon: Icons.auto_graph_outlined,
           title: '수확 예측',
           subtitle: 'ML 예측 확인 후 주문 가능 수량 확인',
           page: HarvestSlotPage(),
+          demoKey: DemoTargetKeys.menuHarvest,
         ),
         MenuEntry(
           icon: Icons.center_focus_strong_outlined,
           title: '신선도 검사',
           subtitle: '촬영, DL 결과 확인, 점주 최종 판정',
           page: QualityPage(),
+          demoKey: DemoTargetKeys.menuQuality,
         ),
       ],
     ),
@@ -55,12 +59,14 @@ class _MenuPageState extends State<MenuPage> {
           title: '주문 현황',
           subtitle: '고객 주문 완료와 결제 상태 확인',
           page: OrdersPage(),
+          demoKey: DemoTargetKeys.menuOrders,
         ),
         MenuEntry(
           icon: Icons.inventory_2_outlined,
           title: '발주 승인',
           subtitle: '주문 완료 건 선택 후 승인 또는 거절',
           page: ProcurementPage(),
+          demoKey: DemoTargetKeys.menuProcurement,
         ),
         MenuEntry(
           icon: Icons.fact_check_outlined,
@@ -78,6 +84,7 @@ class _MenuPageState extends State<MenuPage> {
           title: '배송 관리',
           subtitle: '택배사, 송장 번호, 발송 수량 등록',
           page: ShipmentPage(),
+          demoKey: DemoTargetKeys.menuShipment,
         ),
         MenuEntry(
           icon: Icons.route_outlined,
@@ -95,6 +102,7 @@ class _MenuPageState extends State<MenuPage> {
           title: '반품 · 환불 관리',
           subtitle: '반품 요청 확인, 승인/거절, 환불 처리',
           page: ReturnPage(),
+          demoKey: DemoTargetKeys.menuReturn,
         ),
         MenuEntry(
           icon: Icons.assignment_return_outlined,
@@ -229,12 +237,14 @@ class MenuEntry {
   final String title;
   final String subtitle;
   final Widget page;
+  final Key? demoKey;
 
   const MenuEntry({
     required this.icon,
     required this.title,
     required this.subtitle,
     required this.page,
+    this.demoKey,
   });
 }
 
@@ -246,6 +256,7 @@ class _MenuTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
+      key: entry.demoKey,
       color: Colors.white,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(

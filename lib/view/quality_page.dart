@@ -2,13 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:smart_app/core/api_exception.dart';
+import 'package:smart_app/demo/owner_demo_manager.dart';
 import 'package:smart_app/model/quality_record.dart';
 import 'package:smart_app/repositories/quality_repository.dart';
 import 'package:smart_app/util/app_colors.dart';
 import 'package:smart_app/widgets/owner_widgets.dart';
 
 class QualityPage extends StatefulWidget {
-  const QualityPage({super.key});
+  final bool demoAutoImage;
+  final bool demoAutoAnalyze;
+
+  const QualityPage({
+    super.key,
+    this.demoAutoImage = false,
+    this.demoAutoAnalyze = false,
+  });
 
   @override
   State<QualityPage> createState() => _QualityPageState();
@@ -28,6 +36,7 @@ class _QualityPageState extends State<QualityPage> {
   bool isLoading = false;
   bool isAnalyzing = false;
   bool isSaving = false;
+  bool demoAnalyzeScheduled = false;
   String? loadError;
 
   @override
@@ -49,6 +58,11 @@ class _QualityPageState extends State<QualityPage> {
         targets = loaded;
         selectedTarget = loaded.isEmpty ? null : loaded.first;
       });
+      if (widget.demoAutoImage) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && selectedImageBytes == null) _applyDemoImage();
+        });
+      }
     } on ApiException catch (error) {
       if (!mounted) return;
       setState(() => loadError = error.message);
@@ -132,8 +146,8 @@ class _QualityPageState extends State<QualityPage> {
 
   Future<void> _applyDemoImage() async {
     final asset = selectedTarget?.productName.contains('부사') == true
-        ? 'assets/images/owner_demo/fuji_apples.png'
-        : 'assets/images/owner_demo/yanggwang_apples.png';
+        ? 'assets/images/owner_demo/demo_fuji_product.png'
+        : 'assets/images/owner_demo/demo_yanggwang_product.png';
     final data = await rootBundle.load(asset);
     if (!mounted) return;
     setState(() {
@@ -141,6 +155,16 @@ class _QualityPageState extends State<QualityPage> {
       selectedImageName = asset.split('/').last;
       inspectionAnchor = const Offset(0.5, 0.72);
       analysis = null;
+    });
+    _scheduleDemoAnalyze();
+  }
+
+  void _scheduleDemoAnalyze() {
+    if (!widget.demoAutoAnalyze || demoAnalyzeScheduled) return;
+    demoAnalyzeScheduled = true;
+    Future<void>.delayed(const Duration(milliseconds: 9300), () {
+      if (!mounted || selectedImageBytes == null || analysis != null) return;
+      _analyze();
     });
   }
 
@@ -265,6 +289,7 @@ class _QualityPageState extends State<QualityPage> {
               text: '승인된 발주 품목이 없어 신선도 검사를 저장할 수 없습니다.',
             ),
           LabeledDropdown(
+            key: DemoTargetKeys.qualityTarget,
             label: '검사 대상 발주 품목',
             value: selectedTarget?.title ?? '',
             items: [for (final target in targets) target.title],
@@ -277,6 +302,7 @@ class _QualityPageState extends State<QualityPage> {
             },
           ),
           CameraPreviewCard(
+            key: DemoTargetKeys.qualityImage,
             icon: Icons.image_search_outlined,
             label: null,
             hasImage: hasImage,
@@ -300,6 +326,7 @@ class _QualityPageState extends State<QualityPage> {
             text: '판별 결과는 선별 보조 자료입니다. 최종 등급과 출고 여부는 점주가 확정합니다.',
           ),
           GridCards(
+            key: DemoTargetKeys.qualityResult,
             children: [
               MetricCard(
                 icon: Icons.workspace_premium_outlined,
@@ -333,6 +360,7 @@ class _QualityPageState extends State<QualityPage> {
             badgeColor: AppColors.mint,
           ),
           LabeledDropdown(
+            key: DemoTargetKeys.qualityOwnerGrade,
             label: '점주 확정 등급',
             value: ownerGrade,
             items: const ['A', 'B', 'C'],
@@ -341,6 +369,7 @@ class _QualityPageState extends State<QualityPage> {
             },
           ),
           LabeledDropdown(
+            key: DemoTargetKeys.qualityOwnerDecision,
             label: '점주 판정',
             value: ownerDecision,
             items: const ['PASS', 'HOLD', 'REJECT'],
@@ -349,6 +378,8 @@ class _QualityPageState extends State<QualityPage> {
             },
           ),
           DualActionBar(
+            leftKey: DemoTargetKeys.qualityAnalyze,
+            rightKey: DemoTargetKeys.qualitySave,
             left: isAnalyzing ? '분석 중' : '분석',
             right: isSaving ? '저장 중' : '저장',
             onLeftPressed: isAnalyzing ? null : _analyze,

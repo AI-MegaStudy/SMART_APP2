@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smart_app/demo/owner_demo_manager.dart';
 import 'package:smart_app/model/owner_order_record.dart';
 import 'package:smart_app/repositories/owner_workflow_repository.dart';
 import 'package:smart_app/util/app_colors.dart';
@@ -38,7 +39,9 @@ class _ProcurementDetailPageState extends State<ProcurementDetailPage> {
   }
 
   String get _decision {
-    if (items.every((item) => item.approvedPackageCount <= 0 || item.approvedKg <= 0)) {
+    if (items.every(
+      (item) => item.approvedPackageCount <= 0 || item.approvedKg <= 0,
+    )) {
       return 'REJECTED';
     }
     if (items.every(
@@ -146,6 +149,7 @@ class _ProcurementDetailPageState extends State<ProcurementDetailPage> {
             children: [
               Expanded(
                 child: FilledButton.tonal(
+                  key: DemoTargetKeys.procurementApproveAll,
                   onPressed: _approveAll,
                   child: const Text('전체 승인'),
                 ),
@@ -161,6 +165,7 @@ class _ProcurementDetailPageState extends State<ProcurementDetailPage> {
           ),
           for (var index = 0; index < items.length; index++)
             _ProcurementItemEditor(
+              key: index == 0 ? DemoTargetKeys.procurementItemQuantity : null,
               item: items[index],
               onChanged: () => setState(() {}),
             ),
@@ -173,6 +178,7 @@ class _ProcurementDetailPageState extends State<ProcurementDetailPage> {
               showCounter: true,
             ),
           DualActionBar(
+            rightKey: DemoTargetKeys.procurementSave,
             left: '취소',
             right: isSubmitting ? '저장 중' : '결정 저장',
             onLeftPressed: () => Navigator.of(context).pop(false),
@@ -186,6 +192,7 @@ class _ProcurementDetailPageState extends State<ProcurementDetailPage> {
 
 class _ProcurementItemEditor extends StatelessWidget {
   const _ProcurementItemEditor({
+    super.key,
     required this.item,
     required this.onChanged,
   });
@@ -276,9 +283,7 @@ class _EditableProcurementItem {
   double approvedKg;
   final memoController = TextEditingController();
 
-  factory _EditableProcurementItem.fromRecord(
-    OwnerProcurementItemRecord item,
-  ) {
+  factory _EditableProcurementItem.fromRecord(OwnerProcurementItemRecord item) {
     return _EditableProcurementItem(
       procurementItemId: item.procurementItemId,
       productName: item.productName,

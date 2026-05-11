@@ -1,8 +1,8 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:smart_app/core/api_exception.dart';
+import 'package:smart_app/demo/owner_demo_manager.dart';
 import 'package:smart_app/model/product_record.dart';
 import 'package:smart_app/repositories/product_repository.dart';
 import 'package:smart_app/util/app_colors.dart';
@@ -10,8 +10,15 @@ import 'package:smart_app/widgets/owner_widgets.dart';
 
 class ProductAddPage extends StatefulWidget {
   final int farmId;
+  final bool demoPreset;
+  final String? demoImageAsset;
 
-  const ProductAddPage({super.key, required this.farmId});
+  const ProductAddPage({
+    super.key,
+    required this.farmId,
+    this.demoPreset = false,
+    this.demoImageAsset,
+  });
 
   @override
   State<ProductAddPage> createState() => _ProductAddPageState();
@@ -30,6 +37,35 @@ class _ProductAddPageState extends State<ProductAddPage> {
   int stockBoxes = 1;
   String status = '';
   bool isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.demoPreset) {
+      variety = '양광';
+      packageUnitKg = 5;
+      price = 41000;
+      stockBoxes = 24;
+      status = '판매 중';
+      descriptionController.text = '당일 선별한 데모 등록용 양광 사과입니다.';
+      _loadDemoImage();
+    }
+  }
+
+  Future<void> _loadDemoImage() async {
+    final asset = widget.demoImageAsset;
+    if (asset == null || asset.isEmpty) return;
+    try {
+      final data = await rootBundle.load(asset);
+      if (!mounted) return;
+      setState(() {
+        selectedImageBytes = data.buffer.asUint8List();
+        selectedImageName = asset.split('/').last;
+      });
+    } catch (_) {
+      // 데모 이미지는 선택 보조용이므로 실패해도 일반 등록 흐름은 유지한다.
+    }
+  }
 
   Future<void> _save() async {
     if (!(formKey.currentState?.validate() ?? false)) {
@@ -121,6 +157,7 @@ class _ProductAddPageState extends State<ProductAddPage> {
           ),
           children: [
             LabeledDropdown(
+              key: DemoTargetKeys.productAddVariety,
               label: '사과 품종',
               value: variety,
               items: ProductRecord.appleVarieties,
@@ -131,6 +168,7 @@ class _ProductAddPageState extends State<ProductAddPage> {
               },
             ),
             LabeledDropdown(
+              key: DemoTargetKeys.productAddPackage,
               label: '포장 단위',
               value: ProductRecord.packageLabel(packageUnitKg),
               items: [
@@ -144,6 +182,7 @@ class _ProductAddPageState extends State<ProductAddPage> {
               },
             ),
             CameraPreviewCard(
+              key: DemoTargetKeys.productAddImage,
               icon: Icons.image_outlined,
               label: selectedImageName ?? '상품 대표 이미지 선택',
               hasImage: selectedImageBytes != null,
@@ -159,6 +198,7 @@ class _ProductAddPageState extends State<ProductAddPage> {
               ),
             ),
             LabeledNumberStepper(
+              key: DemoTargetKeys.productAddPrice,
               label: '기본 판매가',
               value: price,
               min: 1000,
@@ -199,6 +239,7 @@ class _ProductAddPageState extends State<ProductAddPage> {
               },
             ),
             DualActionBar(
+              rightKey: DemoTargetKeys.productAddSave,
               left: '취소',
               right: isSaving ? '저장 중' : '등록',
               onLeftPressed: () => Navigator.of(context).pop(),

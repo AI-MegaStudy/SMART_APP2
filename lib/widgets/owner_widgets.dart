@@ -178,6 +178,7 @@ class AppScaffold extends StatelessWidget {
   final Widget? leading;
   final Widget? trailing;
   final List<Widget> children;
+  final Key? titleKey;
 
   const AppScaffold({
     super.key,
@@ -185,6 +186,7 @@ class AppScaffold extends StatelessWidget {
     this.subtitle,
     this.leading,
     this.trailing,
+    this.titleKey,
     required this.children,
   });
 
@@ -211,6 +213,7 @@ class AppScaffold extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
+                            key: titleKey,
                             title,
                             style: const TextStyle(
                               color: AppColors.text,
@@ -1068,6 +1071,8 @@ class DualActionBar extends StatelessWidget {
   final String right;
   final VoidCallback? onLeftPressed;
   final VoidCallback? onRightPressed;
+  final Key? leftKey;
+  final Key? rightKey;
 
   const DualActionBar({
     super.key,
@@ -1075,6 +1080,8 @@ class DualActionBar extends StatelessWidget {
     required this.right,
     this.onLeftPressed,
     this.onRightPressed,
+    this.leftKey,
+    this.rightKey,
   });
 
   @override
@@ -1085,6 +1092,7 @@ class DualActionBar extends StatelessWidget {
         children: [
           Expanded(
             child: FilledButton.tonal(
+              key: leftKey,
               onPressed: onLeftPressed ?? () {},
               child: Text(left),
             ),
@@ -1092,6 +1100,7 @@ class DualActionBar extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: FilledButton(
+              key: rightKey,
               onPressed: onRightPressed ?? () {},
               child: Text(right),
             ),

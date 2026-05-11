@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:smart_app/demo/owner_demo_manager.dart';
 import 'package:smart_app/model/owner_status_record.dart';
 import 'package:smart_app/repositories/owner_workflow_repository.dart';
 import 'package:smart_app/util/app_colors.dart';
 import 'package:smart_app/widgets/owner_widgets.dart';
 
 class ReturnPage extends StatefulWidget {
-  const ReturnPage({super.key});
+  final bool demoOpenFirst;
+
+  const ReturnPage({super.key, this.demoOpenFirst = false});
 
   @override
   State<ReturnPage> createState() => _ReturnPageState();
@@ -39,6 +42,18 @@ class _ReturnPageState extends State<ReturnPage> {
         ..sort((a, b) => a.requestedAt.compareTo(b.requestedAt));
       loading = false;
     });
+    if (widget.demoOpenFirst && requests.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Future<void>.delayed(const Duration(milliseconds: 5400), () {
+          if (!mounted) return;
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => _ReturnDetailPage(request: requests.first),
+            ),
+          );
+        });
+      });
+    }
   }
 
   @override
@@ -86,13 +101,15 @@ class _ReturnPageState extends State<ReturnPage> {
               ),
             ),
           if (!loading)
-            for (final request in visible)
+            for (var index = 0; index < visible.length; index++)
               _ReturnRequestTile(
-                request: request,
+                key: index == 0 ? DemoTargetKeys.returnList : null,
+                request: visible[index],
                 onTap: () async {
                   final handled = await Navigator.of(context).push<bool>(
                     MaterialPageRoute(
-                      builder: (_) => _ReturnDetailPage(request: request),
+                      builder: (_) =>
+                          _ReturnDetailPage(request: visible[index]),
                     ),
                   );
                   if (handled == true) {
@@ -112,7 +129,11 @@ class _ReturnRequestTile extends StatelessWidget {
   final OwnerReturnRequestRecord request;
   final VoidCallback onTap;
 
-  const _ReturnRequestTile({required this.request, required this.onTap});
+  const _ReturnRequestTile({
+    super.key,
+    required this.request,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -300,8 +321,12 @@ class _ReturnDetailPageState extends State<_ReturnDetailPage> {
               enabled: false,
             ),
             if (widget.request.photoCount > 0)
-              _CustomerImagePreview(imageUrl: widget.request.evidenceImageUrl),
+              _CustomerImagePreview(
+                key: DemoTargetKeys.returnEvidence,
+                imageUrl: widget.request.evidenceImageUrl,
+              ),
             LabeledField(
+              key: DemoTargetKeys.returnAmount,
               label: '승인 금액',
               value: '',
               controller: approvalAmountController,
@@ -318,6 +343,7 @@ class _ReturnDetailPageState extends State<_ReturnDetailPage> {
               suffixText: '원',
             ),
             DualActionBar(
+              rightKey: DemoTargetKeys.returnApprove,
               left: '거절',
               right: '승인',
               onLeftPressed: () => _confirmReject(context),
@@ -333,7 +359,7 @@ class _ReturnDetailPageState extends State<_ReturnDetailPage> {
 class _CustomerImagePreview extends StatelessWidget {
   final String? imageUrl;
 
-  const _CustomerImagePreview({required this.imageUrl});
+  const _CustomerImagePreview({super.key, required this.imageUrl});
 
   @override
   Widget build(BuildContext context) {

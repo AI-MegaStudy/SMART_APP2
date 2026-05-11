@@ -189,7 +189,7 @@ Last updated: 2026-05-11
 | `python scripts/migrate_owner_app_endpoints_to_smart_web.py` | SMART_WEB 실제 폴더 dry-run 성공, 파일 수정 없음 |
 | SMART_WEB backend 임시 복사본 migration `--apply` | 백업 생성, 신규 5개 endpoint 확인, SMART_WEB 전용 endpoint 보존, compileall 통과 |
 | `flutter build web --dart-define=API_BASE_URL=http://127.0.0.1:8000/api/v1` | 성공 |
-| 반품 증빙 이미지 asset 응답 | `http://127.0.0.1:3002/assets/assets/images/owner_demo/yanggwang_apples.png` 200 확인 |
+| 반품 증빙 이미지 asset 응답 | `http://127.0.0.1:3002/assets/assets/images/owner_demo/demo_damaged_return_box.png` 200 확인 |
 | Chrome 홈/메뉴/주문/예약 | 확인 완료 |
 | Chrome 신선도 검사 화면 | 품목 선택, 이미지 카드 UX, 4개 분석 metric 표시 확인 |
 | iOS 시뮬레이터 | 로그인/대시보드/메뉴/수확 슬롯 관리/신선도 갤러리 선택 확인 완료 |

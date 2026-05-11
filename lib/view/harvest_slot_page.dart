@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:smart_app/core/api_exception.dart';
+import 'package:smart_app/demo/owner_demo_manager.dart';
 import 'package:smart_app/model/harvest_slot_record.dart';
 import 'package:smart_app/model/product_record.dart';
 import 'package:smart_app/repositories/harvest_repository.dart';
 import 'package:smart_app/widgets/owner_widgets.dart';
 
 class HarvestSlotPage extends StatefulWidget {
-  const HarvestSlotPage({super.key});
+  final bool demoAutoPredict;
+
+  const HarvestSlotPage({super.key, this.demoAutoPredict = false});
 
   @override
   State<HarvestSlotPage> createState() => _HarvestSlotPageState();
@@ -59,6 +62,11 @@ class _HarvestSlotPageState extends State<HarvestSlotPage> {
       _resetPredictionInputs();
       loading = false;
       setState(() {});
+      if (widget.demoAutoPredict && selectedOption != null) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && prediction == null) _createPrediction();
+        });
+      }
     } on ApiException catch (error) {
       if (!mounted) return;
       setState(() {
@@ -409,6 +417,7 @@ class _HarvestSlotPageState extends State<HarvestSlotPage> {
                 text: '최근 슬롯 ${slots.length}건 중 4건을 표시합니다.',
               ),
             LabeledDropdown(
+              key: DemoTargetKeys.harvestProduct,
               label: '상품',
               value: selectedOption?.product.name ?? '',
               items: [for (final option in options) option.product.name],
@@ -425,6 +434,7 @@ class _HarvestSlotPageState extends State<HarvestSlotPage> {
             ),
             const SectionHeader(title: '예측 입력값'),
             LabeledNumberStepper(
+              key: DemoTargetKeys.harvestYield,
               label: '최근 기준 수확량',
               value: pastYieldKg,
               min: 100,
@@ -463,6 +473,7 @@ class _HarvestSlotPageState extends State<HarvestSlotPage> {
               },
             ),
             PrimaryAction(
+              key: DemoTargetKeys.harvestPredict,
               label: predicting ? '예측 중' : '수확 예측 실행',
               onPressed: predicting ? null : _createPrediction,
             ),
@@ -564,6 +575,7 @@ class _HarvestSlotPageState extends State<HarvestSlotPage> {
                 maxLength: 160,
               ),
               PrimaryAction(
+                key: DemoTargetKeys.harvestOpenSlot,
                 label: opening ? '처리 중' : '수확 슬롯 열기',
                 onPressed: opening ? null : _openSlot,
               ),

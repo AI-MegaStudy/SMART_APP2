@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:smart_app/demo/owner_demo_manager.dart';
 import 'package:smart_app/model/owner_order_record.dart';
 import 'package:smart_app/repositories/owner_workflow_repository.dart';
 import 'package:smart_app/util/app_colors.dart';
 import 'package:smart_app/widgets/owner_widgets.dart';
 
 class ShipmentPage extends StatefulWidget {
-  const ShipmentPage({super.key});
+  final bool demoAutofill;
+
+  const ShipmentPage({super.key, this.demoAutofill = false});
 
   @override
   State<ShipmentPage> createState() => _ShipmentPageState();
@@ -47,6 +50,15 @@ class _ShipmentPageState extends State<ShipmentPage> {
       final loaded = await repository.fetchShippableProcurements();
       if (!mounted) return;
       setState(() => shippableProcurements = loaded);
+      if (widget.demoAutofill) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          if (shippableProcurements.isNotEmpty && selectedProduct.isEmpty) {
+            _selectProduct(shippableProcurements.first.title);
+          }
+          _scanPackingCode();
+        });
+      }
     } catch (_) {
       if (!mounted) return;
       setState(() => loadError = '배송 등록 가능한 발주를 불러오지 못했습니다.');
@@ -146,6 +158,7 @@ class _ShipmentPageState extends State<ShipmentPage> {
             onPressed: () => Navigator.of(context).pop(),
           ),
           trailing: ActionChipIcon(
+            key: DemoTargetKeys.shipmentScan,
             icon: Icons.qr_code_scanner,
             onPressed: _scanPackingCode,
           ),
@@ -159,6 +172,7 @@ class _ShipmentPageState extends State<ShipmentPage> {
                 text: '배송 등록 가능한 승인 발주가 없습니다. 발주 승인 후 배송 등록이 가능합니다.',
               ),
             LabeledDropdown(
+              key: DemoTargetKeys.shipmentProduct,
               label: '발주 승인 상품',
               value: selectedProduct,
               items: [for (final item in shippableProcurements) item.title],
@@ -179,6 +193,7 @@ class _ShipmentPageState extends State<ShipmentPage> {
               },
             ),
             LabeledField(
+              key: DemoTargetKeys.shipmentInvoice,
               label: '송장번호',
               value: '',
               controller: invoiceController,
@@ -218,6 +233,7 @@ class _ShipmentPageState extends State<ShipmentPage> {
               suffixText: '박스',
             ),
             DualActionBar(
+              rightKey: DemoTargetKeys.shipmentRegister,
               left: '취소',
               right: isSubmitting ? '등록 중' : '등록',
               onLeftPressed: () => Navigator.of(context).pop(),

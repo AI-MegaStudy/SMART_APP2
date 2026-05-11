@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:smart_app/demo/owner_demo_manager.dart';
 import 'package:smart_app/model/owner_profile.dart';
 import 'package:smart_app/model/product_record.dart';
 import 'package:smart_app/repositories/owner_repository.dart';
@@ -42,7 +43,9 @@ class _DashboardPageState extends State<DashboardPage> {
   Future<void> _loadHeader() async {
     final results = await Future.wait<Object?>([
       _fetchOwnerProfile(),
-      productRepository.fetchOwnerFarms().catchError((_) => <OwnerFarmRecord>[]),
+      productRepository.fetchOwnerFarms().catchError(
+        (_) => <OwnerFarmRecord>[],
+      ),
     ]);
     if (!mounted) return;
     final farms = results[1] as List<OwnerFarmRecord>;
@@ -74,6 +77,7 @@ class _DashboardPageState extends State<DashboardPage> {
       title: ownerName == null || ownerName.isEmpty
           ? '안녕하세요'
           : '안녕하세요, $ownerName 점주님',
+      titleKey: DemoTargetKeys.homeGreeting,
       subtitle: farmName == null || farmName.isEmpty ? '내 농장' : farmName,
       children: [
         _MlReferenceCard(onPressed: () => _open(const HarvestSlotPage())),

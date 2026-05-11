@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smart_app/demo/owner_demo_manager.dart';
 import 'package:smart_app/model/owner_order_record.dart';
 import 'package:smart_app/repositories/owner_workflow_repository.dart';
 import 'package:smart_app/util/app_colors.dart';
@@ -6,7 +7,9 @@ import 'package:smart_app/view/procurement_detail_page.dart';
 import 'package:smart_app/widgets/owner_widgets.dart';
 
 class ProcurementPage extends StatefulWidget {
-  const ProcurementPage({super.key});
+  final bool demoOpenFirst;
+
+  const ProcurementPage({super.key, this.demoOpenFirst = false});
 
   @override
   State<ProcurementPage> createState() => _ProcurementPageState();
@@ -47,6 +50,14 @@ class _ProcurementPageState extends State<ProcurementPage> {
       requests = _requestsFromProcurements(procurements);
       loading = false;
     });
+    if (widget.demoOpenFirst && requests.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Future<void>.delayed(const Duration(milliseconds: 5400), () {
+          if (!mounted || requests.isEmpty) return;
+          _openDetail(requests.first);
+        });
+      });
+    }
   }
 
   List<_ApprovalRequest> _requestsFromProcurements(
@@ -226,17 +237,18 @@ class _ProcurementPageState extends State<ProcurementPage> {
               ),
             ),
           if (!loading)
-            for (final request in visible)
+            for (var index = 0; index < visible.length; index++)
               _ApprovalTile(
-                request: request,
-                selected: selectedIds.contains(request.id),
-                onTap: () => _openDetail(request),
+                key: index == 0 ? DemoTargetKeys.procurementFirst : null,
+                request: visible[index],
+                selected: selectedIds.contains(visible[index].id),
+                onTap: () => _openDetail(visible[index]),
                 onChanged: (checked) {
                   setState(() {
                     if (checked == true) {
-                      selectedIds.add(request.id);
+                      selectedIds.add(visible[index].id);
                     } else {
-                      selectedIds.remove(request.id);
+                      selectedIds.remove(visible[index].id);
                     }
                   });
                 },
@@ -251,6 +263,7 @@ class _ProcurementPageState extends State<ProcurementPage> {
             ),
           if (!loading)
             DualActionBar(
+              rightKey: DemoTargetKeys.procurementApprove,
               left: '거절',
               right: '승인',
               onLeftPressed: _confirmReject,
@@ -269,6 +282,7 @@ class _ApprovalTile extends StatelessWidget {
   final ValueChanged<bool?> onChanged;
 
   const _ApprovalTile({
+    super.key,
     required this.request,
     required this.selected,
     required this.onTap,

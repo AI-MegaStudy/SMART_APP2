@@ -48,19 +48,12 @@ class HarvestRepository {
       return await ApiService.postData<HarvestPredictionRecord>(
         '/owner/ml/predictions',
         requiresAuth: true,
-        body: {
-          'farm_id': option.farm.farmId,
-          'product_id': option.product.id,
-          'features': {
-            'past_yield_kg': pastYieldKg,
-            'suggested_price': option.product.price,
-            'package_unit_kg': option.product.packageUnitKg,
-            'open_slot_count': option.product.stockKg,
-            'variety': option.product.variety,
-            'recent_weather': recentWeather,
-            'cultivation_status': cultivationStatus,
-          },
-        },
+        body: buildPredictionRequest(
+          option,
+          pastYieldKg: pastYieldKg,
+          recentWeather: recentWeather,
+          cultivationStatus: cultivationStatus,
+        ),
         parser: (data) {
           final json = data as Map<String, dynamic>? ?? const {};
           return HarvestPredictionRecord.fromJson(json);
@@ -74,6 +67,75 @@ class HarvestRepository {
         cultivationStatus: cultivationStatus,
       );
     }
+  }
+
+  Map<String, Object?> buildPredictionRequest(
+    HarvestProductOption option, {
+    required int pastYieldKg,
+    required String recentWeather,
+    required String cultivationStatus,
+  }) {
+    final climate = _climateFeatures(
+      recentWeather: recentWeather,
+      cultivationStatus: cultivationStatus,
+    );
+    return {
+      'farm_id': option.farm.farmId,
+      'product_id': option.product.id,
+      'features': {
+        'past_yield_kg': pastYieldKg,
+        'market_price': option.product.price,
+        'variety': option.product.variety.isEmpty
+            ? ProductRecord.varietyFromProductName(option.product.name)
+            : option.product.variety,
+        'mar_avg_temp': climate.marAvgTemp,
+        'aug_sunshine': climate.augSunshine,
+        'oct_rainfall': climate.octRainfall,
+        'aug_humidity': climate.augHumidity,
+      },
+    };
+  }
+
+  _MlClimateFeatures _climateFeatures({
+    required String recentWeather,
+    required String cultivationStatus,
+  }) {
+    var features = switch (recentWeather) {
+      '고온' => const _MlClimateFeatures(
+        marAvgTemp: 10.2,
+        augSunshine: 245,
+        octRainfall: 52,
+        augHumidity: 66,
+      ),
+      '저온' => const _MlClimateFeatures(
+        marAvgTemp: 5.8,
+        augSunshine: 184,
+        octRainfall: 71,
+        augHumidity: 74,
+      ),
+      '강수 많음' => const _MlClimateFeatures(
+        marAvgTemp: 8.1,
+        augSunshine: 158,
+        octRainfall: 132,
+        augHumidity: 86,
+      ),
+      _ => const _MlClimateFeatures(
+        marAvgTemp: 8.5,
+        augSunshine: 210,
+        octRainfall: 65,
+        augHumidity: 72,
+      ),
+    };
+
+    if (cultivationStatus == '관수 필요') {
+      features = features.copyWith(augHumidity: features.augHumidity - 6);
+    } else if (cultivationStatus == '병해 확인') {
+      features = features.copyWith(
+        augSunshine: features.augSunshine - 18,
+        augHumidity: features.augHumidity + 5,
+      );
+    }
+    return features;
   }
 
   Future<HarvestSlotRecord> createOpenSlot({
@@ -219,7 +281,7 @@ class HarvestRepository {
           id: 5,
           farmId: 3,
           variety: '양광',
-          imageUrl: 'assets/images/owner_demo/yanggwang_apples.png',
+          imageUrl: 'assets/images/owner_demo/demo_yanggwang_product.png',
         ),
       ),
       HarvestProductOption(
@@ -234,7 +296,7 @@ class HarvestRepository {
           id: 6,
           farmId: 3,
           variety: '부사',
-          imageUrl: 'assets/images/owner_demo/fuji_apples.png',
+          imageUrl: 'assets/images/owner_demo/demo_fuji_product.png',
         ),
       ),
     ];
@@ -294,10 +356,38 @@ class HarvestRepository {
         farmId: 3,
         productId: 5,
         farmName: '청주 햇살농원',
-        imageUrl: 'assets/images/owner_demo/yanggwang_apples.png',
+        imageUrl: 'assets/images/owner_demo/demo_yanggwang_product.png',
         packageUnitKg: 5,
         predictionId: 9901,
       ),
     ];
+  }
+}
+
+class _MlClimateFeatures {
+  const _MlClimateFeatures({
+    required this.marAvgTemp,
+    required this.augSunshine,
+    required this.octRainfall,
+    required this.augHumidity,
+  });
+
+  final double marAvgTemp;
+  final double augSunshine;
+  final double octRainfall;
+  final double augHumidity;
+
+  _MlClimateFeatures copyWith({
+    double? marAvgTemp,
+    double? augSunshine,
+    double? octRainfall,
+    double? augHumidity,
+  }) {
+    return _MlClimateFeatures(
+      marAvgTemp: marAvgTemp ?? this.marAvgTemp,
+      augSunshine: augSunshine ?? this.augSunshine,
+      octRainfall: octRainfall ?? this.octRainfall,
+      augHumidity: augHumidity ?? this.augHumidity,
+    );
   }
 }

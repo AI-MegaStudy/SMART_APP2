@@ -137,8 +137,8 @@ class ProductRepository {
         variety: variety,
         description: productDescription,
         imageUrl: variety == '부사'
-            ? 'assets/images/owner_demo/fuji_apples.png'
-            : 'assets/images/owner_demo/yanggwang_apples.png',
+            ? 'assets/images/owner_demo/demo_fuji_product.png'
+            : 'assets/images/owner_demo/demo_yanggwang_product.png',
       );
     }
   }
@@ -224,8 +224,8 @@ class ProductRepository {
       );
       return current.copyWith(
         imageUrl: current.variety == '부사'
-            ? 'assets/images/owner_demo/fuji_apples.png'
-            : 'assets/images/owner_demo/yanggwang_apples.png',
+            ? 'assets/images/owner_demo/demo_fuji_product.png'
+            : 'assets/images/owner_demo/demo_yanggwang_product.png',
       );
     }
   }
@@ -257,7 +257,7 @@ const _fallbackProducts = [
     fruitType: '사과',
     variety: '양광',
     description: '산미와 단맛 균형이 좋은 선물용 양광 사과입니다.',
-    imageUrl: 'assets/images/owner_demo/yanggwang_apples.png',
+    imageUrl: 'assets/images/owner_demo/demo_yanggwang_product.png',
   ),
   ProductRecord(
     '부사 사과',
@@ -271,6 +271,6 @@ const _fallbackProducts = [
     fruitType: '사과',
     variety: '부사',
     description: '아삭한 식감과 저장성이 좋은 가정용 부사 사과입니다.',
-    imageUrl: 'assets/images/owner_demo/fuji_apples.png',
+    imageUrl: 'assets/images/owner_demo/demo_fuji_product.png',
   ),
 ];

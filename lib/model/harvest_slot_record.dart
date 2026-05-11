@@ -13,6 +13,9 @@ class HarvestPredictionRecord {
     required this.recommendedPrice,
     required this.confidence,
     required this.warningMessage,
+    this.unitYieldKg10a,
+    this.safetyFactor,
+    this.modelVersion,
   });
 
   final int predictionId;
@@ -26,6 +29,9 @@ class HarvestPredictionRecord {
   final int recommendedPrice;
   final double confidence;
   final String warningMessage;
+  final double? unitYieldKg10a;
+  final double? safetyFactor;
+  final String? modelVersion;
 
   factory HarvestPredictionRecord.fromJson(Map<String, dynamic> json) {
     return HarvestPredictionRecord(
@@ -40,6 +46,9 @@ class HarvestPredictionRecord {
       recommendedPrice: _asInt(json['recommended_price']),
       confidence: _asDouble(json['confidence']),
       warningMessage: json['warning_message']?.toString() ?? '',
+      unitYieldKg10a: _asDoubleOrNull(json['unit_yield_kg_10a']),
+      safetyFactor: _asDoubleOrNull(json['safety_factor']),
+      modelVersion: json['model_version']?.toString(),
     );
   }
 

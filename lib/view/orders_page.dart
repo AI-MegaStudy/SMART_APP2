@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:smart_app/demo/owner_demo_manager.dart';
 import 'package:smart_app/model/owner_order_record.dart';
 import 'package:smart_app/repositories/owner_workflow_repository.dart';
 import 'package:smart_app/util/app_colors.dart';
 import 'package:smart_app/widgets/owner_widgets.dart';
 
 class OrdersPage extends StatefulWidget {
-  const OrdersPage({super.key});
+  final bool demoMode;
+
+  const OrdersPage({super.key, this.demoMode = false});
 
   @override
   State<OrdersPage> createState() => _OrdersPageState();
@@ -44,8 +47,53 @@ class _OrdersPageState extends State<OrdersPage> {
       orders = loaded[0] as List<OwnerOrderRecord>;
       reservations = loaded[1] as List<OwnerReservationRecord>;
       sharedOwnerOrders = orders;
+      if (widget.demoMode) {
+        section = '주문';
+        filter = '결제 완료';
+      }
       loading = false;
     });
+    if (widget.demoMode) _scheduleReservationDemo();
+  }
+
+  void _scheduleReservationDemo() {
+    Future<void>.delayed(const Duration(milliseconds: 9300), () {
+      if (!mounted) return;
+      setState(() {
+        section = '예약';
+        filter = '전체';
+      });
+    });
+  }
+
+  Key? _orderKey(List<Object> visible, int index) {
+    final item = visible[index];
+    if (item is! OwnerOrderRecord || item.status != '결제 완료') return null;
+    final isFirstPaid = !visible
+        .take(index)
+        .whereType<OwnerOrderRecord>()
+        .any((order) => order.status == '결제 완료');
+    return isFirstPaid ? DemoTargetKeys.ordersPaid : null;
+  }
+
+  Key? _reservationKey(List<Object> visible, int index) {
+    final item = visible[index];
+    if (item is! OwnerReservationRecord) return null;
+    if (item.status == '예약 유지') {
+      final isFirstKeep = !visible
+          .take(index)
+          .whereType<OwnerReservationRecord>()
+          .any((reservation) => reservation.status == '예약 유지');
+      return isFirstKeep ? DemoTargetKeys.reservationKeep : null;
+    }
+    if (item.status == '주문 전환') {
+      final isFirstConverted = !visible
+          .take(index)
+          .whereType<OwnerReservationRecord>()
+          .any((reservation) => reservation.status == '주문 전환');
+      return isFirstConverted ? DemoTargetKeys.reservationConverted : null;
+    }
+    return null;
   }
 
   @override
@@ -110,6 +158,9 @@ class _OrdersPageState extends State<OrdersPage> {
               ),
             ),
           FilterTabs(
+            key: section == '주문'
+                ? DemoTargetKeys.ordersSection
+                : DemoTargetKeys.reservationsSection,
             labels: const ['주문', '예약'],
             selected: section,
             onChanged: (value) {
@@ -134,22 +185,24 @@ class _OrdersPageState extends State<OrdersPage> {
               ),
             ),
           if (!loading)
-            for (final item in visible)
-              if (item is OwnerOrderRecord)
+            for (var index = 0; index < visible.length; index++)
+              if (visible[index] is OwnerOrderRecord)
                 DataTile(
+                  key: _orderKey(visible, index),
                   icon: Icons.receipt_long_outlined,
-                  title: item.title,
-                  subtitle: item.subtitle,
-                  badge: item.status,
-                  badgeColor: item.color,
+                  title: (visible[index] as OwnerOrderRecord).title,
+                  subtitle: (visible[index] as OwnerOrderRecord).subtitle,
+                  badge: (visible[index] as OwnerOrderRecord).status,
+                  badgeColor: (visible[index] as OwnerOrderRecord).color,
                 )
-              else if (item is OwnerReservationRecord)
+              else if (visible[index] is OwnerReservationRecord)
                 DataTile(
+                  key: _reservationKey(visible, index),
                   icon: Icons.event_available_outlined,
-                  title: item.title,
-                  subtitle: item.subtitle,
-                  badge: item.status,
-                  badgeColor: item.color,
+                  title: (visible[index] as OwnerReservationRecord).title,
+                  subtitle: (visible[index] as OwnerReservationRecord).subtitle,
+                  badge: (visible[index] as OwnerReservationRecord).status,
+                  badgeColor: (visible[index] as OwnerReservationRecord).color,
                 ),
           if (!loading && visible.isEmpty)
             const NoticeBox(color: AppColors.yellow, text: '검색 결과가 없습니다.'),

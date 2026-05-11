@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:smart_app/core/api_exception.dart';
+import 'package:smart_app/demo/owner_demo_manager.dart';
 import 'package:smart_app/model/product_record.dart';
 import 'package:smart_app/repositories/product_repository.dart';
 import 'package:smart_app/util/app_colors.dart';
@@ -189,7 +190,11 @@ class _ProductPageState extends State<ProductPage> {
               },
             ),
             const SizedBox(width: 6),
-            ActionChipIcon(icon: Icons.add, onPressed: _openAdd),
+            ActionChipIcon(
+              key: DemoTargetKeys.productAdd,
+              icon: Icons.add,
+              onPressed: _openAdd,
+            ),
           ],
         ),
         children: [
