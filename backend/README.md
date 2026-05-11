@@ -60,9 +60,41 @@ uvicorn backend.app.main:app --reload
 
 레포 루트(`C:\...\smart_app`)에서 실행합니다.
 
-### 1. Python 3.12 확인
+### 이미 설치된 venv로 서버 실행
 
 PowerShell:
+
+```powershell
+cd C:\...\smart_app
+.\.venv\Scripts\Activate.ps1
+uvicorn backend.app.main:app --reload
+```
+
+cmd:
+
+```bat
+cd C:\...\smart_app
+.\.venv\Scripts\activate.bat
+uvicorn backend.app.main:app --reload
+```
+
+Git Bash:
+
+```bash
+cd /c/.../smart_app
+source .venv/Scripts/activate
+uvicorn backend.app.main:app --reload
+```
+
+PowerShell에서 activate가 막히면 아래 명령을 한 번만 실행한 뒤 다시 activate합니다.
+
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
+
+### 처음 설치할 때
+
+Python 3.12 확인:
 
 ```powershell
 py -3.12 --version
@@ -76,8 +108,6 @@ https://www.python.org/downloads/
 
 설치할 때 `Add python.exe to PATH` 옵션을 켜는 것을 권장합니다.
 
-### 2. 가상환경 생성 및 패키지 설치
-
 PowerShell:
 
 ```powershell
@@ -85,12 +115,6 @@ py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 python -m pip install -r backend\requirements.txt
-```
-
-PowerShell 실행 정책 때문에 activate가 막히면 한 번만 아래 명령을 실행한 뒤 다시 activate합니다.
-
-```powershell
-Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
 
 명령 프롬프트(cmd)를 쓰는 경우:
@@ -100,22 +124,6 @@ py -3.12 -m venv .venv
 .\.venv\Scripts\activate.bat
 python -m pip install --upgrade pip
 python -m pip install -r backend\requirements.txt
-```
-
-### 3. 서버 실행
-
-PowerShell:
-
-```powershell
-.\.venv\Scripts\Activate.ps1
-uvicorn backend.app.main:app --reload
-```
-
-cmd:
-
-```bat
-.\.venv\Scripts\activate.bat
-uvicorn backend.app.main:app --reload
 ```
 
 ## Flutter 앱 연결
