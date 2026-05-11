@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smart_app/core/api_debug_log.dart';
 import 'package:smart_app/core/api_service.dart';
 import 'package:smart_app/model/harvest_slot_record.dart';
 import 'package:smart_app/model/product_record.dart';
@@ -16,7 +17,9 @@ class HarvestRepository {
       final products = await productRepository.fetchOwnerProducts();
       final options = [
         for (final product in products)
-          if (product.id != null && product.farmId != null)
+          if (product.id != null &&
+              product.farmId != null &&
+              product.status != '판매 중지')
             HarvestProductOption(
               product: product,
               farm: farms.firstWhere(
@@ -32,8 +35,17 @@ class HarvestRepository {
               ),
             ),
       ];
-      return options.isEmpty ? _fallbackProductOptions() : options;
-    } catch (_) {
+      if (options.isNotEmpty) {
+        ApiDebugLog.ok('harvest.products', 'options=${options.length}');
+        return options;
+      }
+      ApiDebugLog.fallbackReason(
+        'harvest.products',
+        '상품/농장 API 호출은 성공했지만 선택 가능한 상품이 없어 fallback 상품을 사용합니다.',
+      );
+      return _fallbackProductOptions();
+    } catch (error) {
+      ApiDebugLog.fallback('harvest.products', error, message: '상품/농장 API 실패');
       return _fallbackProductOptions();
     }
   }
@@ -45,27 +57,53 @@ class HarvestRepository {
     required String cultivationStatus,
   }) async {
     try {
-      return await ApiService.postData<HarvestPredictionRecord>(
-        '/owner/ml/predictions',
-        requiresAuth: true,
-        body: buildPredictionRequest(
-          option,
-          pastYieldKg: pastYieldKg,
-          recentWeather: recentWeather,
-          cultivationStatus: cultivationStatus,
-        ),
-        parser: (data) {
-          final json = data as Map<String, dynamic>? ?? const {};
-          return HarvestPredictionRecord.fromJson(json);
-        },
-      );
-    } catch (_) {
-      return _fallbackPrediction(
+      final requestBody = buildPredictionRequest(
         option,
         pastYieldKg: pastYieldKg,
         recentWeather: recentWeather,
         cultivationStatus: cultivationStatus,
       );
+      final record = await ApiService.postData<HarvestPredictionRecord>(
+        '/owner/ml/predictions',
+        requiresAuth: true,
+        body: requestBody,
+        parser: (data) {
+          final json = data as Map<String, dynamic>? ?? const {};
+          return HarvestPredictionRecord.fromJson(json);
+        },
+      );
+      ApiDebugLog.ok(
+        'harvest.prediction',
+        'request=$requestBody result='
+            'id=${record.predictionId}, model=${record.modelVersion}, '
+            'unitYield10a=${record.unitYieldKg10a}, '
+            'estimated=${record.estimatedYieldKg}, '
+            'reservable=${record.suggestedReservableMinKg}-${record.suggestedReservableMaxKg}, '
+            'price=${record.recommendedPrice}, period=${record.predictedHarvestStart}-${record.predictedHarvestEnd}',
+      );
+      return record;
+    } catch (error) {
+      ApiDebugLog.fallback(
+        'harvest.prediction',
+        error,
+        message:
+            '수확 예측 API 실패. 앱 내부 계산값을 사용합니다. '
+            'pastYield=$pastYieldKg, weather=$recentWeather, cultivation=$cultivationStatus',
+      );
+      final fallback = _fallbackPrediction(
+        option,
+        pastYieldKg: pastYieldKg,
+        recentWeather: recentWeather,
+        cultivationStatus: cultivationStatus,
+      );
+      ApiDebugLog.fallbackReason(
+        'harvest.prediction',
+        'fallback result=id=${fallback.predictionId}, '
+            'estimated=${fallback.estimatedYieldKg}, '
+            'reservable=${fallback.suggestedReservableMinKg}-${fallback.suggestedReservableMaxKg}, '
+            'price=${fallback.recommendedPrice}, period=${fallback.predictedHarvestStart}-${fallback.predictedHarvestEnd}',
+      );
+      return fallback;
     }
   }
 
@@ -205,8 +243,10 @@ class HarvestRepository {
           ];
         },
       );
+      ApiDebugLog.ok('harvest.slots', 'count=${slots.length}');
       return slots;
-    } catch (_) {
+    } catch (error) {
+      ApiDebugLog.fallback('harvest.slots', error, message: '수확 슬롯 API 실패');
       return _fallbackSlots();
     }
   }

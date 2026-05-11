@@ -6,6 +6,13 @@ class QualityInspectionCreateRequest(BaseModel):
     image_url: str = Field(json_schema_extra={"example": "/mock/quality/apple_sample_001.jpg"})
     owner_confirmed_grade: str | None = Field(default=None, json_schema_extra={"example": "A"})
     owner_decision: str | None = Field(default=None, json_schema_extra={"example": "PASS"})
+    model_grade: str | None = Field(default=None, json_schema_extra={"example": "A"})
+    freshness_score: float | None = Field(default=None, ge=0, le=100)
+    color_score: float | None = Field(default=None, ge=0, le=100)
+    roundness_score: float | None = Field(default=None, ge=0, le=100)
+    bruise_probability: float | None = Field(default=None, ge=0, le=1)
+    model_decision: str | None = Field(default=None, json_schema_extra={"example": "PASS"})
+    model_version: str | None = Field(default=None)
 
     model_config = ConfigDict(
         json_schema_extra={
@@ -14,6 +21,13 @@ class QualityInspectionCreateRequest(BaseModel):
                 "image_url": "/mock/quality/apple_sample_001.jpg",
                 "owner_confirmed_grade": "A",
                 "owner_decision": "PASS",
+                "model_grade": "A",
+                "freshness_score": 91.2,
+                "color_score": 88.0,
+                "roundness_score": 93.5,
+                "bruise_probability": 0.06,
+                "model_decision": "PASS",
+                "model_version": "apple-single-image-v1",
             }
         }
     )

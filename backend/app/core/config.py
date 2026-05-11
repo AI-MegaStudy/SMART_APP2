@@ -18,7 +18,7 @@ class Settings(BaseSettings):
 
     jwt_secret_key: str = "change-this-secret"
     jwt_algorithm: str = "HS256"
-    access_token_expire_minutes: int = 60
+    access_token_expire_minutes: int = 43200
     cors_allowed_origins: str | list[str] = "*"
     email_verification_required: bool = False
     email_verification_expire_minutes: int = 5

@@ -59,6 +59,10 @@ class HarvestPredictionRecord {
       '${suggestedReservableMinKg.round()}-${suggestedReservableMaxKg.round()}kg';
   String get price => '${_money(recommendedPrice)}/kg';
   String get confidenceLabel => '${(confidence * 100).round()}%';
+  String get standardAreaYieldValue =>
+      unitYieldKg10a == null ? '' : '${unitYieldKg10a!.round()}kg';
+  String get standardAreaYieldLabel =>
+      unitYieldKg10a == null ? '' : '1,000㎡ 기준 수확량';
   List<double> get trendValues {
     final base = estimatedYieldKg <= 0 ? 1.0 : estimatedYieldKg;
     final confidenceSpread = (1 - confidence.clamp(0.0, 1.0)) * 0.16;

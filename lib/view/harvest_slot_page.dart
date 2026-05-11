@@ -34,6 +34,17 @@ class _HarvestSlotPageState extends State<HarvestSlotPage> {
   bool opening = false;
   String? errorMessage;
 
+  Map<String, Object?> get _predictionRequest {
+    final option = selectedOption;
+    if (option == null) return const {};
+    return repository.buildPredictionRequest(
+      option,
+      pastYieldKg: pastYieldKg,
+      recentWeather: recentWeather,
+      cultivationStatus: cultivationStatus,
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -449,7 +460,7 @@ class _HarvestSlotPageState extends State<HarvestSlotPage> {
               },
             ),
             LabeledDropdown(
-              label: '최근 기상',
+              label: '최근 기상 기준',
               value: recentWeather,
               items: const ['평년 수준', '고온', '저온', '강수 많음'],
               onChanged: (value) {
@@ -471,6 +482,11 @@ class _HarvestSlotPageState extends State<HarvestSlotPage> {
                   prediction = null;
                 });
               },
+            ),
+            _MlFeatureCard(
+              request: _predictionRequest,
+              weatherPreset: recentWeather,
+              cultivationPreset: cultivationStatus,
             ),
             PrimaryAction(
               key: DemoTargetKeys.harvestPredict,
@@ -516,13 +532,19 @@ class _HarvestSlotPageState extends State<HarvestSlotPage> {
                     value: currentPrediction.price,
                     label: '권장 판매가(kg 기준)',
                   ),
+                  if (currentPrediction.standardAreaYieldLabel.isNotEmpty)
+                    MetricCard(
+                      icon: Icons.square_foot_outlined,
+                      value: currentPrediction.standardAreaYieldValue,
+                      label: currentPrediction.standardAreaYieldLabel,
+                    ),
                 ],
               ),
               DataTile(
                 icon: Icons.verified_outlined,
                 title: '신뢰도 ${currentPrediction.confidenceLabel}',
                 subtitle: currentPrediction.warningMessage,
-                badge: '',
+                badge: currentPrediction.standardAreaYieldLabel,
                 badgeColor: const Color(0xffDFF4E8),
               ),
               const NoticeBox(
@@ -605,8 +627,8 @@ class _HarvestSlotManageCard extends StatelessWidget {
     final image = url.isEmpty
         ? null
         : url.startsWith('assets/')
-        ? Image.asset(url, fit: BoxFit.cover)
-        : Image.network(url, fit: BoxFit.cover);
+        ? Image.asset(url, fit: BoxFit.contain)
+        : Image.network(url, fit: BoxFit.contain);
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(14),
@@ -742,6 +764,136 @@ class _SlotPill extends StatelessWidget {
   }
 }
 
+class _MlFeatureCard extends StatelessWidget {
+  const _MlFeatureCard({
+    required this.request,
+    required this.weatherPreset,
+    required this.cultivationPreset,
+  });
+
+  final Map<String, Object?> request;
+  final String weatherPreset;
+  final String cultivationPreset;
+
+  @override
+  Widget build(BuildContext context) {
+    final features =
+        request['features'] as Map<String, Object?>? ??
+        const <String, Object?>{};
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xffF8FBF6),
+        border: Border.all(color: const Color(0xffDCE9DC)),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            '예측에 반영된 기준',
+            style: TextStyle(
+              color: Color(0xff102019),
+              fontSize: 15,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 10),
+          _FeatureRow(
+            label: '과거 수확량',
+            value: '${_formatNumber(features['past_yield_kg'])}kg',
+            source: '점주 입력',
+          ),
+          _FeatureRow(
+            label: '기준 판매가',
+            value: '${_formatMoney(features['market_price'])}원',
+            source: '상품 등록값',
+          ),
+          _FeatureRow(
+            label: '품종',
+            value: features['variety']?.toString() ?? '-',
+            source: '상품 등록값',
+          ),
+          _FeatureRow(
+            label: '3월 평균기온',
+            value: '${_formatNumber(features['mar_avg_temp'])}도',
+            source: '날씨 기준',
+          ),
+          _FeatureRow(
+            label: '8월 일조량',
+            value: '${_formatNumber(features['aug_sunshine'])}시간',
+            source: '날씨 기준',
+          ),
+          _FeatureRow(
+            label: '10월 강수량',
+            value: '${_formatNumber(features['oct_rainfall'])}mm',
+            source: '날씨 기준',
+          ),
+          _FeatureRow(
+            label: '8월 습도',
+            value: '${_formatNumber(features['aug_humidity'])}%',
+            source: cultivationPreset == '양호' ? '날씨 기준' : '작황 보정',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FeatureRow extends StatelessWidget {
+  const _FeatureRow({
+    required this.label,
+    required this.value,
+    required this.source,
+  });
+
+  final String label;
+  final String value;
+  final String source;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 96,
+            child: Text(
+              label,
+              style: const TextStyle(
+                color: Color(0xff6F7D68),
+                fontSize: 12,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: const TextStyle(
+                color: Color(0xff102019),
+                fontSize: 13,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ),
+          Text(
+            source,
+            textAlign: TextAlign.right,
+            style: const TextStyle(
+              color: Color(0xff1E6B4E),
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _DateSelectTile extends StatelessWidget {
   const _DateSelectTile({
     required this.label,
@@ -800,6 +952,24 @@ class _DateSelectTile extends StatelessWidget {
 }
 
 String _apiDate(DateTime date) => date.toIso8601String().substring(0, 10);
+
+String _formatNumber(Object? value) {
+  final number = value is num ? value : num.tryParse(value?.toString() ?? '');
+  if (number == null) return '-';
+  if (number == number.roundToDouble()) return number.round().toString();
+  return number.toStringAsFixed(1);
+}
+
+String _formatMoney(Object? value) {
+  final number = value is num
+      ? value.toInt()
+      : int.tryParse(value?.toString() ?? '');
+  if (number == null) return '-';
+  return number.toString().replaceAllMapped(
+    RegExp(r'\B(?=(\d{3})+(?!\d))'),
+    (_) => ',',
+  );
+}
 
 String _dateLabel(DateTime date) {
   final month = date.month.toString().padLeft(2, '0');

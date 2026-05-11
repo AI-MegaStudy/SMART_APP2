@@ -1,4 +1,5 @@
 import 'package:smart_app/model/dashboard_model.dart';
+import 'package:smart_app/core/api_debug_log.dart';
 import 'package:smart_app/core/api_service.dart';
 
 class DashboardRepository {
@@ -12,8 +13,22 @@ class DashboardRepository {
           return DashboardModel.fromJson(json);
         },
       );
-      return dashboard.hasActivity ? dashboard : DashboardModel.demo();
-    } catch (_) {
+      if (dashboard.hasActivity) {
+        ApiDebugLog.ok(
+          'dashboard',
+          'open=${dashboard.openSlots}, procurement=${dashboard.newProcurements}, '
+              'quality=${dashboard.inspectionWaiting}, ship=${dashboard.readyToShip}, '
+              'return=${dashboard.returnRequests}',
+        );
+        return dashboard;
+      }
+      ApiDebugLog.fallbackReason(
+        'dashboard',
+        'API 호출은 성공했지만 전체 값이 0이라 발표용 demo 값을 사용합니다.',
+      );
+      return DashboardModel.demo();
+    } catch (error) {
+      ApiDebugLog.fallback('dashboard', error, message: '대시보드 API 실패');
       return DashboardModel.demo();
     }
   }

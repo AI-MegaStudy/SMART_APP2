@@ -48,7 +48,9 @@ class QualityImageUploadRecord {
   final String imageUrl;
 
   factory QualityImageUploadRecord.fromJson(Map<String, dynamic> json) {
-    return QualityImageUploadRecord(imageUrl: json['image_url']?.toString() ?? '');
+    return QualityImageUploadRecord(
+      imageUrl: json['image_url']?.toString() ?? '',
+    );
   }
 }
 
@@ -61,6 +63,11 @@ class QualityAnalysisRecord {
     required this.bruiseProbability,
     required this.modelDecision,
     required this.imageUrl,
+    this.modelVersion,
+    this.actionRequired,
+    this.angleLabel,
+    this.angleConfidence,
+    this.gradeConfidence,
   });
 
   final String modelGrade;
@@ -70,6 +77,11 @@ class QualityAnalysisRecord {
   final double bruiseProbability;
   final String modelDecision;
   final String imageUrl;
+  final String? modelVersion;
+  final String? actionRequired;
+  final String? angleLabel;
+  final double? angleConfidence;
+  final double? gradeConfidence;
 
   factory QualityAnalysisRecord.fromJson(Map<String, dynamic> json) {
     final freshnessScore = _asDouble(json['freshness_score']);
@@ -83,6 +95,11 @@ class QualityAnalysisRecord {
       bruiseProbability: _asDouble(json['bruise_probability']),
       modelDecision: json['model_decision']?.toString() ?? 'PASS',
       imageUrl: json['image_url']?.toString() ?? '',
+      modelVersion: json['model_version']?.toString(),
+      actionRequired: json['action_required']?.toString(),
+      angleLabel: json['angle_label']?.toString(),
+      angleConfidence: _asDoubleOrNull(json['angle_confidence']),
+      gradeConfidence: _asDoubleOrNull(json['grade_confidence']),
     );
   }
 
@@ -107,6 +124,8 @@ class QualityAnalysisRecord {
       bruiseProbability: bruise,
       modelDecision: bruise < 0.2 && score >= 86 ? 'PASS' : 'REVIEW',
       imageUrl: 'local://$imageName',
+      modelVersion: 'local-estimate-v1',
+      actionRequired: 'OWNER_REVIEW',
     );
   }
 
@@ -132,4 +151,11 @@ double _asDouble(Object? value) {
   if (value is double) return value;
   if (value is num) return value.toDouble();
   return double.tryParse(value?.toString() ?? '') ?? 0;
+}
+
+double? _asDoubleOrNull(Object? value) {
+  if (value == null) return null;
+  if (value is double) return value;
+  if (value is num) return value.toDouble();
+  return double.tryParse(value.toString());
 }

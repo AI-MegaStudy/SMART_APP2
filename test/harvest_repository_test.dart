@@ -70,5 +70,7 @@ void main() {
     expect(record.modelVersion, 'rf-apple-harvest-v1');
     expect(record.expectedYield, '3019kg');
     expect(record.reservation, '1208-2264kg');
+    expect(record.standardAreaYieldValue, '1510kg');
+    expect(record.standardAreaYieldLabel, '1,000㎡ 기준 수확량');
   });
 }

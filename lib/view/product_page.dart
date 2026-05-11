@@ -389,8 +389,8 @@ class _ProductThumbnail extends StatelessWidget {
     final image = url.isEmpty
         ? null
         : url.startsWith('assets/')
-        ? Image.asset(url, fit: BoxFit.cover)
-        : Image.network(url, fit: BoxFit.cover);
+        ? Image.asset(url, fit: BoxFit.contain)
+        : Image.network(url, fit: BoxFit.contain);
     return Container(
       width: 46,
       height: 46,

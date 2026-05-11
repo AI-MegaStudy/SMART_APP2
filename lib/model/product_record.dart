@@ -106,6 +106,7 @@ class ProductRecord {
       'ACTIVE' => '판매 중',
       'SOLD_OUT' => '준비 중',
       'HIDDEN' => '판매 중지',
+      'INACTIVE' => '판매 중지',
       _ => status.isEmpty ? '준비 중' : status,
     };
   }

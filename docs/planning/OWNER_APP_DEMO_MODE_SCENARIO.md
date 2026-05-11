@@ -74,6 +74,7 @@
 13. 수확 예측 - ML 예측 실행
    - 강조 대상: `수확 예측 실행` 버튼
    - 데모 상태: 데모 모드에서 실제 예측 API/fallback 실행 후 예측 결과, 권장 예약량, 권장 가격이 표시된다.
+   - 화면 기준: 개발자용 필드명은 노출하지 않고 `예측에 반영된 기준`, `1,000㎡당 수확량`처럼 점주가 이해할 수 있는 표현으로 번역한다.
    - 실제 동작: `HarvestSlotPage(demoAutoPredict: true)`가 예측 생성을 자동 실행
 
 14. 수확 슬롯 확정
@@ -178,6 +179,8 @@
 
 - 데모 컨트롤러: `lib/demo/owner_demo_manager.dart`
 - 실제 페이지 대상 키: `DemoTargetKeys`
+- 수확 예측 입력/출력 매핑: `docs/planning/OWNER_APP_ML_PREDICTION_MAPPING.md`
+- 신선도 DL 연동/fallback 정책: `docs/planning/OWNER_APP_DL_QUALITY_INTEGRATION.md`
 - 데모 시작 트리거: `lib/view/home.dart`의 홈 상단 점주 인사 영역 3회 빠른 탭
 - 메뉴 키 연결: `lib/view/menu_page.dart`
 - 주문/예약 흐름: `lib/view/orders_page.dart`

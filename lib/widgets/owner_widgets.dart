@@ -384,22 +384,28 @@ class MetricCard extends StatelessWidget {
             children: [
               Icon(icon, color: AppColors.text, size: 24),
               const Spacer(),
-              Text(
-                value,
-                maxLines: 2,
-                overflow: TextOverflow.visible,
-                style: const TextStyle(
-                  color: AppColors.text,
-                  fontSize: 21,
-                  height: 1.08,
-                  fontWeight: FontWeight.w900,
+              Align(
+                alignment: Alignment.centerLeft,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    value,
+                    maxLines: 1,
+                    style: const TextStyle(
+                      color: AppColors.text,
+                      fontSize: 21,
+                      height: 1.08,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
                 ),
               ),
               const SizedBox(height: 4),
               Text(
                 label,
                 maxLines: 2,
-                overflow: TextOverflow.visible,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   color: AppColors.muted,
                   fontSize: 12,
@@ -1163,7 +1169,7 @@ class YieldChart extends StatelessWidget {
     ];
 
     return Container(
-      height: 188,
+      height: 214,
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 10),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -1198,7 +1204,10 @@ class YieldChart extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     for (final value in chartValues)
-                      _Bar(height: 24 + (value / maxValue * 82)),
+                      _Bar(
+                        height: 24 + (value / maxValue * 82),
+                        value: '${value.round()}kg',
+                      ),
                   ],
                 ),
               ],
@@ -1218,8 +1227,9 @@ class YieldChart extends StatelessWidget {
 
 class _Bar extends StatelessWidget {
   final double height;
+  final String value;
 
-  const _Bar({required this.height});
+  const _Bar({required this.height, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -1227,6 +1237,17 @@ class _Bar extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
+          Text(
+            value,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: AppColors.text,
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 4),
           Container(
             height: height,
             margin: const EdgeInsets.symmetric(horizontal: 6),
@@ -1312,15 +1333,15 @@ class CameraPreviewCard extends StatelessWidget {
               Positioned.fill(
                 child: Image.memory(
                   imageBytes!,
-                  fit: BoxFit.cover,
+                  fit: BoxFit.contain,
                   gaplessPlayback: true,
                 ),
               )
             else if (imageUrl?.isNotEmpty == true)
               Positioned.fill(
                 child: imageUrl!.startsWith('assets/')
-                    ? Image.asset(imageUrl!, fit: BoxFit.cover)
-                    : Image.network(imageUrl!, fit: BoxFit.cover),
+                    ? Image.asset(imageUrl!, fit: BoxFit.contain)
+                    : Image.network(imageUrl!, fit: BoxFit.contain),
               )
             else
               Center(
@@ -1390,52 +1411,58 @@ class _InspectionOverlayTool extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final left = (anchor.dx * constraints.maxWidth).clamp(
-          16.0,
-          constraints.maxWidth - 42.0,
-        );
-        final top = (anchor.dy * constraints.maxHeight).clamp(
-          16.0,
-          constraints.maxHeight - 42.0,
-        );
-        return Positioned(
-          left: left,
-          top: top,
-          child: GestureDetector(
-            onPanUpdate: (details) {
-              final next = Offset(
-                ((left + details.delta.dx) / constraints.maxWidth).clamp(
-                  0.0,
-                  1.0,
-                ),
-                ((top + details.delta.dy) / constraints.maxHeight).clamp(
-                  0.0,
-                  1.0,
-                ),
-              );
-              onChanged?.call(next);
-            },
-            child: Container(
-              width: 26,
-              height: 26,
-              decoration: BoxDecoration(
-                color: AppColors.green,
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 3),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.16),
-                    blurRadius: 8,
-                    offset: const Offset(0, 3),
+    return Positioned.fill(
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final left = (anchor.dx * constraints.maxWidth).clamp(
+            16.0,
+            constraints.maxWidth - 42.0,
+          );
+          final top = (anchor.dy * constraints.maxHeight).clamp(
+            16.0,
+            constraints.maxHeight - 42.0,
+          );
+          return Stack(
+            children: [
+              Positioned(
+                left: left,
+                top: top,
+                child: GestureDetector(
+                  onPanUpdate: (details) {
+                    final next = Offset(
+                      ((left + details.delta.dx) / constraints.maxWidth).clamp(
+                        0.0,
+                        1.0,
+                      ),
+                      ((top + details.delta.dy) / constraints.maxHeight).clamp(
+                        0.0,
+                        1.0,
+                      ),
+                    );
+                    onChanged?.call(next);
+                  },
+                  child: Container(
+                    width: 26,
+                    height: 26,
+                    decoration: BoxDecoration(
+                      color: AppColors.green,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 3),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.16),
+                          blurRadius: 8,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
                   ),
-                ],
+                ),
               ),
-            ),
-          ),
-        );
-      },
+            ],
+          );
+        },
+      ),
     );
   }
 }

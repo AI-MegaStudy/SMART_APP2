@@ -475,7 +475,10 @@ class _ReturnEvidenceImage extends StatelessWidget {
   final String imageUrl;
   final BoxFit fit;
 
-  const _ReturnEvidenceImage({required this.imageUrl, this.fit = BoxFit.cover});
+  const _ReturnEvidenceImage({
+    required this.imageUrl,
+    this.fit = BoxFit.contain,
+  });
 
   @override
   Widget build(BuildContext context) {

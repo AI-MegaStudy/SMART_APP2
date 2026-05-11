@@ -189,6 +189,8 @@ class _QualityPageState extends State<QualityPage> {
       final result = await repository.analyzeImage(
         procurementItemId: target.procurementItemId,
         imageUrl: uploaded.imageUrl,
+        fileName: fileName,
+        fileBytes: bytes,
       );
       if (!mounted) return;
       setState(() {
@@ -235,6 +237,7 @@ class _QualityPageState extends State<QualityPage> {
         imageUrl: result.imageUrl,
         ownerConfirmedGrade: ownerGrade,
         ownerDecision: ownerDecision,
+        analysis: result,
       );
       if (!mounted) return;
       showOwnerSnack(context, '신선도 검사 결과를 저장했습니다.');

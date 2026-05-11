@@ -121,7 +121,18 @@ class QualityService:
 
     def create_inspection(self, owner_id: int, payload: dict) -> dict:
         procurement_item = self._get_procurement_item(owner_id, payload["procurement_item_id"])
-        analysis = self.quality_analysis_service.analyze(image_url=payload["image_url"])
+        if payload.get("model_grade") is not None:
+            analysis = {
+                "model_grade": payload.get("model_grade") or "A",
+                "freshness_score": payload.get("freshness_score") or 0,
+                "color_score": payload.get("color_score") or 0,
+                "roundness_score": payload.get("roundness_score") or 0,
+                "bruise_probability": payload.get("bruise_probability") or 0,
+                "model_decision": payload.get("model_decision") or "REVIEW",
+                "model_version": payload.get("model_version") or "owner-provided-analysis",
+            }
+        else:
+            analysis = self.quality_analysis_service.analyze(image_url=payload["image_url"])
 
         inspection = QualityInspection(
             procurement_item_id=procurement_item.procurement_item_id,

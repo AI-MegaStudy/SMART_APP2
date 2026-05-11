@@ -32,6 +32,7 @@ dependencies:
     sdk: flutter
   provider: ^6.1.2
   http: ^1.2.2
+  http_parser: ^4.1.2
   kpostal_plus: ^1.0.3
   image_picker: ^1.1.2
   
