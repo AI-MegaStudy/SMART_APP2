@@ -36,7 +36,7 @@ class Settings(BaseSettings):
     image_default_product_subfolder: str = "products"
     image_default_quality_subfolder: str = "quality-inspections"
     image_allowed_extensions: str | list[str] = "jpg,jpeg,png,gif,webp"
-    image_max_size_mb: int = 5
+    image_max_size_mb: int = 10
     dl_quality_enabled: bool = False
     dl_quality_api_url: str = ""
     dl_quality_timeout_seconds: int = 20

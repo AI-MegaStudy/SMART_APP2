@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:smart_app/core/auth_session.dart';
+import 'package:smart_app/demo/owner_demo_manager.dart';
 import 'package:smart_app/model/owner_profile.dart';
 import 'package:smart_app/model/product_record.dart';
 import 'package:smart_app/repositories/owner_repository.dart';
@@ -69,6 +70,7 @@ class _ProfilePageState extends State<ProfilePage> {
           compact: true,
         ),
         ProfileListTile(
+          key: DemoTargetKeys.profileOwnerInfo,
           icon: Icons.person_outline,
           title: '내 정보 수정',
           subtitle: '이름, 이메일, 비밀번호, 전화번호, 사업자번호',
@@ -77,6 +79,7 @@ class _ProfilePageState extends State<ProfilePage> {
           ).push(MaterialPageRoute(builder: (_) => const OwnerDetailPage())),
         ),
         ProfileListTile(
+          key: DemoTargetKeys.profileFarmInfo,
           icon: Icons.warehouse_outlined,
           title: '농장 정보 수정',
           subtitle: '농장명, 주소, 농장 소개, 배송 정책, 반품 정책',

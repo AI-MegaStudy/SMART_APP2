@@ -85,24 +85,28 @@ class _DashboardPageState extends State<DashboardPage> {
         GridCards(
           children: [
             MetricCard(
+              key: DemoTargetKeys.dashboardQuality,
               icon: Icons.center_focus_strong_outlined,
               value: '${dashboard?.inspectionWaiting ?? 0}',
               label: '선별 대기',
               onTap: () => _open(const QualityPage()),
             ),
             MetricCard(
+              key: DemoTargetKeys.dashboardProcurement,
               icon: Icons.assignment_turned_in_outlined,
               value: '${dashboard?.newProcurements ?? 0}',
               label: '신규 발주',
               onTap: () => _open(const ProcurementPage()),
             ),
             MetricCard(
+              key: DemoTargetKeys.dashboardShipment,
               icon: Icons.local_shipping_outlined,
               value: '${dashboard?.readyToShip ?? 0}',
               label: '배송 준비',
               onTap: () => _open(const ShipmentPage()),
             ),
             MetricCard(
+              key: DemoTargetKeys.dashboardReturn,
               icon: Icons.keyboard_return_outlined,
               value: '${dashboard?.returnRequests ?? 0}',
               label: '반품 요청',

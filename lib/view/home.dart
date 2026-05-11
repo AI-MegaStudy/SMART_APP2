@@ -88,7 +88,11 @@ class _HomeState extends State<Home> {
               NavigationDestination(
                 icon: Icon(
                   pages[index].icon,
-                  key: index == 0 ? DemoTargetKeys.navMenu : null,
+                  key: index == 0
+                      ? DemoTargetKeys.navMenu
+                      : index == 2
+                      ? DemoTargetKeys.navProfile
+                      : null,
                 ),
                 selectedIcon: Icon(pages[index].selectedIcon),
                 label: pages[index].label,

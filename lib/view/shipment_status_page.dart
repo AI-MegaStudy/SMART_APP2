@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smart_app/demo/owner_demo_manager.dart';
 import 'package:smart_app/model/owner_status_record.dart';
 import 'package:smart_app/repositories/owner_workflow_repository.dart';
 import 'package:smart_app/widgets/owner_widgets.dart';
@@ -180,15 +181,16 @@ class _ShipmentStatusPageState extends State<ShipmentStatusPage> {
                 message: '배송 등록이 완료되면 송장과 배송 상태를 이곳에서 관리합니다.',
               ),
           if (!loading)
-            for (final item in visible)
+            for (final entry in visible.indexed)
               DataTile(
+                key: entry.$1 == 0 ? DemoTargetKeys.shipmentStatusItem : null,
                 icon: Icons.local_shipping_outlined,
-                title: item.title,
-                subtitle: item.subtitle,
-                badge: item.status,
-                badgeColor: item.color,
+                title: entry.$2.title,
+                subtitle: entry.$2.subtitle,
+                badge: entry.$2.status,
+                badgeColor: entry.$2.color,
                 showChevron: true,
-                onTap: () => _openShipmentAction(item),
+                onTap: () => _openShipmentAction(entry.$2),
               ),
         ],
       ),

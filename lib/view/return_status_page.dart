@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smart_app/demo/owner_demo_manager.dart';
 import 'package:smart_app/model/owner_status_record.dart';
 import 'package:smart_app/repositories/owner_workflow_repository.dart';
 import 'package:smart_app/util/app_colors.dart';
@@ -103,13 +104,14 @@ class _ReturnStatusPageState extends State<ReturnStatusPage> {
                 message: '고객 반품 요청이 들어오면 접수, 승인, 거절 상태를 이곳에서 확인합니다.',
               ),
           if (!loading)
-            for (final item in visible)
+            for (final entry in visible.indexed)
               DataTile(
+                key: entry.$1 == 0 ? DemoTargetKeys.returnStatusItem : null,
                 icon: Icons.assignment_return_outlined,
-                title: item.title,
-                subtitle: item.subtitle,
-                badge: item.status,
-                badgeColor: item.color,
+                title: entry.$2.title,
+                subtitle: entry.$2.subtitle,
+                badge: entry.$2.status,
+                badgeColor: entry.$2.color,
                 iconBackground: AppColors.mint,
                 iconColor: AppColors.green,
               ),

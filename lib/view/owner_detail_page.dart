@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:smart_app/core/api_exception.dart';
+import 'package:smart_app/demo/owner_demo_manager.dart';
 import 'package:smart_app/model/owner_profile.dart';
 import 'package:smart_app/repositories/owner_repository.dart';
 import 'package:smart_app/widgets/owner_widgets.dart';
@@ -142,6 +143,7 @@ class _OwnerDetailPageState extends State<OwnerDetailPage> {
                 ]
               : [
                   LabeledField(
+                    key: DemoTargetKeys.ownerDetailName,
                     label: '이름',
                     value: '',
                     controller: nameController,
@@ -157,6 +159,7 @@ class _OwnerDetailPageState extends State<OwnerDetailPage> {
                     readOnly: true,
                   ),
                   LabeledField(
+                    key: DemoTargetKeys.ownerDetailPhone,
                     label: '전화번호',
                     value: '',
                     controller: phoneController,
@@ -179,6 +182,7 @@ class _OwnerDetailPageState extends State<OwnerDetailPage> {
                   DualActionBar(
                     left: '취소',
                     right: saving ? '저장 중' : '저장',
+                    rightKey: DemoTargetKeys.ownerDetailSave,
                     onLeftPressed: () => Navigator.of(context).pop(),
                     onRightPressed: saving ? null : _save,
                   ),

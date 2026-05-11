@@ -3,27 +3,52 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:smart_app/view/farm_detail_page.dart';
 import 'package:smart_app/view/harvest_slot_page.dart';
 import 'package:smart_app/view/orders_page.dart';
+import 'package:smart_app/view/owner_detail_page.dart';
 import 'package:smart_app/view/procurement_page.dart';
+import 'package:smart_app/view/procurement_status_page.dart';
 import 'package:smart_app/view/product_add_page.dart';
 import 'package:smart_app/view/product_page.dart';
 import 'package:smart_app/view/quality_page.dart';
 import 'package:smart_app/view/return_page.dart';
+import 'package:smart_app/view/return_status_page.dart';
 import 'package:smart_app/view/shipment_page.dart';
+import 'package:smart_app/view/shipment_status_page.dart';
 
 const _demoHighlightColor = Color(0xffD81B60);
 
 class DemoTargetKeys {
   static final homeGreeting = GlobalKey(debugLabel: 'demo.home.greeting');
   static final navMenu = GlobalKey(debugLabel: 'demo.nav.menu');
+  static final navProfile = GlobalKey(debugLabel: 'demo.nav.profile');
+  static final dashboardQuality = GlobalKey(
+    debugLabel: 'demo.dashboard.quality',
+  );
+  static final dashboardProcurement = GlobalKey(
+    debugLabel: 'demo.dashboard.procurement',
+  );
+  static final dashboardShipment = GlobalKey(
+    debugLabel: 'demo.dashboard.shipment',
+  );
+  static final dashboardReturn = GlobalKey(debugLabel: 'demo.dashboard.return');
   static final menuProduct = GlobalKey(debugLabel: 'demo.menu.product');
   static final menuHarvest = GlobalKey(debugLabel: 'demo.menu.harvest');
   static final menuOrders = GlobalKey(debugLabel: 'demo.menu.orders');
   static final menuProcurement = GlobalKey(debugLabel: 'demo.menu.procurement');
+  static final menuProcurementStatus = GlobalKey(
+    debugLabel: 'demo.menu.procurement.status',
+  );
   static final menuQuality = GlobalKey(debugLabel: 'demo.menu.quality');
   static final menuShipment = GlobalKey(debugLabel: 'demo.menu.shipment');
+  static final menuShipmentStatus = GlobalKey(
+    debugLabel: 'demo.menu.shipment.status',
+  );
   static final menuReturn = GlobalKey(debugLabel: 'demo.menu.return');
+  static final menuReturnStatus = GlobalKey(
+    debugLabel: 'demo.menu.return.status',
+  );
   static final productAdd = GlobalKey(debugLabel: 'demo.product.add');
   static final productAddVariety = GlobalKey(
     debugLabel: 'demo.product.add.variety',
@@ -100,6 +125,35 @@ class DemoTargetKeys {
   static final returnEvidence = GlobalKey(debugLabel: 'demo.return.evidence');
   static final returnAmount = GlobalKey(debugLabel: 'demo.return.amount');
   static final returnApprove = GlobalKey(debugLabel: 'demo.return.approve');
+  static final procurementStatusItem = GlobalKey(
+    debugLabel: 'demo.procurement.status.item',
+  );
+  static final shipmentStatusItem = GlobalKey(
+    debugLabel: 'demo.shipment.status.item',
+  );
+  static final returnStatusItem = GlobalKey(
+    debugLabel: 'demo.return.status.item',
+  );
+  static final profileOwnerInfo = GlobalKey(
+    debugLabel: 'demo.profile.owner.info',
+  );
+  static final profileFarmInfo = GlobalKey(
+    debugLabel: 'demo.profile.farm.info',
+  );
+  static final ownerDetailName = GlobalKey(
+    debugLabel: 'demo.owner.detail.name',
+  );
+  static final ownerDetailPhone = GlobalKey(
+    debugLabel: 'demo.owner.detail.phone',
+  );
+  static final ownerDetailSave = GlobalKey(
+    debugLabel: 'demo.owner.detail.save',
+  );
+  static final farmDetailName = GlobalKey(debugLabel: 'demo.farm.detail.name');
+  static final farmDetailImage = GlobalKey(
+    debugLabel: 'demo.farm.detail.image',
+  );
+  static final farmDetailSave = GlobalKey(debugLabel: 'demo.farm.detail.save');
 
   const DemoTargetKeys._();
 }
@@ -129,6 +183,30 @@ class OwnerDemoManager {
       await root();
       selectTab(1);
       await _focus(key: DemoTargetKeys.homeGreeting);
+      await _focus(key: DemoTargetKeys.dashboardQuality);
+      await _push(const QualityPage(demoAutoImage: true));
+      await _focus(key: DemoTargetKeys.qualityTarget);
+      await root();
+      selectTab(1);
+      await _wait();
+      await _focus(key: DemoTargetKeys.dashboardProcurement);
+      await _push(const ProcurementPage());
+      await _focus(key: DemoTargetKeys.procurementFirst);
+      await root();
+      selectTab(1);
+      await _wait();
+      await _focus(key: DemoTargetKeys.dashboardShipment);
+      await _push(const ShipmentPage(demoAutofill: true));
+      await _focus(key: DemoTargetKeys.shipmentProduct);
+      await root();
+      selectTab(1);
+      await _wait();
+      await _focus(key: DemoTargetKeys.dashboardReturn);
+      await _push(const ReturnPage());
+      await _focus(key: DemoTargetKeys.returnList);
+      await root();
+      selectTab(1);
+      await _wait();
       await _focus(
         key: DemoTargetKeys.navMenu,
         beforeDelay: const Duration(milliseconds: 300),
@@ -195,6 +273,13 @@ class OwnerDemoManager {
       await root();
       selectTab(0);
       await _wait();
+      await _focus(key: DemoTargetKeys.menuProcurementStatus);
+      await _push(const ProcurementStatusPage());
+      await _focus(key: DemoTargetKeys.procurementStatusItem);
+
+      await root();
+      selectTab(0);
+      await _wait();
       await _focus(key: DemoTargetKeys.menuQuality);
       await _push(
         const QualityPage(demoAutoImage: true, demoAutoAnalyze: true),
@@ -221,12 +306,46 @@ class OwnerDemoManager {
       await root();
       selectTab(0);
       await _wait();
+      await _focus(key: DemoTargetKeys.menuShipmentStatus);
+      await _push(const ShipmentStatusPage());
+      await _focus(key: DemoTargetKeys.shipmentStatusItem);
+
+      await root();
+      selectTab(0);
+      await _wait();
       await _focus(key: DemoTargetKeys.menuReturn);
       await _push(const ReturnPage(demoOpenFirst: true));
       await _focus(key: DemoTargetKeys.returnList);
       await _focus(key: DemoTargetKeys.returnEvidence);
       await _focus(key: DemoTargetKeys.returnAmount);
       await _focus(key: DemoTargetKeys.returnApprove);
+
+      await root();
+      selectTab(0);
+      await _wait();
+      await _focus(key: DemoTargetKeys.menuReturnStatus);
+      await _push(const ReturnStatusPage());
+      await _focus(key: DemoTargetKeys.returnStatusItem);
+
+      await root();
+      selectTab(1);
+      await _wait();
+      await _focus(key: DemoTargetKeys.navProfile);
+      selectTab(2);
+      await _wait();
+      await _focus(key: DemoTargetKeys.profileOwnerInfo);
+      await _push(const OwnerDetailPage());
+      await _focus(key: DemoTargetKeys.ownerDetailName);
+      await _focus(key: DemoTargetKeys.ownerDetailPhone);
+      await _focus(key: DemoTargetKeys.ownerDetailSave);
+      await root();
+      selectTab(2);
+      await _wait();
+      await _focus(key: DemoTargetKeys.profileFarmInfo);
+      await _push(const FarmDetailPage());
+      await _focus(key: DemoTargetKeys.farmDetailName);
+      await _focus(key: DemoTargetKeys.farmDetailImage);
+      await _focus(key: DemoTargetKeys.farmDetailSave);
     } finally {
       await _wait(const Duration(milliseconds: 600));
       stop();

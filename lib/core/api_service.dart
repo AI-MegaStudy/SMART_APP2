@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import 'package:smart_app/core/api_exception.dart';
 import 'package:smart_app/core/auth_session.dart';
 
@@ -90,7 +91,12 @@ class ApiService {
     );
     request.fields.addAll(fields);
     request.files.add(
-      http.MultipartFile.fromBytes(fileField, fileBytes, filename: fileName),
+      http.MultipartFile.fromBytes(
+        fileField,
+        fileBytes,
+        filename: fileName,
+        contentType: _imageContentType(fileName),
+      ),
     );
 
     final streamed = await request.send().timeout(requestTimeout);
@@ -104,6 +110,17 @@ class ApiService {
         : baseUrl;
     final normalizedPath = path.startsWith('/') ? path : '/$path';
     return Uri.parse('$normalizedBase$normalizedPath');
+  }
+
+  static MediaType? _imageContentType(String fileName) {
+    final extension = fileName.split('.').last.toLowerCase();
+    return switch (extension) {
+      'jpg' || 'jpeg' => MediaType('image', 'jpeg'),
+      'png' => MediaType('image', 'png'),
+      'gif' => MediaType('image', 'gif'),
+      'webp' => MediaType('image', 'webp'),
+      _ => null,
+    };
   }
 
   static Map<String, String> _headers({required bool requiresAuth}) {
@@ -194,6 +211,12 @@ class ApiService {
       'harvest slot not found' => '수확 슬롯 정보를 찾을 수 없습니다.',
       'procurement not found' => '발주 정보를 찾을 수 없습니다.',
       'return request not found' => '반품 요청 정보를 찾을 수 없습니다.',
+      'unsupported image extension' =>
+        '지원하지 않는 이미지 형식입니다. JPG 또는 PNG 이미지를 선택해주세요.',
+      'invalid file name' => '이미지 파일명을 처리하지 못했습니다. 다른 이미지를 선택해주세요.',
+      'image file too large' => '이미지 용량이 너무 큽니다. 더 작은 이미지를 선택해주세요.',
+      'invalid image content type' => '이미지 파일 형식을 확인해주세요.',
+      'invalid image file' => '이미지 파일을 읽을 수 없습니다. 다른 이미지를 선택해주세요.',
       'internal server error' => '서버에서 요청을 처리하지 못했습니다.',
       _ => message.isEmpty ? '요청을 처리하지 못했습니다.' : message,
     };

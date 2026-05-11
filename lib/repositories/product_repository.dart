@@ -74,23 +74,32 @@ class ProductRepository {
     required String fileName,
     required Uint8List fileBytes,
   }) async {
+    final uploadName = _safeImageUploadName(
+      'farm_$farmId',
+      fileName,
+      fileBytes,
+    );
     try {
-      return await ApiService.postMultipartData<OwnerFarmRecord>(
+      final uploaded = await ApiService.postMultipartData<OwnerFarmRecord>(
         '/owner/farms/$farmId/image',
         requiresAuth: true,
         fileField: 'file',
-        fileName: fileName,
+        fileName: uploadName,
         fileBytes: fileBytes,
         parser: (data) {
           final json = data as Map<String, dynamic>? ?? const {};
           return OwnerFarmRecord.fromJson(json);
         },
       );
-    } catch (_) {
-      return _fallbackFarms.firstWhere(
-        (farm) => farm.farmId == farmId,
-        orElse: () => _fallbackFarms.first,
+      debugPrint(
+        '[API 정상][farm.image] farmId=$farmId file=$uploadName url=${uploaded.farmImageUrl}',
       );
+      return uploaded;
+    } catch (error) {
+      debugPrint(
+        '[API 실패][farm.image] farmId=$farmId file=$uploadName error=$error',
+      );
+      rethrow;
     }
   }
 
@@ -205,30 +214,84 @@ class ProductRepository {
     required String fileName,
     required Uint8List fileBytes,
   }) async {
+    final uploadName = _safeImageUploadName(
+      'product_$productId',
+      fileName,
+      fileBytes,
+    );
     try {
-      return await ApiService.postMultipartData<ProductRecord>(
+      final uploaded = await ApiService.postMultipartData<ProductRecord>(
         '/owner/products/$productId/image',
         requiresAuth: true,
         fileField: 'file',
-        fileName: fileName,
+        fileName: uploadName,
         fileBytes: fileBytes,
         parser: (data) {
           final json = data as Map<String, dynamic>? ?? const {};
           return ProductRecord.fromJson(json);
         },
       );
-    } catch (_) {
-      final current = _fallbackProducts.firstWhere(
-        (product) => product.id == productId,
-        orElse: () => _fallbackProducts.first,
+      debugPrint(
+        '[API 정상][product.image] productId=$productId file=$uploadName url=${uploaded.imageUrl}',
       );
-      return current.copyWith(
-        imageUrl: current.variety == '부사'
-            ? 'assets/images/owner_demo/demo_fuji_product.png'
-            : 'assets/images/owner_demo/demo_yanggwang_product.png',
+      return uploaded;
+    } catch (error) {
+      debugPrint(
+        '[API 실패][product.image] productId=$productId file=$uploadName error=$error',
       );
+      rethrow;
     }
   }
+}
+
+String _safeImageUploadName(
+  String prefix,
+  String originalFileName,
+  Uint8List fileBytes,
+) {
+  final extension = _imageExtension(fileBytes, originalFileName);
+  return '${prefix}_${DateTime.now().millisecondsSinceEpoch}.$extension';
+}
+
+String _imageExtension(Uint8List bytes, String fileName) {
+  if (bytes.length >= 4 &&
+      bytes[0] == 0x89 &&
+      bytes[1] == 0x50 &&
+      bytes[2] == 0x4e &&
+      bytes[3] == 0x47) {
+    return 'png';
+  }
+  if (bytes.length >= 3 &&
+      bytes[0] == 0xff &&
+      bytes[1] == 0xd8 &&
+      bytes[2] == 0xff) {
+    return 'jpg';
+  }
+  if (bytes.length >= 4 &&
+      bytes[0] == 0x47 &&
+      bytes[1] == 0x49 &&
+      bytes[2] == 0x46 &&
+      bytes[3] == 0x38) {
+    return 'gif';
+  }
+  if (bytes.length >= 12 &&
+      bytes[0] == 0x52 &&
+      bytes[1] == 0x49 &&
+      bytes[2] == 0x46 &&
+      bytes[3] == 0x46 &&
+      bytes[8] == 0x57 &&
+      bytes[9] == 0x45 &&
+      bytes[10] == 0x42 &&
+      bytes[11] == 0x50) {
+    return 'webp';
+  }
+
+  final extension = fileName.split('.').last.toLowerCase();
+  return switch (extension) {
+    'jpeg' => 'jpg',
+    'jpg' || 'png' || 'gif' || 'webp' => extension,
+    _ => 'jpg',
+  };
 }
 
 const _fallbackFarms = [

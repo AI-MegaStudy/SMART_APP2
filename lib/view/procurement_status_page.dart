@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smart_app/demo/owner_demo_manager.dart';
 import 'package:smart_app/model/owner_order_record.dart';
 import 'package:smart_app/repositories/owner_workflow_repository.dart';
 import 'package:smart_app/widgets/owner_widgets.dart';
@@ -101,13 +102,16 @@ class _ProcurementStatusPageState extends State<ProcurementStatusPage> {
               message: '새 주문이 들어오면 발주 승인 흐름에서 바로 확인할 수 있습니다.',
             ),
           if (!loading)
-            for (final item in visible)
+            for (final entry in visible.indexed)
               DataTile(
+                key: entry.$1 == 0
+                    ? DemoTargetKeys.procurementStatusItem
+                    : null,
                 icon: Icons.inventory_2_outlined,
-                title: item.title,
-                subtitle: item.subtitle,
-                badge: item.status,
-                badgeColor: item.color,
+                title: entry.$2.title,
+                subtitle: entry.$2.subtitle,
+                badge: entry.$2.status,
+                badgeColor: entry.$2.color,
               ),
         ],
       ),

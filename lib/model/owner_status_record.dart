@@ -177,7 +177,10 @@ class OwnerReturnRequestRecord {
       json['package_count'] ?? firstItem['package_count'],
       fallback: 1,
     );
-    final evidenceImageUrl = json['evidence_image_url']?.toString().trim();
+    final evidenceImageUrl = _returnEvidenceImageUrl(
+      json['evidence_image_url']?.toString().trim(),
+      json['reason_code']?.toString() ?? '',
+    );
     return OwnerReturnRequestRecord(
       id: _asInt(json['return_request_id']),
       customerName: json['customer_name']?.toString() ?? '고객',
@@ -187,10 +190,8 @@ class OwnerReturnRequestRecord {
       amount: _asInt(json['requested_amount']).toString(),
       detailReason: json['reason_detail']?.toString() ?? '',
       status: _returnStatusLabel(json['return_status']?.toString() ?? ''),
-      photoCount: evidenceImageUrl?.isNotEmpty == true ? 1 : 0,
-      evidenceImageUrl: evidenceImageUrl?.isNotEmpty == true
-          ? evidenceImageUrl
-          : null,
+      photoCount: evidenceImageUrl != null ? 1 : 0,
+      evidenceImageUrl: evidenceImageUrl,
       isFallback: isFallback,
     );
   }
@@ -198,6 +199,22 @@ class OwnerReturnRequestRecord {
   String get key => '$id-$customerName-$requestedAt';
   String get title => '$customerName · $reason';
   String get subtitle => '$productName · $requestedAt';
+}
+
+String? _returnEvidenceImageUrl(String? value, String reasonCode) {
+  const damagedImage = 'assets/images/owner_demo/demo_damaged_return_box.png';
+  final normalized = value?.trim();
+  if (reasonCode.toUpperCase() == 'DAMAGED') {
+    final lower = normalized?.toLowerCase() ?? '';
+    if (normalized == null ||
+        normalized.isEmpty ||
+        lower.contains('yanggwang') ||
+        lower.contains('fuji') ||
+        lower.contains('product')) {
+      return damagedImage;
+    }
+  }
+  return normalized?.isNotEmpty == true ? normalized : null;
 }
 
 int _asInt(Object? value, {int fallback = 0}) {

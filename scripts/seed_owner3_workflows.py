@@ -47,6 +47,7 @@ PRODUCT_IMAGE_URLS = {
     "양광": "assets/images/owner_demo/yanggwang_apples.png",
     "부사": "assets/images/owner_demo/fuji_apples.png",
 }
+DAMAGED_RETURN_IMAGE_URL = "assets/images/owner_demo/demo_damaged_return_box.png"
 
 
 SCENARIOS = [
@@ -330,7 +331,7 @@ def create_scenario(session, scenario: dict, index: int) -> bool:
             return_status=return_status,
             reason_code="DAMAGED",
             reason_detail="배송 중 일부 상품이 손상되어 반품을 요청했습니다.",
-            evidence_image_url=PRODUCT_IMAGE_URLS["양광"],
+            evidence_image_url=DAMAGED_RETURN_IMAGE_URL,
             requested_amount=total_amount,
             approved_amount=0,
             decision_reason=None,

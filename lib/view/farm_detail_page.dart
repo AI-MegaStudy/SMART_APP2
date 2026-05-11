@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:kpostal_plus/kpostal_plus.dart';
 import 'package:smart_app/core/api_exception.dart';
+import 'package:smart_app/demo/owner_demo_manager.dart';
 import 'package:smart_app/model/product_record.dart';
 import 'package:smart_app/repositories/product_repository.dart';
 import 'package:smart_app/util/app_colors.dart';
@@ -226,6 +227,7 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
             if (loadError != null)
               NoticeBox(color: AppColors.yellow, text: loadError!),
             LabeledField(
+              key: DemoTargetKeys.farmDetailName,
               label: '농장명',
               value: '',
               controller: farmNameController,
@@ -245,6 +247,7 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
               label: const Text('주소 검색'),
             ),
             CameraPreviewCard(
+              key: DemoTargetKeys.farmDetailImage,
               icon: Icons.photo_camera_back_outlined,
               label:
                   selectedImageName ??
@@ -295,6 +298,7 @@ class _FarmDetailPageState extends State<FarmDetailPage> {
             DualActionBar(
               left: '취소',
               right: isSaving ? '저장 중' : '저장',
+              rightKey: DemoTargetKeys.farmDetailSave,
               onLeftPressed: () => Navigator.of(context).pop(),
               onRightPressed: isSaving ? () {} : _save,
             ),
