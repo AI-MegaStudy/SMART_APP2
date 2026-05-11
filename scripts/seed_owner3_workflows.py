@@ -42,12 +42,12 @@ from backend.app.models import (
 OWNER_ID = 3
 FARM_ID = 3
 CUSTOMER_PASSWORD = "pass1234!"
-FARM_IMAGE_URL = "assets/images/owner_demo/chungju_apple_farm.png"
+FARM_IMAGE_URL = "https://cheng80.myqnapcloud.com/images/owner_demo/product_1_chungju_apple_farm.png"
 PRODUCT_IMAGE_URLS = {
-    "양광": "assets/images/owner_demo/yanggwang_apples.png",
-    "부사": "assets/images/owner_demo/fuji_apples.png",
+    "양광": "https://cheng80.myqnapcloud.com/images/owner_demo/product_11_yanggwang_apples.png",
+    "부사": "https://cheng80.myqnapcloud.com/images/owner_demo/product_10_fuji_apples.png",
 }
-DAMAGED_RETURN_IMAGE_URL = "assets/images/owner_demo/demo_damaged_return_box.png"
+DAMAGED_RETURN_IMAGE_URL = "https://cheng80.myqnapcloud.com/images/owner_demo/product_3_demo_damaged_return_box.png"
 
 
 SCENARIOS = [

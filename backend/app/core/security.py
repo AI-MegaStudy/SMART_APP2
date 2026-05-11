@@ -4,6 +4,7 @@ import base64
 import hashlib
 import hmac
 import json
+from numbers import Number
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
@@ -49,7 +50,8 @@ except ModuleNotFoundError:
             payload_json = base64.urlsafe_b64decode(payload_segment + "=" * (-len(payload_segment) % 4)).decode()
             payload = json.loads(payload_json)
             exp = payload.get("exp")
-            if exp and datetime.now(timezone.utc) > datetime.fromisoformat(exp):
+            expires_at = _parse_token_expiry(exp)
+            if expires_at and datetime.now(timezone.utc) > expires_at:
                 raise JWTError("token expired")
             return payload
 
@@ -99,6 +101,27 @@ def hash_password(password: str) -> str:
 
 def _is_legacy_sha256_hash(value: str) -> bool:
     return len(value) == 64 and all(char in "0123456789abcdef" for char in value.lower())
+
+
+def _parse_token_expiry(exp: object) -> datetime | None:
+    if exp is None:
+        return None
+    if isinstance(exp, datetime):
+        return exp if exp.tzinfo else exp.replace(tzinfo=timezone.utc)
+    if isinstance(exp, Number):
+        return datetime.fromtimestamp(float(exp), tz=timezone.utc)
+    if isinstance(exp, str):
+        normalized = exp.strip()
+        if not normalized:
+            return None
+        if normalized.endswith("Z"):
+            normalized = f"{normalized[:-1]}+00:00"
+        try:
+            parsed = datetime.fromisoformat(normalized)
+        except ValueError as exc:
+            raise JWTError("invalid exp claim") from exc
+        return parsed if parsed.tzinfo else parsed.replace(tzinfo=timezone.utc)
+    raise JWTError("invalid exp claim")
 
 
 def create_access_token(subject: str, role: str, expires_delta: timedelta | None = None) -> str:

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smart_app/demo/owner_coach_tour_manager.dart';
 import 'package:smart_app/demo/owner_demo_manager.dart';
 import 'package:smart_app/view/dashboard_page.dart';
 import 'package:smart_app/view/menu_page.dart';
@@ -12,11 +13,9 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
-  static const _demoTapWindow = Duration(milliseconds: 850);
   int selectedIndex = 1;
-  int demoTapCount = 0;
-  DateTime? lastDemoTapAt;
   OwnerDemoManager? demoManager;
+  OwnerCoachTourManager? coachTourManager;
 
   late final pages = <_ShellPage>[
     const _ShellPage(
@@ -29,7 +28,11 @@ class _HomeState extends State<Home> {
       label: '홈',
       icon: Icons.home_outlined,
       selectedIcon: Icons.home,
-      child: DashboardPage(onJump: _selectTab),
+      child: DashboardPage(
+        onJump: _selectTab,
+        onTitleTripleTap: _startAutoDemo,
+        onSubtitleTripleTap: _startCoachTour,
+      ),
     ),
     const _ShellPage(
       label: '마이',
@@ -45,29 +48,29 @@ class _HomeState extends State<Home> {
     });
   }
 
-  void _handleHiddenDemoTap(PointerDownEvent event) {
+  void _startAutoDemo() {
     if (selectedIndex != 1) return;
-    final topAreaHeight = MediaQuery.paddingOf(context).top + 128;
-    if (event.position.dy > topAreaHeight) return;
+    coachTourManager?.stop();
+    demoManager?.stop();
+    demoManager = OwnerDemoManager(context: context, selectTab: _selectTab);
+    demoManager!.start();
+  }
 
-    final now = DateTime.now();
-    final isFastTap =
-        lastDemoTapAt != null &&
-        now.difference(lastDemoTapAt!) < _demoTapWindow;
-    demoTapCount = isFastTap ? demoTapCount + 1 : 1;
-    lastDemoTapAt = now;
-
-    if (demoTapCount >= 3) {
-      demoTapCount = 0;
-      demoManager?.stop();
-      demoManager = OwnerDemoManager(context: context, selectTab: _selectTab);
-      demoManager!.start();
-    }
+  void _startCoachTour() {
+    if (selectedIndex != 1) return;
+    demoManager?.stop();
+    coachTourManager?.stop();
+    coachTourManager = OwnerCoachTourManager(
+      context: context,
+      selectTab: _selectTab,
+    );
+    coachTourManager!.start();
   }
 
   @override
   void dispose() {
     demoManager?.stop();
+    coachTourManager?.stop();
     super.dispose();
   }
 
@@ -75,30 +78,26 @@ class _HomeState extends State<Home> {
   Widget build(BuildContext context) {
     final current = pages[selectedIndex];
 
-    return Listener(
-      behavior: HitTestBehavior.translucent,
-      onPointerDown: _handleHiddenDemoTap,
-      child: Scaffold(
-        body: current.child,
-        bottomNavigationBar: NavigationBar(
-          selectedIndex: selectedIndex,
-          onDestinationSelected: _selectTab,
-          destinations: [
-            for (var index = 0; index < pages.length; index++)
-              NavigationDestination(
-                icon: Icon(
-                  pages[index].icon,
-                  key: index == 0
-                      ? DemoTargetKeys.navMenu
-                      : index == 2
-                      ? DemoTargetKeys.navProfile
-                      : null,
-                ),
-                selectedIcon: Icon(pages[index].selectedIcon),
-                label: pages[index].label,
+    return Scaffold(
+      body: current.child,
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: selectedIndex,
+        onDestinationSelected: _selectTab,
+        destinations: [
+          for (var index = 0; index < pages.length; index++)
+            NavigationDestination(
+              icon: Icon(
+                pages[index].icon,
+                key: index == 0
+                    ? DemoTargetKeys.navMenu
+                    : index == 2
+                    ? DemoTargetKeys.navProfile
+                    : null,
               ),
-          ],
-        ),
+              selectedIcon: Icon(pages[index].selectedIcon),
+              label: pages[index].label,
+            ),
+        ],
       ),
     );
   }

@@ -10,6 +10,7 @@ from backend.app.models.product import Product
 from backend.app.repositories.farm_repo import FarmRepository
 from backend.app.repositories.product_repo import ProductRepository
 from backend.app.services.image_storage_service import ImageStorageService
+from backend.app.services.image_url_policy import validate_persisted_image_url
 
 
 def serialize_farm(farm: Farm) -> dict:
@@ -100,6 +101,11 @@ class ProductService:
         farm = self.farm_repo.get(farm_id)
         if not farm or farm.owner_id != owner_id:
             raise HTTPException(status_code=404, detail="farm not found")
+        if "farm_image_url" in payload:
+            payload["farm_image_url"] = validate_persisted_image_url(
+                payload.get("farm_image_url"),
+                field_name="farm_image_url",
+            )
         for key, value in payload.items():
             setattr(farm, key, value)
         self.session.commit()
@@ -113,6 +119,8 @@ class ProductService:
         farm = self.farm_repo.get(payload["farm_id"])
         if not farm or farm.owner_id != owner_id:
             raise HTTPException(status_code=404, detail="farm not found")
+        if "image_url" in payload:
+            payload["image_url"] = validate_persisted_image_url(payload.get("image_url"))
         product = Product(**payload)
         self.session.add(product)
         self.session.commit()
@@ -123,6 +131,8 @@ class ProductService:
         product = self.product_repo.get(product_id)
         if not product or product.farm.owner_id != owner_id:
             raise HTTPException(status_code=404, detail="product not found")
+        if "image_url" in payload:
+            payload["image_url"] = validate_persisted_image_url(payload.get("image_url"))
         for key, value in payload.items():
             setattr(product, key, value)
         self.session.commit()

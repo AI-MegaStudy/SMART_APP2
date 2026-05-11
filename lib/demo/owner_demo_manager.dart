@@ -21,6 +21,7 @@ const _demoHighlightColor = Color(0xffD81B60);
 
 class DemoTargetKeys {
   static final homeGreeting = GlobalKey(debugLabel: 'demo.home.greeting');
+  static final homeSubtitle = GlobalKey(debugLabel: 'demo.home.subtitle');
   static final navMenu = GlobalKey(debugLabel: 'demo.nav.menu');
   static final navProfile = GlobalKey(debugLabel: 'demo.nav.profile');
   static final dashboardQuality = GlobalKey(

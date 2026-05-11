@@ -15,17 +15,29 @@ import 'package:smart_app/vm/dashboard_viewmodel.dart';
 
 class DashboardPage extends StatefulWidget {
   final ValueChanged<int> onJump;
+  final VoidCallback? onTitleTripleTap;
+  final VoidCallback? onSubtitleTripleTap;
 
-  const DashboardPage({super.key, required this.onJump});
+  const DashboardPage({
+    super.key,
+    required this.onJump,
+    this.onTitleTripleTap,
+    this.onSubtitleTripleTap,
+  });
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
 }
 
 class _DashboardPageState extends State<DashboardPage> {
+  static const _coachTapWindow = Duration(milliseconds: 850);
   final ownerRepository = OwnerRepository();
   final productRepository = ProductRepository();
   bool didLoad = false;
+  int coachTapCount = 0;
+  int demoTapCount = 0;
+  DateTime? lastCoachTapAt;
+  DateTime? lastDemoTapAt;
   OwnerProfile? owner;
   OwnerFarmRecord? farm;
 
@@ -67,6 +79,34 @@ class _DashboardPageState extends State<DashboardPage> {
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));
   }
 
+  void _handleSubtitleTap() {
+    if (widget.onSubtitleTripleTap == null) return;
+    final now = DateTime.now();
+    final isFastTap =
+        lastCoachTapAt != null &&
+        now.difference(lastCoachTapAt!) < _coachTapWindow;
+    coachTapCount = isFastTap ? coachTapCount + 1 : 1;
+    lastCoachTapAt = now;
+    if (coachTapCount < 3) return;
+    coachTapCount = 0;
+    debugPrint('[데모 진입][coach] 홈 서브타이틀 3탭 감지');
+    widget.onSubtitleTripleTap?.call();
+  }
+
+  void _handleTitleTap() {
+    if (widget.onTitleTripleTap == null) return;
+    final now = DateTime.now();
+    final isFastTap =
+        lastDemoTapAt != null &&
+        now.difference(lastDemoTapAt!) < _coachTapWindow;
+    demoTapCount = isFastTap ? demoTapCount + 1 : 1;
+    lastDemoTapAt = now;
+    if (demoTapCount < 3) return;
+    demoTapCount = 0;
+    debugPrint('[데모 진입][auto] 홈 타이틀 3탭 감지');
+    widget.onTitleTripleTap?.call();
+  }
+
   @override
   Widget build(BuildContext context) {
     final dashboard = context.watch<DashboardViewModel>().dashboard;
@@ -78,7 +118,10 @@ class _DashboardPageState extends State<DashboardPage> {
           ? '안녕하세요'
           : '안녕하세요, $ownerName 점주님',
       titleKey: DemoTargetKeys.homeGreeting,
+      onTitleTap: _handleTitleTap,
       subtitle: farmName == null || farmName.isEmpty ? '내 농장' : farmName,
+      subtitleKey: DemoTargetKeys.homeSubtitle,
+      onSubtitleTap: _handleSubtitleTap,
       children: [
         _MlReferenceCard(onPressed: () => _open(const HarvestSlotPage())),
         const SectionHeader(title: '업무 현황'),

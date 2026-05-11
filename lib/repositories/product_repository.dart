@@ -47,18 +47,21 @@ class ProductRepository {
 
   Future<OwnerFarmRecord> updateFarm(OwnerFarmRecord farm) async {
     try {
+      final body = <String, Object?>{
+        'farm_name': farm.farmName,
+        'farm_region': farm.farmRegion,
+        'farm_address': farm.farmAddress,
+        'farm_description': farm.farmDescription,
+        'delivery_policy': farm.deliveryPolicy,
+        'return_policy': farm.returnPolicy,
+      };
+      if (_isPersistedImageUrl(farm.farmImageUrl)) {
+        body['farm_image_url'] = farm.farmImageUrl;
+      }
       return await ApiService.putData<OwnerFarmRecord>(
         '/owner/farms/${farm.farmId}',
         requiresAuth: true,
-        body: {
-          'farm_name': farm.farmName,
-          'farm_region': farm.farmRegion,
-          'farm_address': farm.farmAddress,
-          'farm_image_url': farm.farmImageUrl,
-          'farm_description': farm.farmDescription,
-          'delivery_policy': farm.deliveryPolicy,
-          'return_policy': farm.returnPolicy,
-        },
+        body: body,
         parser: (data) {
           final json = data as Map<String, dynamic>? ?? const {};
           return OwnerFarmRecord.fromJson(json);
@@ -162,20 +165,23 @@ class ProductRepository {
       );
     }
     try {
+      final body = <String, Object?>{
+        'farm_id': farmId,
+        'product_name': product.name,
+        'fruit_type': product.fruitType,
+        'variety': product.variety.isEmpty ? product.name : product.variety,
+        'package_unit_kg': product.packageUnitKg,
+        'base_price': product.price,
+        'product_status': product.backendStatus,
+        'product_description': product.description,
+      };
+      if (_isPersistedImageUrl(product.imageUrl)) {
+        body['image_url'] = product.imageUrl;
+      }
       return await ApiService.putData<ProductRecord>(
         '/owner/products/$productId',
         requiresAuth: true,
-        body: {
-          'farm_id': farmId,
-          'product_name': product.name,
-          'fruit_type': product.fruitType,
-          'variety': product.variety.isEmpty ? product.name : product.variety,
-          'package_unit_kg': product.packageUnitKg,
-          'base_price': product.price,
-          'product_status': product.backendStatus,
-          'product_description': product.description,
-          'image_url': product.imageUrl,
-        },
+        body: body,
         parser: (data) {
           final json = data as Map<String, dynamic>? ?? const {};
           return ProductRecord.fromJson(json);
@@ -242,6 +248,11 @@ class ProductRepository {
       rethrow;
     }
   }
+}
+
+bool _isPersistedImageUrl(String? value) {
+  final lower = value?.trim().toLowerCase() ?? '';
+  return lower.startsWith('http://') || lower.startsWith('https://');
 }
 
 String _safeImageUploadName(

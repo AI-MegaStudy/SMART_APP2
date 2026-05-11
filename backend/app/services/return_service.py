@@ -9,6 +9,7 @@ from backend.app.core.transaction import transaction_scope
 from backend.app.models.return_refund import Refund, ReturnRequest
 from backend.app.repositories.order_repo import OrderRepository
 from backend.app.repositories.return_repo import ReturnRepository
+from backend.app.services.image_url_policy import validate_persisted_image_url
 
 
 def serialize_return_request(return_request: ReturnRequest) -> dict:
@@ -92,7 +93,10 @@ class ReturnService:
             return_status=ReturnStatus.REQUESTED,
             reason_code=payload["reason_code"],
             reason_detail=payload.get("reason_detail"),
-            evidence_image_url=payload.get("evidence_image_url"),
+            evidence_image_url=validate_persisted_image_url(
+                payload.get("evidence_image_url"),
+                field_name="evidence_image_url",
+            ),
             requested_amount=payload["requested_amount"],
             approved_amount=0,
             requested_at=datetime.utcnow(),

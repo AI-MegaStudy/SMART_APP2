@@ -202,7 +202,8 @@ class OwnerReturnRequestRecord {
 }
 
 String? _returnEvidenceImageUrl(String? value, String reasonCode) {
-  const damagedImage = 'assets/images/owner_demo/demo_damaged_return_box.png';
+  const damagedImage =
+      'https://cheng80.myqnapcloud.com/images/owner_demo/product_3_demo_damaged_return_box.png';
   final normalized = value?.trim();
   if (reasonCode.toUpperCase() == 'DAMAGED') {
     final lower = normalized?.toLowerCase() ?? '';

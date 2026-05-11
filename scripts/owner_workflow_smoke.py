@@ -151,7 +151,7 @@ def _add_return_request(order_id: int) -> int:
             return_status=ReturnStatus.REQUESTED,
             reason_code="QUALITY_ISSUE",
             reason_detail="배송 후 품질 확인 요청",
-            evidence_image_url="/mock/returns/smoke.jpg",
+            evidence_image_url="https://cheng80.myqnapcloud.com/images/owner_demo/product_3_demo_damaged_return_box.png",
             requested_amount=order.total_amount,
             approved_amount=0,
             requested_at=datetime.utcnow(),
@@ -205,7 +205,7 @@ def main() -> int:
             token=token,
             json_body={
                 "procurement_item_id": procurement_item_id,
-                "image_url": "/mock/quality/smoke.jpg",
+                "image_url": "https://cheng80.myqnapcloud.com/images/owner_demo/product_9_demo_yanggwang_product.png",
                 "owner_confirmed_grade": "A",
                 "owner_decision": "PASS",
             },

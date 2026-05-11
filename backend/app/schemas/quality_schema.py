@@ -3,7 +3,11 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class QualityInspectionCreateRequest(BaseModel):
     procurement_item_id: int = Field(json_schema_extra={"example": 1})
-    image_url: str = Field(json_schema_extra={"example": "/mock/quality/apple_sample_001.jpg"})
+    image_url: str = Field(
+        json_schema_extra={
+            "example": "https://cheng80.myqnapcloud.com/images/owner_demo/product_9_demo_yanggwang_product.png"
+        }
+    )
     owner_confirmed_grade: str | None = Field(default=None, json_schema_extra={"example": "A"})
     owner_decision: str | None = Field(default=None, json_schema_extra={"example": "PASS"})
     model_grade: str | None = Field(default=None, json_schema_extra={"example": "A"})
@@ -18,7 +22,7 @@ class QualityInspectionCreateRequest(BaseModel):
         json_schema_extra={
             "example": {
                 "procurement_item_id": 1,
-                "image_url": "/mock/quality/apple_sample_001.jpg",
+                "image_url": "https://cheng80.myqnapcloud.com/images/owner_demo/product_9_demo_yanggwang_product.png",
                 "owner_confirmed_grade": "A",
                 "owner_decision": "PASS",
                 "model_grade": "A",

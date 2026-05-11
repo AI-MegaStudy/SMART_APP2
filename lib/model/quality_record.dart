@@ -123,7 +123,7 @@ class QualityAnalysisRecord {
       roundnessScore: roundness.toDouble(),
       bruiseProbability: bruise,
       modelDecision: bruise < 0.2 && score >= 86 ? 'PASS' : 'REVIEW',
-      imageUrl: 'local://$imageName',
+      imageUrl: '',
       modelVersion: 'local-estimate-v1',
       actionRequired: 'OWNER_REVIEW',
     );

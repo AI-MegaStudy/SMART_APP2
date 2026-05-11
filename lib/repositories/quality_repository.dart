@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
 import 'package:smart_app/core/api_debug_log.dart';
+import 'package:smart_app/core/api_exception.dart';
 import 'package:smart_app/core/api_service.dart';
 import 'package:smart_app/model/quality_record.dart';
 
@@ -54,8 +55,13 @@ class QualityRepository {
           return QualityImageUploadRecord.fromJson(json);
         },
       );
-    } catch (_) {
-      return QualityImageUploadRecord(imageUrl: 'local://$fileName');
+    } catch (error) {
+      ApiDebugLog.fallback(
+        'quality.image',
+        error,
+        message: '신선도 이미지 업로드 실패. 화면에는 선택 이미지를 기준으로 보조 판정을 표시합니다.',
+      );
+      rethrow;
     }
   }
 
@@ -160,6 +166,13 @@ class QualityRepository {
     required String ownerDecision,
     required QualityAnalysisRecord analysis,
   }) async {
+    if (!_isPersistedImageUrl(imageUrl)) {
+      ApiDebugLog.fallbackReason(
+        'quality.save',
+        '이미지 업로드가 완료되지 않아 신선도 저장 API를 호출하지 않습니다. image=$imageUrl',
+      );
+      throw const ApiException(message: '이미지 업로드 후 저장할 수 있습니다.');
+    }
     try {
       await ApiService.postData<void>(
         '/owner/quality-inspections',
@@ -192,6 +205,11 @@ class QualityRepository {
       );
       return;
     }
+  }
+
+  static bool _isPersistedImageUrl(String value) {
+    final lower = value.trim().toLowerCase();
+    return lower.startsWith('http://') || lower.startsWith('https://');
   }
 
   static bool _isApproved(Map<String, dynamic> json) {

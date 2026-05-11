@@ -41,7 +41,9 @@ def update_farm(
     current_user: AuthenticatedUser = Depends(require_owner),
     db: Session = Depends(get_db),
 ) -> dict:
-    return success_response(ProductService(db).update_farm(current_user.owner_id, farm_id, payload.model_dump()))
+    return success_response(
+        ProductService(db).update_farm(current_user.owner_id, farm_id, payload.model_dump(exclude_unset=True))
+    )
 
 
 @router.post("/owner/farms/{farm_id}/image")
@@ -68,7 +70,9 @@ def create_product(
     current_user: AuthenticatedUser = Depends(require_owner),
     db: Session = Depends(get_db),
 ) -> dict:
-    return success_response(ProductService(db).create_product(current_user.owner_id, payload.model_dump()))
+    return success_response(
+        ProductService(db).create_product(current_user.owner_id, payload.model_dump(exclude_unset=True))
+    )
 
 
 @router.put("/owner/products/{product_id}")
@@ -78,7 +82,9 @@ def update_product(
     current_user: AuthenticatedUser = Depends(require_owner),
     db: Session = Depends(get_db),
 ) -> dict:
-    return success_response(ProductService(db).update_product(current_user.owner_id, product_id, payload.model_dump()))
+    return success_response(
+        ProductService(db).update_product(current_user.owner_id, product_id, payload.model_dump(exclude_unset=True))
+    )
 
 
 @router.post("/owner/products/{product_id}/image")

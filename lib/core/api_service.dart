@@ -217,6 +217,11 @@ class ApiService {
       'image file too large' => '이미지 용량이 너무 큽니다. 더 작은 이미지를 선택해주세요.',
       'invalid image content type' => '이미지 파일 형식을 확인해주세요.',
       'invalid image file' => '이미지 파일을 읽을 수 없습니다. 다른 이미지를 선택해주세요.',
+      'image_url must be uploaded image url' => '이미지 업로드가 완료된 뒤 저장할 수 있습니다.',
+      'farm_image_url must be uploaded image url' =>
+        '농장 이미지를 업로드한 뒤 저장할 수 있습니다.',
+      'evidence_image_url must be uploaded image url' =>
+        '고객 첨부 이미지는 업로드된 이미지 URL이어야 합니다.',
       'internal server error' => '서버에서 요청을 처리하지 못했습니다.',
       _ => message.isEmpty ? '요청을 처리하지 못했습니다.' : message,
     };

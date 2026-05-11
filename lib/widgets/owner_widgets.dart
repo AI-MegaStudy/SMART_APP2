@@ -179,6 +179,9 @@ class AppScaffold extends StatelessWidget {
   final Widget? trailing;
   final List<Widget> children;
   final Key? titleKey;
+  final VoidCallback? onTitleTap;
+  final Key? subtitleKey;
+  final VoidCallback? onSubtitleTap;
 
   const AppScaffold({
     super.key,
@@ -187,6 +190,9 @@ class AppScaffold extends StatelessWidget {
     this.leading,
     this.trailing,
     this.titleKey,
+    this.onTitleTap,
+    this.subtitleKey,
+    this.onSubtitleTap,
     required this.children,
   });
 
@@ -212,23 +218,38 @@ class AppScaffold extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
+                          GestureDetector(
                             key: titleKey,
-                            title,
-                            style: const TextStyle(
-                              color: AppColors.text,
-                              fontSize: 23,
-                              fontWeight: FontWeight.w900,
-                              height: 1.15,
+                            behavior: HitTestBehavior.opaque,
+                            onTap: onTitleTap,
+                            child: SizedBox(
+                              width: double.infinity,
+                              child: Text(
+                                title,
+                                style: const TextStyle(
+                                  color: AppColors.text,
+                                  fontSize: 23,
+                                  fontWeight: FontWeight.w900,
+                                  height: 1.15,
+                                ),
+                              ),
                             ),
                           ),
                           if (subtitle != null) ...[
                             const SizedBox(height: 4),
-                            Text(
-                              subtitle!,
-                              style: const TextStyle(
-                                color: AppColors.muted,
-                                fontWeight: FontWeight.w700,
+                            GestureDetector(
+                              key: subtitleKey,
+                              behavior: HitTestBehavior.opaque,
+                              onTap: onSubtitleTap,
+                              child: SizedBox(
+                                width: double.infinity,
+                                child: Text(
+                                  subtitle!,
+                                  style: const TextStyle(
+                                    color: AppColors.muted,
+                                    fontWeight: FontWeight.w700,
+                                  ),
+                                ),
                               ),
                             ),
                           ],

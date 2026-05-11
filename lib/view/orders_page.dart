@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:smart_app/demo/owner_demo_manager.dart';
 import 'package:smart_app/model/owner_order_record.dart';
 import 'package:smart_app/repositories/owner_workflow_repository.dart';
@@ -7,8 +8,17 @@ import 'package:smart_app/widgets/owner_widgets.dart';
 
 class OrdersPage extends StatefulWidget {
   final bool demoMode;
+  final bool demoAutoSwitchReservations;
+  final String? demoInitialSection;
+  final ValueListenable<String>? demoSectionListenable;
 
-  const OrdersPage({super.key, this.demoMode = false});
+  const OrdersPage({
+    super.key,
+    this.demoMode = false,
+    this.demoAutoSwitchReservations = true,
+    this.demoInitialSection,
+    this.demoSectionListenable,
+  });
 
   @override
   State<OrdersPage> createState() => _OrdersPageState();
@@ -27,13 +37,35 @@ class _OrdersPageState extends State<OrdersPage> {
   @override
   void initState() {
     super.initState();
+    widget.demoSectionListenable?.addListener(_handleDemoSectionChanged);
     _loadOrders();
   }
 
   @override
+  void didUpdateWidget(covariant OrdersPage oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.demoSectionListenable != widget.demoSectionListenable) {
+      oldWidget.demoSectionListenable?.removeListener(
+        _handleDemoSectionChanged,
+      );
+      widget.demoSectionListenable?.addListener(_handleDemoSectionChanged);
+    }
+  }
+
+  @override
   void dispose() {
+    widget.demoSectionListenable?.removeListener(_handleDemoSectionChanged);
     searchController.dispose();
     super.dispose();
+  }
+
+  void _handleDemoSectionChanged() {
+    final next = widget.demoSectionListenable?.value;
+    if (next != '주문' && next != '예약') return;
+    setState(() {
+      section = next!;
+      filter = section == '주문' ? '결제 완료' : '전체';
+    });
   }
 
   Future<void> _loadOrders() async {
@@ -48,12 +80,14 @@ class _OrdersPageState extends State<OrdersPage> {
       reservations = loaded[1] as List<OwnerReservationRecord>;
       sharedOwnerOrders = orders;
       if (widget.demoMode) {
-        section = '주문';
-        filter = '결제 완료';
+        section = widget.demoInitialSection ?? '주문';
+        filter = section == '주문' ? '결제 완료' : '전체';
       }
       loading = false;
     });
-    if (widget.demoMode) _scheduleReservationDemo();
+    if (widget.demoMode && widget.demoAutoSwitchReservations) {
+      _scheduleReservationDemo();
+    }
   }
 
   void _scheduleReservationDemo() {

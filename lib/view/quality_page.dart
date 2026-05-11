@@ -234,7 +234,7 @@ class _QualityPageState extends State<QualityPage> {
     try {
       await repository.saveInspection(
         procurementItemId: target.procurementItemId,
-        imageUrl: result.imageUrl,
+        imageUrl: result.imageUrl.isNotEmpty ? result.imageUrl : '',
         ownerConfirmedGrade: ownerGrade,
         ownerDecision: ownerDecision,
         analysis: result,

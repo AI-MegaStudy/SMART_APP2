@@ -9,6 +9,7 @@ from backend.app.models.quality_inspection import QualityInspection
 from backend.app.repositories.quality_repo import QualityRepository
 from backend.app.services.quality_analysis_service import QualityAnalysisService
 from backend.app.services.image_storage_service import ImageStorageService
+from backend.app.services.image_url_policy import validate_persisted_image_url
 
 
 def serialize_quality(inspection: QualityInspection) -> dict:
@@ -85,7 +86,7 @@ class QualityService:
     ) -> dict:
         self._get_procurement_item(owner_id, procurement_item_id)
 
-        persisted_image_url = image_url
+        persisted_image_url = validate_persisted_image_url(image_url) if image_url else None
         file_name = None
         subfolder = None
 
@@ -121,6 +122,7 @@ class QualityService:
 
     def create_inspection(self, owner_id: int, payload: dict) -> dict:
         procurement_item = self._get_procurement_item(owner_id, payload["procurement_item_id"])
+        payload["image_url"] = validate_persisted_image_url(payload.get("image_url"))
         if payload.get("model_grade") is not None:
             analysis = {
                 "model_grade": payload.get("model_grade") or "A",

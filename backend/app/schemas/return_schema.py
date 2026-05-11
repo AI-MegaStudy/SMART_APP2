@@ -10,7 +10,9 @@ class ReturnCreateRequest(BaseModel):
     )
     evidence_image_url: str | None = Field(
         default=None,
-        json_schema_extra={"example": "/mock/returns/apple_damage_001.jpg"},
+        json_schema_extra={
+            "example": "https://cheng80.myqnapcloud.com/images/owner_demo/product_3_demo_damaged_return_box.png"
+        },
     )
     requested_amount: int = Field(json_schema_extra={"example": 78000})
 
@@ -20,7 +22,7 @@ class ReturnCreateRequest(BaseModel):
                 "order_id": 1,
                 "reason_code": "QUALITY_ISSUE",
                 "reason_detail": "상품 품질 문제로 반품 요청합니다.",
-                "evidence_image_url": "/mock/returns/apple_damage_001.jpg",
+                "evidence_image_url": "https://cheng80.myqnapcloud.com/images/owner_demo/product_3_demo_damaged_return_box.png",
                 "requested_amount": 78000,
             }
         }

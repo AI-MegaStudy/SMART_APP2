@@ -145,23 +145,26 @@ class _ProcurementDetailPageState extends State<ProcurementDetailPage> {
                 ? AppColors.yellow
                 : AppColors.mint,
           ),
-          Row(
-            children: [
-              Expanded(
-                child: FilledButton.tonal(
-                  key: DemoTargetKeys.procurementApproveAll,
-                  onPressed: _approveAll,
-                  child: const Text('전체 승인'),
+          SizedBox(
+            key: DemoTargetKeys.procurementApproveAll,
+            width: double.infinity,
+            child: Row(
+              children: [
+                Expanded(
+                  child: FilledButton.tonal(
+                    onPressed: _approveAll,
+                    child: const Text('전체 승인'),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: FilledButton.tonal(
-                  onPressed: _rejectAll,
-                  child: const Text('전체 거절'),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: FilledButton.tonal(
+                    onPressed: _rejectAll,
+                    child: const Text('전체 거절'),
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
           for (var index = 0; index < items.length; index++)
             _ProcurementItemEditor(
