@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:smart_app/core/api_exception.dart';
 import 'package:smart_app/core/auth_session.dart';
-import 'package:smart_app/demo/owner_demo_page.dart';
 import 'package:smart_app/repositories/auth_repository.dart';
 import 'package:smart_app/view/email_find_page.dart';
 import 'package:smart_app/view/home.dart';
@@ -17,15 +16,12 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  static const _demoTapWindow = Duration(milliseconds: 850);
   final formKey = GlobalKey<FormState>();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final authRepository = AuthRepository();
   String? loginError;
   bool isSubmitting = false;
-  int demoTapCount = 0;
-  DateTime? lastDemoTapAt;
 
   @override
   void dispose() {
@@ -71,144 +67,121 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  void _handleHiddenDemoTap(PointerDownEvent event) {
-    final topAreaHeight = MediaQuery.paddingOf(context).top + 136;
-    if (event.position.dy > topAreaHeight) return;
-
-    final now = DateTime.now();
-    final isFastTap =
-        lastDemoTapAt != null &&
-        now.difference(lastDemoTapAt!) < _demoTapWindow;
-    demoTapCount = isFastTap ? demoTapCount + 1 : 1;
-    lastDemoTapAt = now;
-
-    if (demoTapCount >= 3) {
-      demoTapCount = 0;
-      Navigator.of(
-        context,
-      ).push(MaterialPageRoute(builder: (_) => const OwnerDemoPage()));
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     const whiteText = TextStyle(
       color: Colors.white,
       fontWeight: FontWeight.w700,
     );
-    return Listener(
-      behavior: HitTestBehavior.translucent,
-      onPointerDown: _handleHiddenDemoTap,
-      child: Scaffold(
-        body: Stack(
-          fit: StackFit.expand,
-          children: [
-            const _LoginBackdrop(),
-            SafeArea(
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 430),
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(28),
-                    child: Form(
-                      key: formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const _SeedLogo(),
-                          SizedBox(
-                            height: MediaQuery.sizeOf(context).height < 720
-                                ? 72
-                                : 170,
+    return Scaffold(
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const _LoginBackdrop(),
+          SafeArea(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 430),
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(28),
+                  child: Form(
+                    key: formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const _SeedLogo(),
+                        SizedBox(
+                          height: MediaQuery.sizeOf(context).height < 720
+                              ? 72
+                              : 170,
+                        ),
+                        const Text(
+                          '오늘 수확 운영을 시작하세요',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 28,
+                            fontWeight: FontWeight.w900,
+                            height: 1.08,
                           ),
-                          const Text(
-                            '오늘 수확 운영을 시작하세요',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 28,
-                              fontWeight: FontWeight.w900,
-                              height: 1.08,
-                            ),
+                        ),
+                        const SizedBox(height: 10),
+                        const Text(
+                          '내 농장의 주문, 발주, 배송 현황을 이어서 관리합니다.',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w700,
+                            height: 1.55,
                           ),
-                          const SizedBox(height: 10),
-                          const Text(
-                            '내 농장의 주문, 발주, 배송 현황을 이어서 관리합니다.',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
-                              height: 1.55,
-                            ),
+                        ),
+                        const SizedBox(height: 24),
+                        TextFormField(
+                          controller: emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          maxLength: 20,
+                          validator: (value) =>
+                              loginError ?? emailValidator(value),
+                          decoration: const InputDecoration(
+                            hintText: '이메일',
+                            counterText: '',
+                            prefixIcon: Icon(Icons.mail_outline),
                           ),
-                          const SizedBox(height: 24),
-                          TextFormField(
-                            controller: emailController,
-                            keyboardType: TextInputType.emailAddress,
-                            maxLength: 20,
-                            validator: (value) =>
-                                loginError ?? emailValidator(value),
-                            decoration: const InputDecoration(
-                              hintText: '이메일',
-                              counterText: '',
-                              prefixIcon: Icon(Icons.mail_outline),
-                            ),
+                        ),
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: passwordController,
+                          obscureText: true,
+                          maxLength: 20,
+                          validator: passwordValidator,
+                          decoration: const InputDecoration(
+                            hintText: '비밀번호',
+                            counterText: '',
+                            prefixIcon: Icon(Icons.lock_outline),
                           ),
-                          const SizedBox(height: 12),
-                          TextFormField(
-                            controller: passwordController,
-                            obscureText: true,
-                            maxLength: 20,
-                            validator: passwordValidator,
-                            decoration: const InputDecoration(
-                              hintText: '비밀번호',
-                              counterText: '',
-                              prefixIcon: Icon(Icons.lock_outline),
-                            ),
-                          ),
-                          const SizedBox(height: 28),
-                          FilledButton(
-                            onPressed: isSubmitting ? null : _login,
-                            child: Text(isSubmitting ? '로그인 중...' : '로그인'),
-                          ),
-                          const SizedBox(height: 10),
-                          Wrap(
-                            spacing: 4,
-                            children: [
-                              TextButton(
-                                onPressed: () => Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => const SignupPage(),
-                                  ),
+                        ),
+                        const SizedBox(height: 28),
+                        FilledButton(
+                          onPressed: isSubmitting ? null : _login,
+                          child: Text(isSubmitting ? '로그인 중...' : '로그인'),
+                        ),
+                        const SizedBox(height: 10),
+                        Wrap(
+                          spacing: 4,
+                          children: [
+                            TextButton(
+                              onPressed: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const SignupPage(),
                                 ),
-                                child: const Text('회원가입', style: whiteText),
                               ),
-                              TextButton(
-                                onPressed: () => Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => const EmailFindPage(),
-                                  ),
+                              child: const Text('회원가입', style: whiteText),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const EmailFindPage(),
                                 ),
-                                child: const Text('이메일 찾기', style: whiteText),
                               ),
-                              TextButton(
-                                onPressed: () => Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => const PasswordFindPage(),
-                                  ),
+                              child: const Text('이메일 찾기', style: whiteText),
+                            ),
+                            TextButton(
+                              onPressed: () => Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const PasswordFindPage(),
                                 ),
-                                child: const Text('비밀번호 찾기', style: whiteText),
                               ),
-                            ],
-                          ),
-                        ],
-                      ),
+                              child: const Text('비밀번호 찾기', style: whiteText),
+                            ),
+                          ],
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
