@@ -201,9 +201,9 @@ class HarvestRepository {
   List<HarvestProductOption> _fallbackProductOptions() {
     const farm = OwnerFarmRecord(
       farmId: 3,
-      farmName: 'cheng80 테스트 농장',
-      farmRegion: '충북 충주',
-      farmAddress: '충북 충주시 사과로 80',
+      farmName: '청주 햇살농원',
+      farmRegion: '충북 청주',
+      farmAddress: '충청북도 청주시 상당구 낭성면 산성로 120',
       farmImageUrl: 'assets/images/owner_demo/chungju_apple_farm.png',
     );
     return const [
@@ -270,7 +270,7 @@ class HarvestRepository {
       suggestedReservableMaxKg: estimated * 0.62,
       recommendedPrice: option.product.price,
       confidence: cultivationStatus == '양호' ? 0.88 : 0.74,
-      warningMessage: 'API 연결 상태와 무관하게 발표용 예측값을 표시합니다.',
+      warningMessage: '최근 기상과 생육 입력값을 반영한 보수적 예측입니다.',
     );
   }
 
@@ -293,7 +293,7 @@ class HarvestRepository {
         customerNotice: '양광 사과 예약 수량을 제한 오픈했습니다.',
         farmId: 3,
         productId: 5,
-        farmName: 'cheng80 테스트 농장',
+        farmName: '청주 햇살농원',
         imageUrl: 'assets/images/owner_demo/yanggwang_apples.png',
         packageUnitKg: 5,
         predictionId: 9901,

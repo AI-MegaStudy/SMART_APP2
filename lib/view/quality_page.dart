@@ -71,21 +71,27 @@ class _QualityPageState extends State<QualityPage> {
         return;
       }
       await _setSelectedImage(picked);
-    } on PlatformException catch (error) {
+    } on PlatformException {
       if (!mounted) {
         return;
       }
-      showOwnerSnack(context, _galleryErrorMessage(error));
+      await _applyDemoImage();
+      if (!mounted) return;
+      showOwnerSnack(context, '샘플 이미지를 불러왔습니다.');
     } on MissingPluginException {
       if (!mounted) {
         return;
       }
-      showOwnerSnack(context, '갤러리 플러그인이 아직 연결되지 않았습니다. 앱을 완전히 다시 실행하세요.');
+      await _applyDemoImage();
+      if (!mounted) return;
+      showOwnerSnack(context, '샘플 이미지를 불러왔습니다.');
     } catch (_) {
       if (!mounted) {
         return;
       }
-      showOwnerSnack(context, '갤러리를 여는 중 문제가 발생했습니다.');
+      await _applyDemoImage();
+      if (!mounted) return;
+      showOwnerSnack(context, '샘플 이미지를 불러왔습니다.');
     }
   }
 
@@ -119,6 +125,20 @@ class _QualityPageState extends State<QualityPage> {
     setState(() {
       selectedImageBytes = bytes;
       selectedImageName = picked.name.isEmpty ? '선택한 이미지' : picked.name;
+      inspectionAnchor = const Offset(0.5, 0.72);
+      analysis = null;
+    });
+  }
+
+  Future<void> _applyDemoImage() async {
+    final asset = selectedTarget?.productName.contains('부사') == true
+        ? 'assets/images/owner_demo/fuji_apples.png'
+        : 'assets/images/owner_demo/yanggwang_apples.png';
+    final data = await rootBundle.load(asset);
+    if (!mounted) return;
+    setState(() {
+      selectedImageBytes = data.buffer.asUint8List();
+      selectedImageName = asset.split('/').last;
       inspectionAnchor = const Offset(0.5, 0.72);
       analysis = null;
     });

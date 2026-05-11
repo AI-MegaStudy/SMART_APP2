@@ -31,7 +31,7 @@ void main() {
     await tester.pumpWidget(const OwnerApp());
     await tester.pumpAndSettle();
 
-    expect(find.text('안녕하세요'), findsOneWidget);
+    expect(find.textContaining('안녕하세요'), findsOneWidget);
     expect(find.text('메뉴'), findsOneWidget);
     expect(find.text('홈'), findsOneWidget);
     expect(find.text('마이'), findsOneWidget);
