@@ -57,7 +57,7 @@ Last updated: 2026-05-11
 | 신선도 검사 | 90% | 검사 대상 발주 품목 선택, 이미지 카드 탭/갤러리 버튼, iOS 갤러리 선택/미리보기, 이미지 업로드, 분석, 추천 등급/신선도/색상/형태/멍 확률 표시, 점주 확정 등급/판정 저장 | `GET /owner/procurements`, `POST /owner/quality-inspections/image`, `POST /owner/quality-inspections/analyze`, `POST /owner/quality-inspections` | 분석 실패 시 선택 이미지 기준 보조 판정 표시 | 실기기 사진 권한은 후속 확인 |
 | 배송 관리 | 88% | 배송 등록 가능한 발주 선택, 택배사 선택, 송장번호, 발송 중량/박스 수 입력, 바코드 버튼으로 송장 보조 입력 | `POST /owner/shipments` | 등록 조건 부족 시 안내. 송장 보조 입력으로 시연 가능 | 실제 바코드/QR 스캐너 연동 |
 | 배송 현황 | 92% | 배송 목록, 검색/필터, 배송 중/배송 완료 상태 변경 bottom sheet | `GET /owner/shipments`, `PATCH /owner/shipments/{shipment_id}/status` | 구버전 backend 호환용으로 `/owner/orders` shipment field fallback, 서버 미가동 시 JSON fallback | 배송 상세 화면 추가 가능 |
-| 반품 · 환불 관리 | 88% | 반품 요청 목록, 검색, 상세 진입, 승인 금액 입력, 승인/거절, 거절 사유 선택 | `GET /owner/returns`, `PATCH /owner/returns/{id}/decision` | fallback 항목도 화면상 처리 완료 가능 | 실제 PG 환불 API 연계 |
+| 반품 · 환불 관리 | 91% | 반품 요청 목록, 검색, 상세 진입, 고객 첨부 이미지 표시/확대, 승인 금액 입력, 승인/거절, 거절 사유 선택 | `GET /owner/returns`, `PATCH /owner/returns/{id}/decision`, `return_requests.evidence_image_url` | fallback 항목도 화면상 처리 완료 가능 | 실제 PG 환불 API 연계 |
 | 반품 · 환불 현황 | 85% | 반품 처리 상태 목록, 검색/필터 | `GET /owner/returns` | fallback 상태 데이터 유지 | 환불 금액/처리일 상세 강화 |
 | 내 정보 수정 | 90% | 점주명, 이메일, 전화번호, 사업자번호 조회/수정 | `GET /owner/profile`, `PUT /owner/profile` | 없음 | 비밀번호 변경 API가 있으면 통합 |
 | 마이 | 85% | 점주/농장 헤더, 내 정보 수정, 농장 정보 수정, 로그아웃, 계정 지원 요청 | `GET /owner/profile`, `GET /owner/farms/me` | 회원 탈퇴 미구현 노출 대신 계정 지원 요청 UX | 실제 계정 비활성화/탈퇴 운영 API |
@@ -183,6 +183,7 @@ Last updated: 2026-05-11
 | `python scripts/migrate_owner_app_endpoints_to_smart_web.py` | SMART_WEB 실제 폴더 dry-run 성공, 파일 수정 없음 |
 | SMART_WEB backend 임시 복사본 migration `--apply` | 백업 생성, 신규 5개 endpoint 확인, SMART_WEB 전용 endpoint 보존, compileall 통과 |
 | `flutter build web --dart-define=API_BASE_URL=http://127.0.0.1:8000/api/v1` | 성공 |
+| 반품 증빙 이미지 asset 응답 | `http://127.0.0.1:3002/assets/assets/images/owner_demo/yanggwang_apples.png` 200 확인 |
 | Chrome 홈/메뉴/주문/예약 | 확인 완료 |
 | Chrome 신선도 검사 화면 | 품목 선택, 이미지 카드 UX, 4개 분석 metric 표시 확인 |
 | iOS 시뮬레이터 | 로그인/대시보드/메뉴/수확 슬롯 관리/신선도 갤러리 선택 확인 완료 |
@@ -237,7 +238,7 @@ Last updated: 2026-05-11
 | 배송 | 택배사 송장 검증 | 입력 형식 검증만 있음 | 택배사별 송장 자리수/배송조회 연동 없음 | carrier별 validation, tracking URL/API 추가 | 외부 택배 API 미연동 |
 | 배송 | 배송 라벨/출력 | 없음 | 포장 라벨, 송장 출력, 운송장 PDF 없음 | 라벨 템플릿/출력 flow 추가 | 발표 범위 밖 |
 | 반품 | 실제 PG 환불 | 반품 승인/거절 상태 처리 | 결제 취소/부분환불 PG API 연동 없음 | payment/refund service 연계 | 결제 운영 연계 필요 |
-| 반품 | 반품 이미지 상세 보기 | photo count 표시 수준 | 고객 첨부 이미지 확대/다운로드/비교 없음 | evidence image viewer 추가 | 데이터/이미지 URL seed 부족 |
+| 반품 | 반품 이미지 상세 보기 | 구현 완료 | 고객 첨부 이미지를 실제 이미지로 표시하고 탭 시 확대 확인 가능 | 없음 | 다운로드/다중 이미지 비교는 발표 범위 밖 |
 | 반품 | 환불 정책 자동 판정 | 점주 선택 중심 | 정책 기반 자동 승인/부분승인 추천 없음 | return policy rule engine 추가 | 정책 확정 필요 |
 | 프로필 | 사업자등록 검증 | 입력/저장 중심 | 사업자번호 외부 검증 없음 | 공공 API 또는 운영 검증 flow 추가 | 외부 API 미연동 |
 | 프로필 | 전화번호 인증 | 입력/저장 중심 | SMS 인증/변경 인증 없음 | SMS 인증 API 추가 | 외부 메시징 필요 |

@@ -37,7 +37,7 @@ Last updated: 2026-05-11
 | O-009 발주 상세/결정 | 승인/부분승인/거절 저장 | Done | 상세 결정 화면, `PATCH /owner/procurements/{id}/decision`. API 데이터가 없을 때도 품목별 수량 조정과 로컬 처리 흐름 유지 |
 | O-010 신선도 검사 | 이미지 선택/분석/점주 판정 저장 | Done | 갤러리 선택 버튼/카드 탭 연결, 추천등급/신선도/색상/형태/멍 확률 표시, 분석 실패 시 선택 이미지 기준 보조 판정 표시, `POST /owner/quality-inspections` 저장 |
 | O-011 배송 관리 | 배송 등록/상태 변경 | Done | `POST /owner/shipments`, `PATCH /owner/shipments/{id}/status`. 송장 스캔 액션은 발표용 송장 입력 보조 흐름으로 동작 |
-| O-012 반품/환불 관리 | 승인/거절, 환불 처리 | Done | `GET /owner/returns`, `PATCH /owner/returns/{id}/decision` |
+| O-012 반품/환불 관리 | 승인/거절, 환불 처리, 고객 첨부 이미지 확인 | Done | `GET /owner/returns`, `PATCH /owner/returns/{id}/decision`, `evidence_image_url` 실제 이미지 표시/확대 |
 | O-013 내 정보 | 점주 기본 정보 수정 | Done | `GET/PUT /owner/profile` |
 
 ## API / Migration Coverage

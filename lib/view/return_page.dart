@@ -300,7 +300,7 @@ class _ReturnDetailPageState extends State<_ReturnDetailPage> {
               enabled: false,
             ),
             if (widget.request.photoCount > 0)
-              _CustomerImagePreview(count: widget.request.photoCount),
+              _CustomerImagePreview(imageUrl: widget.request.evidenceImageUrl),
             LabeledField(
               label: '승인 금액',
               value: '',
@@ -331,34 +331,163 @@ class _ReturnDetailPageState extends State<_ReturnDetailPage> {
 }
 
 class _CustomerImagePreview extends StatelessWidget {
-  final int count;
+  final String? imageUrl;
 
-  const _CustomerImagePreview({required this.count});
+  const _CustomerImagePreview({required this.imageUrl});
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
+    final url = imageUrl ?? '';
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        for (var i = 0; i < count; i++)
-          Container(
-            width: 96,
-            height: 96,
-            decoration: BoxDecoration(
-              border: Border.all(color: AppColors.line),
-              borderRadius: BorderRadius.circular(16),
-              gradient: const LinearGradient(
-                colors: [Color(0xffB64033), Color(0xffF1B095)],
+        const Text(
+          '고객 첨부 이미지',
+          style: TextStyle(fontWeight: FontWeight.w700, color: AppColors.text),
+        ),
+        const SizedBox(height: 8),
+        InkWell(
+          borderRadius: BorderRadius.circular(8),
+          onTap: url.isEmpty
+              ? null
+              : () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => _ReturnImageViewer(imageUrl: url),
+                    ),
+                  );
+                },
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: AspectRatio(
+              aspectRatio: 16 / 10,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: AppColors.line),
+                      color: AppColors.mint,
+                    ),
+                    child: url.isEmpty
+                        ? const _ImageUnavailable()
+                        : _ReturnEvidenceImage(imageUrl: url),
+                  ),
+                  Positioned(
+                    right: 10,
+                    bottom: 10,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.62),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.open_in_full,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                          SizedBox(width: 6),
+                          Text(
+                            '확대',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            child: const Icon(
-              Icons.image_outlined,
-              color: Colors.white,
-              size: 36,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _ReturnImageViewer extends StatelessWidget {
+  final String imageUrl;
+
+  const _ReturnImageViewer({required this.imageUrl});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        title: const Text('고객 첨부 이미지'),
+      ),
+      body: SafeArea(
+        child: Center(
+          child: InteractiveViewer(
+            minScale: 1,
+            maxScale: 4,
+            child: _ReturnEvidenceImage(
+              imageUrl: imageUrl,
+              fit: BoxFit.contain,
             ),
           ),
-      ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ReturnEvidenceImage extends StatelessWidget {
+  final String imageUrl;
+  final BoxFit fit;
+
+  const _ReturnEvidenceImage({required this.imageUrl, this.fit = BoxFit.cover});
+
+  @override
+  Widget build(BuildContext context) {
+    if (imageUrl.startsWith('assets/')) {
+      return Image.asset(
+        imageUrl,
+        fit: fit,
+        errorBuilder: (_, _, _) => const _ImageUnavailable(),
+      );
+    }
+    return Image.network(
+      imageUrl,
+      fit: fit,
+      errorBuilder: (_, _, _) => const _ImageUnavailable(),
+    );
+  }
+}
+
+class _ImageUnavailable extends StatelessWidget {
+  const _ImageUnavailable();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.broken_image_outlined, color: AppColors.green, size: 32),
+          SizedBox(height: 8),
+          Text(
+            '이미지를 불러올 수 없습니다.',
+            style: TextStyle(
+              color: AppColors.green,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

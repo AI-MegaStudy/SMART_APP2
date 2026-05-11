@@ -144,6 +144,7 @@ class OwnerReturnRequestRecord {
     required this.detailReason,
     required this.status,
     required this.photoCount,
+    required this.evidenceImageUrl,
     required this.isFallback,
   });
 
@@ -156,6 +157,7 @@ class OwnerReturnRequestRecord {
   final String detailReason;
   final String status;
   final int photoCount;
+  final String? evidenceImageUrl;
   final bool isFallback;
 
   factory OwnerReturnRequestRecord.fromJson(
@@ -175,6 +177,7 @@ class OwnerReturnRequestRecord {
       json['package_count'] ?? firstItem['package_count'],
       fallback: 1,
     );
+    final evidenceImageUrl = json['evidence_image_url']?.toString().trim();
     return OwnerReturnRequestRecord(
       id: _asInt(json['return_request_id']),
       customerName: json['customer_name']?.toString() ?? '고객',
@@ -184,9 +187,10 @@ class OwnerReturnRequestRecord {
       amount: _asInt(json['requested_amount']).toString(),
       detailReason: json['reason_detail']?.toString() ?? '',
       status: _returnStatusLabel(json['return_status']?.toString() ?? ''),
-      photoCount: json['evidence_image_url']?.toString().isNotEmpty == true
-          ? 1
-          : 0,
+      photoCount: evidenceImageUrl?.isNotEmpty == true ? 1 : 0,
+      evidenceImageUrl: evidenceImageUrl?.isNotEmpty == true
+          ? evidenceImageUrl
+          : null,
       isFallback: isFallback,
     );
   }
