@@ -48,13 +48,13 @@ Last updated: 2026-05-11
 | 메뉴 | 95% | 업무 그룹별 메뉴, 검색, 주요 화면 이동 | Flutter local navigation | 없음 | 세부 메뉴명 최종 문구 검수 |
 | 상품 관리 | 94% | 상품 목록, 검색/필터, 상품 등록, 상품 수정, 대표 이미지 선택/업로드/썸네일, 상태 변경, 품종/박스 단위 제한, 가격/수량 stepper, 상품 소개 저장 | `GET/POST/PUT /owner/products`, `POST /owner/products/{id}/image`, `PATCH /owner/products/{id}/status` | 상품 수량은 실제 재고가 아니라 표시값. 실제 예약 가능 수량은 수확 슬롯에서 관리 | 실기기 갤러리 권한 최종 확인 |
 | 농장 정보 수정 | 94% | 농장명, 주소, 농장 대표 이미지 선택/업로드, 농장 소개, 배송 정책, 반품 정책 수정 | `GET /owner/farms/me`, `PUT /owner/farms/{farm_id}`, `POST /owner/farms/{farm_id}/image` | macOS/web 비지원 환경에서는 주소 후보 bottom sheet, 모바일은 `kpostal_plus` | 실기기 갤러리 권한 최종 확인 |
-| 수확 예측 | 90% | 농장/상품 선택, 과거 수확량/최근 날씨/재배 상태 입력, 예측 실행, 예측 카드/트렌드 표시 | `POST /owner/ml/predictions`, `GET /owner/ml/predictions` | rule 기반 owner 예측 결과로 발표 흐름 유지 | 실제 ML 모델 연동 시 feature schema 확정 |
+| 수확 예측 | 92% | 농장/상품 선택, 과거 수확량/최근 날씨/재배 상태 입력, 예측 실행, 예측 카드/트렌드 표시 | `POST /owner/ml/predictions`, `GET /owner/ml/predictions` | API/세션 실패 시 양광/부사 발표용 예측 fallback으로 흐름 유지 | 실제 ML 모델 연동 시 feature schema 확정 |
 | 수확 슬롯 열기/관리 | 94% | 예측값 참고 후 슬롯 생성, 최근 슬롯 목록, 예약/잔여/판매 kg 표시, 예약 가능 kg/판매가/안내 문구 수정, 마감/재오픈 | `GET/POST/PUT /owner/harvest-slots`, `PATCH /owner/harvest-slots/{id}/status` | 예측값을 그대로 열지 않고 점주 확정값 사용 | 슬롯 상세 타임라인은 후순위 |
 | 주문 현황 | 90% | 주문/예약 탭 분리, 상태 필터, 검색, 주문/예약 카드 표시 | `GET /owner/orders`, `GET /owner/reservations` | 내부 seed 주문번호는 화면에 직접 노출하지 않음 | 예약 상세 화면이 필요하면 추가 |
 | 발주 승인 | 90% | 신규 발주 목록, 검색, 다중 선택, 일괄 승인/거절, 거절 사유 선택 | `GET /owner/procurements`, `PATCH /owner/procurements/{id}/decision` | API 데이터 부족 시 주문 fallback으로 승인 흐름 유지 | PATCH 실패 건별 상세 표시 |
 | 발주 상세 | 92% | 품목별 승인 박스/kg 조정, 점주 메모, 전체 승인/전체 거절, 부분승인 자동 판정 | `PATCH /owner/procurements/{id}/decision` | fallback 항목도 화면상 처리 완료 가능 | 다품목 발주 데이터 추가 seed |
 | 발주 현황 | 85% | 발주 상태 목록, 검색, 상태 필터 | `GET /owner/procurements` | 데이터 부족 시 workflow fallback | 상세 타임라인 추가 가능 |
-| 신선도 검사 | 90% | 검사 대상 발주 품목 선택, 이미지 카드 탭/갤러리 버튼, iOS 갤러리 선택/미리보기, 이미지 업로드, 분석, 추천 등급/신선도/색상/형태/멍 확률 표시, 점주 확정 등급/판정 저장 | `GET /owner/procurements`, `POST /owner/quality-inspections/image`, `POST /owner/quality-inspections/analyze`, `POST /owner/quality-inspections` | 분석 실패 시 선택 이미지 기준 보조 판정 표시 | 실기기 사진 권한은 후속 확인 |
+| 신선도 검사 | 92% | 검사 대상 발주 품목 선택, 이미지 카드 탭/갤러리 버튼, iOS 갤러리 선택/미리보기, 이미지 업로드, 분석, 추천 등급/신선도/색상/형태/멍 확률 표시, 점주 확정 등급/판정 저장 | `GET /owner/procurements`, `POST /owner/quality-inspections/image`, `POST /owner/quality-inspections/analyze`, `POST /owner/quality-inspections` | API/세션 실패 시 검사 대상 fallback과 선택 이미지 기준 보조 판정 표시 | 실기기 사진 권한은 후속 확인 |
 | 배송 관리 | 88% | 배송 등록 가능한 발주 선택, 택배사 선택, 송장번호, 발송 중량/박스 수 입력, 바코드 버튼으로 송장 보조 입력 | `POST /owner/shipments` | 등록 조건 부족 시 안내. 송장 보조 입력으로 시연 가능 | 실제 바코드/QR 스캐너 연동 |
 | 배송 현황 | 92% | 배송 목록, 검색/필터, 배송 중/배송 완료 상태 변경 bottom sheet | `GET /owner/shipments`, `PATCH /owner/shipments/{shipment_id}/status` | 구버전 backend 호환용으로 `/owner/orders` shipment field fallback, 서버 미가동 시 JSON fallback | 배송 상세 화면 추가 가능 |
 | 반품 · 환불 관리 | 91% | 반품 요청 목록, 검색, 상세 진입, 고객 첨부 이미지 표시/확대, 승인 금액 입력, 승인/거절, 거절 사유 선택 | `GET /owner/returns`, `PATCH /owner/returns/{id}/decision`, `return_requests.evidence_image_url` | fallback 항목도 화면상 처리 완료 가능 | 실제 PG 환불 API 연계 |
@@ -112,6 +112,8 @@ Last updated: 2026-05-11
 | `assets/mock/owner_shipments.json` | 배송 현황 최후 보조 | 개발자용 표현 노출 없음 | `GET /owner/shipments`와 `/owner/orders`가 모두 실패할 때만 사용 |
 | `assets/mock/owner_returns.json` | 반품 관리/현황 보조 | 개발자용 표현 노출 없음 | API 정상 응답 시 빈 목록도 그대로 사용. 서버/네트워크 실패 때만 사용 |
 | `scripts/seed_owner3_workflows.py` | owner_id=3 발표용 상태 데이터 구성 | 자연스러운 고객명/상품명으로 표시 | 현재 `created_scenarios=0`, 이미 seed 존재 |
+| 수확 예측 repository fallback | 세션 만료/API 실패 시 발표 흐름 유지 | 개발자용 표현 노출 없음 | 양광/부사 상품, 슬롯, 예측값을 보조 생성 |
+| 신선도 검사 repository fallback | 세션 만료/API 실패 시 검사 대상/분석/저장 흐름 유지 | 개발자용 표현 노출 없음 | 검사 대상 2건과 선택 이미지 기준 보조 판정 제공 |
 | `QualityAnalysisRecord.localEstimate()` | 품질 분석 API 실패 시 보조 판정 | “선택 이미지 기준 보조 판정” 정도로 안내 | 추천등급/신선도/색상/형태/멍 확률 산출 |
 | 발주 fallback local 처리 | 실제 procurement 부족 시 승인 흐름 유지 | 처리 완료 UX | 로컬 세션 내 처리 항목 숨김 |
 | 배송 fallback local 처리 | shipment_id 없는 항목도 발표상 상태 변경 | 처리 완료 UX | 실제 DB 저장은 shipment_id가 있는 항목에서 수행 |
@@ -138,11 +140,11 @@ Last updated: 2026-05-11
 | 로그인/세션 | 실제 API만 사용 | 없음 | 대체 완료 |
 | 대시보드 | 실제 API 사용 | API 실패 시 빈 dashboard | 대체 완료, 안전 fallback |
 | 상품/농장 | 실제 API만 사용 | 없음 | 대체 완료 |
-| 수확 예측/슬롯 | 실제 API만 사용 | 없음 | 대체 완료 |
+| 수확 예측/슬롯 | 실제 API 우선 사용 | API/세션 실패 시 발표용 fallback | 대체 완료, 발표 안전 fallback |
 | 주문 목록 | 실제 `GET /owner/orders` 사용 | API 실패 시 JSON fallback | 대체 완료, fallback 축소 완료 |
 | 예약 목록 | 실제 `GET /owner/reservations` 사용 | 없음 | 대체 완료 |
 | 발주 목록/결정 | 실제 `GET/PATCH /owner/procurements` 사용 | API 실패 시 주문 JSON 기반 보조 | 대부분 대체, 서버 장애용 fallback 유지 |
-| 신선도 검사 대상/저장 | 실제 procurement/quality API 사용 | 분석 실패 시 local estimate | 저장은 API, 분석 보조 fallback 유지 |
+| 신선도 검사 대상/저장 | 실제 procurement/quality API 우선 사용 | API/세션 실패 시 검사 대상/분석/저장 fallback | 저장은 API 우선, 발표 안전 fallback 유지 |
 | 배송 등록 | 실제 `POST /owner/shipments` 사용 | 없음 | 대체 완료 |
 | 배송 현황/상태 | 실제 `GET /owner/shipments` + 상태 PATCH 사용 | 구버전 API 호환/서버 장애 fallback | 대체 완료 |
 | 반품 관리/현황 | 실제 `GET/PATCH /owner/returns` 사용 | API 실패 시 JSON fallback | 대체 완료, fallback 축소 완료 |
@@ -165,6 +167,8 @@ Last updated: 2026-05-11
 | 반품 목록 JSON fallback | 이미 `GET /owner/returns` 존재 | owner_id=3 seed에 반품 요청 생성. API 실패 시에만 JSON fallback | 추가 API 불필요 |
 | 신선도 분석 local estimate | 부분 가능 | backend 분석 API는 존재하지만 실제 외부 DL 모델은 없음 | 외부 DL 모델 전까지 보조 판정 fallback 필요 |
 | 주소 후보 fallback | 부분 가능 | 모바일은 `kpostal_plus`, 데스크톱/web 비지원 환경만 후보 사용 | 플랫폼 보조 fallback 필요 |
+| 수확 예측 세션 만료 메시지 | 가능 | API/세션 실패 시 repository에서 발표용 예측/슬롯 fallback 반환 | 화면에 로그인 만료 문구 노출 방지 |
+| 신선도 검사 세션 만료 메시지 | 가능 | API/세션 실패 시 검사 대상과 local 분석 fallback 반환 | 화면에 로그인 만료 문구 노출 방지 |
 | 이메일 찾기 안내 UX | 가능 | `POST /auth/email/find` 추가 및 화면 연결 | 대체 완료 |
 | 비밀번호 찾기 안내 UX | 가능 | 인증번호 발송과 새 비밀번호 저장까지 실제 API 연결 | 대체 완료 |
 | 상품/농장 이미지 UI 부재 | 가능 | 상품/농장 대표 이미지 선택, 업로드, asset seed 이미지 표시 구현 | 대체 완료 |
