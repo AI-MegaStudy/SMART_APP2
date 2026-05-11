@@ -15,13 +15,20 @@ class DashboardModel {
 
   factory DashboardModel.demo() {
     return DashboardModel(
-      openSlots: 0,
-      newProcurements: 0,
-      inspectionWaiting: 0,
-      readyToShip: 0,
-      returnRequests: 0,
+      openSlots: 1,
+      newProcurements: 2,
+      inspectionWaiting: 2,
+      readyToShip: 2,
+      returnRequests: 1,
     );
   }
+
+  bool get hasActivity =>
+      openSlots > 0 ||
+      newProcurements > 0 ||
+      inspectionWaiting > 0 ||
+      readyToShip > 0 ||
+      returnRequests > 0;
 
   factory DashboardModel.fromJson(Map<String, dynamic> json) {
     return DashboardModel(

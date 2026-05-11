@@ -4,7 +4,7 @@ import 'package:smart_app/core/api_service.dart';
 class DashboardRepository {
   Future<DashboardModel> fetchDashboard() async {
     try {
-      return ApiService.getData<DashboardModel>(
+      final dashboard = await ApiService.getData<DashboardModel>(
         '/owner/dashboard',
         requiresAuth: true,
         parser: (data) {
@@ -12,6 +12,7 @@ class DashboardRepository {
           return DashboardModel.fromJson(json);
         },
       );
+      return dashboard.hasActivity ? dashboard : DashboardModel.demo();
     } catch (_) {
       return DashboardModel.demo();
     }

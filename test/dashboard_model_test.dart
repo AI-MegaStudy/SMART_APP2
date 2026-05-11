@@ -34,13 +34,14 @@ void main() {
     expect(model.returnRequests, 11);
   });
 
-  test('DashboardModel demo fallback is empty instead of fake activity', () {
+  test('DashboardModel demo fallback keeps owner presentation populated', () {
     final model = DashboardModel.demo();
 
-    expect(model.openSlots, 0);
-    expect(model.newProcurements, 0);
-    expect(model.inspectionWaiting, 0);
-    expect(model.readyToShip, 0);
-    expect(model.returnRequests, 0);
+    expect(model.openSlots, 1);
+    expect(model.newProcurements, 2);
+    expect(model.inspectionWaiting, 2);
+    expect(model.readyToShip, 2);
+    expect(model.returnRequests, 1);
+    expect(model.hasActivity, isTrue);
   });
 }

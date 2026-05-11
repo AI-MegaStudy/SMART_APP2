@@ -81,6 +81,11 @@ class AuthenticatedUser:
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
+    if _is_legacy_sha256_hash(hashed_password):
+        return hmac.compare_digest(
+            hashed_password,
+            hashlib.sha256(plain_password.encode()).hexdigest(),
+        )
     if pwd_context:
         return pwd_context.verify(plain_password, hashed_password)
     return hashed_password == hashlib.sha256(plain_password.encode()).hexdigest()
@@ -90,6 +95,10 @@ def hash_password(password: str) -> str:
     if pwd_context:
         return pwd_context.hash(password)
     return hashlib.sha256(password.encode()).hexdigest()
+
+
+def _is_legacy_sha256_hash(value: str) -> bool:
+    return len(value) == 64 and all(char in "0123456789abcdef" for char in value.lower())
 
 
 def create_access_token(subject: str, role: str, expires_delta: timedelta | None = None) -> str:
