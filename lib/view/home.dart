@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smart_app/demo/owner_demo_page.dart';
 import 'package:smart_app/view/dashboard_page.dart';
 import 'package:smart_app/view/menu_page.dart';
 import 'package:smart_app/view/profile_page.dart';
@@ -11,7 +12,10 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  static const _demoTapWindow = Duration(milliseconds: 850);
   int selectedIndex = 1;
+  int demoTapCount = 0;
+  DateTime? lastDemoTapAt;
 
   late final pages = <_ShellPage>[
     const _ShellPage(
@@ -40,23 +44,47 @@ class _HomeState extends State<Home> {
     });
   }
 
+  void _handleHiddenDemoTap(PointerDownEvent event) {
+    if (selectedIndex != 1) return;
+    final topAreaHeight = MediaQuery.paddingOf(context).top + 128;
+    if (event.position.dy > topAreaHeight) return;
+
+    final now = DateTime.now();
+    final isFastTap =
+        lastDemoTapAt != null &&
+        now.difference(lastDemoTapAt!) < _demoTapWindow;
+    demoTapCount = isFastTap ? demoTapCount + 1 : 1;
+    lastDemoTapAt = now;
+
+    if (demoTapCount >= 3) {
+      demoTapCount = 0;
+      Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => const OwnerDemoPage()));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final current = pages[selectedIndex];
 
-    return Scaffold(
-      body: current.child,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: selectedIndex,
-        onDestinationSelected: _selectTab,
-        destinations: [
-          for (final page in pages)
-            NavigationDestination(
-              icon: Icon(page.icon),
-              selectedIcon: Icon(page.selectedIcon),
-              label: page.label,
-            ),
-        ],
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: _handleHiddenDemoTap,
+      child: Scaffold(
+        body: current.child,
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: selectedIndex,
+          onDestinationSelected: _selectTab,
+          destinations: [
+            for (final page in pages)
+              NavigationDestination(
+                icon: Icon(page.icon),
+                selectedIcon: Icon(page.selectedIcon),
+                label: page.label,
+              ),
+          ],
+        ),
       ),
     );
   }
