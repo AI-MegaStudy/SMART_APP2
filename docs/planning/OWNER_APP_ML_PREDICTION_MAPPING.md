@@ -8,9 +8,25 @@
 
 ## 호출 API
 
-- `POST /api/v1/owner/ml/predictions`
+- 우선 호출: `POST /api/v1/owner/ml/predictions/auto-weather`
+- 보조 호출: `POST /api/v1/owner/ml/predictions`
+- 날씨 피처 단독 조회: `GET /api/v1/weather/features?stn_id=136&target_year=2026`
 - 인증: 점주 로그인 후 `Authorization: Bearer {access_token}`
-- 요청 구조:
+- 우선 호출 요청 구조:
+
+```json
+{
+  "farm_id": 3,
+  "product_id": 5,
+  "target_year": 2026,
+  "stn_id": "136",
+  "past_yield_kg": 610,
+  "market_price": 39000,
+  "variety": "양광"
+}
+```
+
+- 보조 호출 요청 구조:
 
 ```json
 {
@@ -37,12 +53,16 @@
 | `past_yield_kg` | 최근 기준 수확량 | 점주가 kg 단위로 조정 | 앱 직접 입력이 적절하다. 향후 과거 수확 기록이 있으면 기본값으로 자동 제안한다. |
 | `market_price` | 기준 판매가 | 상품 등록 가격 | 점주가 예측 화면에서 직접 입력하기보다 상품 가격 또는 시세 데이터에서 가져오는 것이 적절하다. |
 | `variety` | 품종 | 상품 등록값 | 상품 선택으로 자동 결정한다. |
-| `mar_avg_temp` | 3월 평균기온 | `최근 기상 기준` 프리셋에서 수치로 변환 | 점주 직접 입력보다 지역/기상 데이터에서 가져오는 것이 적절하다. 현재는 발표용 프리셋으로 보강한다. |
-| `aug_sunshine` | 8월 일조량 | `최근 기상 기준` 프리셋에서 수치로 변환 | 지역/기상 데이터 연동 대상이다. |
-| `oct_rainfall` | 10월 강수량 | `최근 기상 기준` 프리셋에서 수치로 변환 | 지역/기상 데이터 연동 대상이다. 예약 안전계수와 주의 문구에 영향을 준다. |
-| `aug_humidity` | 8월 습도 | `최근 기상 기준`과 `재배 상태`로 보정 | 지역/기상 데이터 연동 대상이다. 현재는 작황 상태가 나쁘면 보정한다. |
+| `target_year` | 예측 기준 연도 | 앱에서 현재 연도를 전달 | 백엔드가 KMA ASOS 일별 데이터를 조회할 기준 연도다. |
+| `stn_id` | 기상 관측 지점 | 기본값 `136` | 앱은 KMA 키를 알 필요 없이 백엔드에 지점 번호만 전달한다. |
+| `mar_avg_temp` | 3월 평균기온 | 백엔드 KMA 날씨 API 결과 | auto-weather 실패 시 앱 프리셋 보조값을 사용한다. |
+| `aug_sunshine` | 8월 일조량 | 백엔드 KMA 날씨 API 결과 | auto-weather 실패 시 앱 프리셋 보조값을 사용한다. |
+| `oct_rainfall` | 10월 강수량 | 백엔드 KMA 날씨 API 결과 | auto-weather 실패 시 앱 프리셋 보조값을 사용한다. 예약 안전계수와 주의 문구에 영향을 준다. |
+| `aug_humidity` | 8월 습도 | 백엔드 KMA 날씨 API 결과 | auto-weather 실패 시 앱 프리셋/작황 보조값을 사용한다. |
 
 ## 현재 앱 프리셋
+
+정상 흐름에서는 백엔드가 `GET /weather/features`와 같은 날씨 피처 로직을 내부 호출해 값을 만든다. 앱의 `최근 기상 기준` 프리셋은 KMA 키 누락, KMA 장애, 백엔드 실패 시 끊김 없이 예측을 보여주기 위한 보조값이다.
 
 점주 화면은 복잡한 기상 수치 입력 대신 `최근 기상 기준`을 선택하게 한다. 앱은 이를 아래 수치로 변환해 API에 전달한다.
 

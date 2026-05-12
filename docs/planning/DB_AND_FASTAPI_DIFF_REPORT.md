@@ -85,6 +85,7 @@
 | 신선도 저장 | `POST /owner/quality-inspections`가 `model_grade`, `freshness_score`, `color_score`, `roundness_score`, `bruise_probability`, `model_decision`, `model_version` 선택 입력을 받음 | 없음 | 앱이 외부 DL 분석 결과를 화면 표시값 그대로 저장 가능 |
 | 신선도 분석 fallback | 외부 DL 결과가 앱에서 전달되면 backend가 다시 mock/rule 분석을 실행하지 않고 전달값을 저장 | 없음 | ngrok/Kaggle DL 성공 시 실제 모델 결과가 DB에 남고, 실패 시 기존 백엔드 분석/앱 보조 판정으로 흐름 유지 |
 | 수확 예측 응답 표시 | `unit_yield_kg_10a`, `confidence`, `warning_message`를 점주용 문구로 분리 표시 | 없음 | 화면에는 `1,000㎡ 기준 수확량`, `신뢰도`, `정상/주의`처럼 업무 표현으로 노출 |
+| 수확 예측 날씨 피처 | `GET /weather/features`, `POST /owner/ml/predictions/auto-weather` 추가. 백엔드가 KMA ASOS 일별 데이터로 ML 날씨 피처를 생성 | 없음 | 앱은 auto-weather를 먼저 호출하고, KMA/API 실패 시 기존 프리셋 기반 `POST /owner/ml/predictions`로 전환 |
 | 이미지 URL 저장 정책 | 농장/상품/신선도/반품 이미지 URL 저장 시 `http://` 또는 `https://` 업로드 URL만 허용 | 없음 | 업로드 실패 시 앱은 선택한 로컬 이미지를 화면 fallback으로 보여주되, DB에는 로컬 asset/mock/local 경로를 저장하지 않음 |
 
 ### SMART_APP에 추가된 엔드포인트

@@ -30,7 +30,6 @@ class _HomeState extends State<Home> {
       selectedIcon: Icons.home,
       child: DashboardPage(
         onJump: _selectTab,
-        onTitleTripleTap: _startAutoDemo,
         onSubtitleTripleTap: _startCoachTour,
       ),
     ),
@@ -48,6 +47,7 @@ class _HomeState extends State<Home> {
     });
   }
 
+  // ignore: unused_element
   void _startAutoDemo() {
     if (selectedIndex != 1) return;
     coachTourManager?.stop();

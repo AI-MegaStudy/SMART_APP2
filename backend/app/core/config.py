@@ -40,6 +40,10 @@ class Settings(BaseSettings):
     dl_quality_enabled: bool = False
     dl_quality_api_url: str = ""
     dl_quality_timeout_seconds: int = 20
+    kma_asos_service_key: str | None = None
+    kma_asos_base_url: str = "http://apis.data.go.kr/1360000/AsosDalyInfoService/getWthrDataList"
+    kma_default_stn_id: str = "136"
+    kma_asos_timeout_seconds: int = 20
 
     model_config = SettingsConfigDict(
         env_file=".env",

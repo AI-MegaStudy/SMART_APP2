@@ -486,6 +486,7 @@ class _HarvestSlotPageState extends State<HarvestSlotPage> {
             _MlFeatureCard(
               key: DemoTargetKeys.harvestFeatures,
               request: _predictionRequest,
+              prediction: prediction,
               weatherPreset: recentWeather,
               cultivationPreset: cultivationStatus,
             ),
@@ -774,19 +775,26 @@ class _MlFeatureCard extends StatelessWidget {
   const _MlFeatureCard({
     super.key,
     required this.request,
+    required this.prediction,
     required this.weatherPreset,
     required this.cultivationPreset,
   });
 
   final Map<String, Object?> request;
+  final HarvestPredictionRecord? prediction;
   final String weatherPreset;
   final String cultivationPreset;
 
   @override
   Widget build(BuildContext context) {
-    final features =
-        request['features'] as Map<String, Object?>? ??
-        const <String, Object?>{};
+    final inputFeatures =
+        (request['features'] as Map<String, Object?>?) ?? const {};
+    final features = {
+      ...inputFeatures,
+      if (prediction?.weatherFeatures != null) ...prediction!.weatherFeatures!,
+    };
+    final weatherSource = prediction?.weatherSource;
+    final fallbackUsed = weatherSource?['fallback_used'] == true;
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(14),
@@ -807,6 +815,13 @@ class _MlFeatureCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
+          if (prediction?.weatherFeatures != null) ...[
+            _FeatureRow(
+              label: '날씨 자료',
+              value: fallbackUsed ? '이전 연도 보완' : '기상청 기준',
+              source: '자동 반영',
+            ),
+          ],
           _FeatureRow(
             label: '과거 수확량',
             value: '${_formatNumber(features['past_yield_kg'])}kg',

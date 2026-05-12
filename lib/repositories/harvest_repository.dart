@@ -63,18 +63,17 @@ class HarvestRepository {
         recentWeather: recentWeather,
         cultivationStatus: cultivationStatus,
       );
-      final record = await ApiService.postData<HarvestPredictionRecord>(
-        '/owner/ml/predictions',
-        requiresAuth: true,
-        body: requestBody,
-        parser: (data) {
-          final json = data as Map<String, dynamic>? ?? const {};
-          return HarvestPredictionRecord.fromJson(json);
-        },
+      final autoWeatherBody = buildAutoWeatherPredictionRequest(
+        option,
+        pastYieldKg: pastYieldKg,
+      );
+      final record = await _createPredictionWithAutoWeather(
+        autoWeatherBody,
+        fallbackBody: requestBody,
       );
       ApiDebugLog.ok(
         'harvest.prediction',
-        'request=$requestBody result='
+        'request=$autoWeatherBody result='
             'id=${record.predictionId}, model=${record.modelVersion}, '
             'unitYield10a=${record.unitYieldKg10a}, '
             'estimated=${record.estimatedYieldKg}, '
@@ -132,6 +131,55 @@ class HarvestRepository {
         'aug_humidity': climate.augHumidity,
       },
     };
+  }
+
+  Map<String, Object?> buildAutoWeatherPredictionRequest(
+    HarvestProductOption option, {
+    required int pastYieldKg,
+  }) {
+    return {
+      'farm_id': option.farm.farmId,
+      'product_id': option.product.id,
+      'target_year': DateTime.now().year,
+      'stn_id': '136',
+      'past_yield_kg': pastYieldKg,
+      'market_price': option.product.price,
+      'variety': option.product.variety.isEmpty
+          ? ProductRecord.varietyFromProductName(option.product.name)
+          : option.product.variety,
+    };
+  }
+
+  Future<HarvestPredictionRecord> _createPredictionWithAutoWeather(
+    Map<String, Object?> body, {
+    required Map<String, Object?> fallbackBody,
+  }) async {
+    try {
+      return await ApiService.postData<HarvestPredictionRecord>(
+        '/owner/ml/predictions/auto-weather',
+        requiresAuth: true,
+        body: body,
+        parser: (data) {
+          final json = data as Map<String, dynamic>? ?? const {};
+          return HarvestPredictionRecord.fromJson(json);
+        },
+      );
+    } catch (error) {
+      ApiDebugLog.fallback(
+        'harvest.weather',
+        error,
+        message: '날씨 API 기반 예측 실패. 화면 입력값 기준 예측으로 전환합니다.',
+      );
+      return await ApiService.postData<HarvestPredictionRecord>(
+        '/owner/ml/predictions',
+        requiresAuth: true,
+        body: fallbackBody,
+        parser: (data) {
+          final json = data as Map<String, dynamic>? ?? const {};
+          return HarvestPredictionRecord.fromJson(json);
+        },
+      );
+    }
   }
 
   _MlClimateFeatures _climateFeatures({

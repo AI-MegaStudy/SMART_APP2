@@ -1,22 +1,38 @@
 from datetime import date
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class MLPredictionFeatures(BaseModel):
     past_yield_kg: float = Field(gt=0)
     market_price: float = Field(gt=0)
     variety: str = Field(min_length=1)
-    mar_avg_temp: float = Field(ge=-5, le=25)
-    aug_sunshine: float = Field(ge=50, le=400)
-    oct_rainfall: float = Field(ge=0, le=600)
-    aug_humidity: float = Field(ge=30, le=100)
+    mar_avg_temp: float | None = Field(default=None, ge=-5, le=25)
+    aug_sunshine: float | None = Field(default=None, ge=50, le=400)
+    oct_rainfall: float | None = Field(default=None, ge=0, le=600)
+    aug_humidity: float | None = Field(default=None, ge=30, le=100)
+    target_year: int | None = Field(default=None, ge=1900, le=2100)
+    stn_id: str | None = Field(default=None, min_length=1)
+
+    model_config = ConfigDict(extra="forbid")
 
 
 class MLPredictionCreateRequest(BaseModel):
     farm_id: int
     product_id: int
     features: MLPredictionFeatures
+
+
+class MLAutoWeatherPredictionRequest(BaseModel):
+    farm_id: int
+    product_id: int
+    target_year: int = Field(ge=1900, le=2100)
+    stn_id: str | None = Field(default=None, min_length=1)
+    past_yield_kg: float = Field(gt=0)
+    market_price: float = Field(gt=0)
+    variety: str = Field(min_length=1)
+
+    model_config = ConfigDict(extra="forbid")
 
 
 class MLPredictionResponse(BaseModel):

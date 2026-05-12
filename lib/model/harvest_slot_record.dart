@@ -16,6 +16,8 @@ class HarvestPredictionRecord {
     this.unitYieldKg10a,
     this.safetyFactor,
     this.modelVersion,
+    this.weatherFeatures,
+    this.weatherSource,
   });
 
   final int predictionId;
@@ -32,6 +34,8 @@ class HarvestPredictionRecord {
   final double? unitYieldKg10a;
   final double? safetyFactor;
   final String? modelVersion;
+  final Map<String, Object?>? weatherFeatures;
+  final Map<String, Object?>? weatherSource;
 
   factory HarvestPredictionRecord.fromJson(Map<String, dynamic> json) {
     return HarvestPredictionRecord(
@@ -49,6 +53,8 @@ class HarvestPredictionRecord {
       unitYieldKg10a: _asDoubleOrNull(json['unit_yield_kg_10a']),
       safetyFactor: _asDoubleOrNull(json['safety_factor']),
       modelVersion: json['model_version']?.toString(),
+      weatherFeatures: _asMap(json['weather_features']),
+      weatherSource: _asMap(json['weather_source']),
     );
   }
 
@@ -227,6 +233,11 @@ double? _asDoubleOrNull(Object? value) {
   if (value is double) return value;
   if (value is num) return value.toDouble();
   return double.tryParse(value.toString());
+}
+
+Map<String, Object?>? _asMap(Object? value) {
+  if (value is! Map) return null;
+  return {for (final entry in value.entries) entry.key.toString(): entry.value};
 }
 
 String _shortDate(String value) {
