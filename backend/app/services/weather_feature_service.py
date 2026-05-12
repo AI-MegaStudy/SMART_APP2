@@ -151,9 +151,9 @@ class WeatherFeatureService:
         service_key = (settings.kma_asos_service_key or "").strip()
         base_url = settings.kma_asos_base_url.strip()
         if not service_key:
-            raise HTTPException(status_code=500, detail="KMA_ASOS_SERVICE_KEY is not configured")
+            raise HTTPException(status_code=503, detail="weather feature service is not configured")
         if not base_url:
-            raise HTTPException(status_code=500, detail="KMA_ASOS_BASE_URL is not configured")
+            raise HTTPException(status_code=503, detail="weather feature service is not configured")
 
         params = {
             "ServiceKey": service_key,

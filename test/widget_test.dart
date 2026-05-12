@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -51,4 +53,36 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('농장 정보 수정'), findsOneWidget);
   });
+
+  testWidgets('Owner app clears expired session and shows login', (
+    WidgetTester tester,
+  ) async {
+    SharedPreferences.setMockInitialValues({
+      'harvest_slot_owner_access_token': _jwtWithExp(
+        DateTime.now().subtract(const Duration(minutes: 1)),
+      ),
+      'harvest_slot_owner_role': 'OWNER',
+    });
+
+    await tester.pumpWidget(const OwnerApp());
+    await tester.pumpAndSettle();
+
+    expect(AuthSession.isLoggedIn, isFalse);
+    expect(find.text('오늘 수확 운영을 시작하세요'), findsOneWidget);
+    expect(find.text('로그인'), findsOneWidget);
+  });
+}
+
+String _jwtWithExp(DateTime expiresAt) {
+  final header = _base64Json({'alg': 'HS256', 'typ': 'JWT'});
+  final payload = _base64Json({
+    'sub': 'owner@test.com',
+    'role': 'OWNER',
+    'exp': expiresAt.millisecondsSinceEpoch ~/ 1000,
+  });
+  return '$header.$payload.signature';
+}
+
+String _base64Json(Map<String, Object> value) {
+  return base64Url.encode(utf8.encode(jsonEncode(value))).replaceAll('=', '');
 }

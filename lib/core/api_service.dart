@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 import 'package:http_parser/http_parser.dart';
+import 'package:smart_app/core/api_debug_log.dart';
 import 'package:smart_app/core/api_exception.dart';
 import 'package:smart_app/core/auth_session.dart';
 
@@ -18,11 +19,14 @@ class ApiService {
     T Function(Object? data)? parser,
     bool requiresAuth = false,
   }) async {
+    final uri = _uri(path);
+    _logRequest('GET', uri, requiresAuth: requiresAuth);
     final response = await http
-        .get(_uri(path), headers: _headers(requiresAuth: requiresAuth))
+        .get(uri, headers: _headers(requiresAuth: requiresAuth))
         .timeout(requestTimeout);
+    ApiDebugLog.response('GET', uri, response.statusCode);
 
-    return _decodeData(response, parser);
+    return _decodeData(response, parser, requiresAuth: requiresAuth);
   }
 
   static Future<T> postData<T>(
@@ -31,15 +35,18 @@ class ApiService {
     T Function(Object? data)? parser,
     bool requiresAuth = false,
   }) async {
+    final uri = _uri(path);
+    _logRequest('POST', uri, requiresAuth: requiresAuth);
     final response = await http
         .post(
-          _uri(path),
+          uri,
           headers: _headers(requiresAuth: requiresAuth),
           body: body == null ? null : jsonEncode(body),
         )
         .timeout(requestTimeout);
+    ApiDebugLog.response('POST', uri, response.statusCode);
 
-    return _decodeData(response, parser);
+    return _decodeData(response, parser, requiresAuth: requiresAuth);
   }
 
   static Future<T> putData<T>(
@@ -48,15 +55,18 @@ class ApiService {
     T Function(Object? data)? parser,
     bool requiresAuth = false,
   }) async {
+    final uri = _uri(path);
+    _logRequest('PUT', uri, requiresAuth: requiresAuth);
     final response = await http
         .put(
-          _uri(path),
+          uri,
           headers: _headers(requiresAuth: requiresAuth),
           body: body == null ? null : jsonEncode(body),
         )
         .timeout(requestTimeout);
+    ApiDebugLog.response('PUT', uri, response.statusCode);
 
-    return _decodeData(response, parser);
+    return _decodeData(response, parser, requiresAuth: requiresAuth);
   }
 
   static Future<T> patchData<T>(
@@ -65,15 +75,18 @@ class ApiService {
     T Function(Object? data)? parser,
     bool requiresAuth = false,
   }) async {
+    final uri = _uri(path);
+    _logRequest('PATCH', uri, requiresAuth: requiresAuth);
     final response = await http
         .patch(
-          _uri(path),
+          uri,
           headers: _headers(requiresAuth: requiresAuth),
           body: body == null ? null : jsonEncode(body),
         )
         .timeout(requestTimeout);
+    ApiDebugLog.response('PATCH', uri, response.statusCode);
 
-    return _decodeData(response, parser);
+    return _decodeData(response, parser, requiresAuth: requiresAuth);
   }
 
   static Future<T> postMultipartData<T>(
@@ -85,7 +98,9 @@ class ApiService {
     Map<String, String> fields = const {},
     bool requiresAuth = false,
   }) async {
-    final request = http.MultipartRequest('POST', _uri(path));
+    final uri = _uri(path);
+    _logRequest('POST', uri, requiresAuth: requiresAuth);
+    final request = http.MultipartRequest('POST', uri);
     request.headers.addAll(
       _headers(requiresAuth: requiresAuth)..remove('Content-Type'),
     );
@@ -101,7 +116,8 @@ class ApiService {
 
     final streamed = await request.send().timeout(requestTimeout);
     final response = await http.Response.fromStream(streamed);
-    return _decodeData(response, parser);
+    ApiDebugLog.response('POST', uri, response.statusCode);
+    return _decodeData(response, parser, requiresAuth: requiresAuth);
   }
 
   static Uri _uri(String path) {
@@ -140,14 +156,18 @@ class ApiService {
     return headers;
   }
 
-  static T _decodeData<T>(
+  static Future<T> _decodeData<T>(
     http.Response response,
-    T Function(Object? data)? parser,
-  ) {
+    T Function(Object? data)? parser, {
+    required bool requiresAuth,
+  }) async {
     final decoded = _decodeJson(response);
     final message = decoded['message']?.toString() ?? '요청 처리에 실패했습니다.';
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
+      if (requiresAuth && response.statusCode == 401) {
+        await AuthSession.clear();
+      }
       throw ApiException(
         message: _toUserMessage(message),
         statusCode: response.statusCode,
@@ -169,6 +189,19 @@ class ApiService {
       return parser(data);
     }
     return data as T;
+  }
+
+  static void _logRequest(
+    String method,
+    Uri uri, {
+    required bool requiresAuth,
+  }) {
+    ApiDebugLog.request(
+      method,
+      uri,
+      requiresAuth: requiresAuth,
+      token: requiresAuth ? AuthSession.accessToken : null,
+    );
   }
 
   static Map<String, Object?> _decodeJson(http.Response response) {

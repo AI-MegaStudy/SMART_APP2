@@ -19,6 +19,25 @@ class OwnerApp extends StatefulWidget {
 
 class _OwnerAppState extends State<OwnerApp> {
   late final Future<void> restoreSession = AuthSession.restore();
+  final navigatorKey = GlobalKey<NavigatorState>();
+
+  @override
+  void initState() {
+    super.initState();
+    AuthSession.sessionVersion.addListener(_handleSessionChanged);
+  }
+
+  @override
+  void dispose() {
+    AuthSession.sessionVersion.removeListener(_handleSessionChanged);
+    super.dispose();
+  }
+
+  void _handleSessionChanged() {
+    if (!AuthSession.isLoggedIn) {
+      navigatorKey.currentState?.popUntil((route) => route.isFirst);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -29,6 +48,7 @@ class _OwnerAppState extends State<OwnerApp> {
         ),
       ],
       child: MaterialApp(
+        navigatorKey: navigatorKey,
         debugShowCheckedModeBanner: false,
         title: 'Harvest Slot 점주앱',
         theme: ThemeData(
@@ -94,7 +114,14 @@ class _OwnerAppState extends State<OwnerApp> {
                 body: Center(child: CircularProgressIndicator()),
               );
             }
-            return AuthSession.isLoggedIn ? const Home() : const LoginPage();
+            return ValueListenableBuilder<int>(
+              valueListenable: AuthSession.sessionVersion,
+              builder: (context, value, child) {
+                return AuthSession.isLoggedIn
+                    ? const Home()
+                    : const LoginPage();
+              },
+            );
           },
         ),
       ),

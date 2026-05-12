@@ -11,6 +11,7 @@ class AuthSession {
 
   static String? accessToken;
   static String? role;
+  static final ValueNotifier<int> sessionVersion = ValueNotifier<int>(0);
 
   static bool get isLoggedIn => accessToken != null && accessToken!.isNotEmpty;
 
@@ -18,6 +19,11 @@ class AuthSession {
     final preferences = await SharedPreferences.getInstance();
     accessToken = preferences.getString(_accessTokenKey);
     role = preferences.getString(_roleKey);
+    if (_isExpiredJwt(accessToken)) {
+      await clear();
+      _logSession('restore-expired');
+      return;
+    }
     _logSession('restore');
   }
 
@@ -30,15 +36,24 @@ class AuthSession {
     final preferences = await SharedPreferences.getInstance();
     await preferences.setString(_accessTokenKey, token);
     await preferences.setString(_roleKey, userRole);
+    _notifySessionChanged();
     _logSession('login');
   }
 
   static Future<void> logout() async {
+    await clear();
+  }
+
+  static Future<void> clear() async {
+    final hadSession = isLoggedIn || role != null;
     accessToken = null;
     role = null;
     final preferences = await SharedPreferences.getInstance();
     await preferences.remove(_accessTokenKey);
     await preferences.remove(_roleKey);
+    if (hadSession) {
+      _notifySessionChanged();
+    }
   }
 
   static void _logSession(String event) {
@@ -91,6 +106,24 @@ class AuthSession {
     return DateTime.fromMillisecondsSinceEpoch(seconds * 1000);
   }
 
+  static bool _isExpiredJwt(String? token) {
+    if (token == null || token.isEmpty) return false;
+
+    try {
+      final parts = token.split('.');
+      if (parts.length < 2) return false;
+      final payloadText = utf8.decode(
+        base64Url.decode(base64Url.normalize(parts[1])),
+      );
+      final payload = jsonDecode(payloadText) as Map<String, dynamic>;
+      final expiresAt = _parseJwtExp(payload['exp']);
+      if (expiresAt == null) return false;
+      return !expiresAt.isAfter(DateTime.now());
+    } catch (_) {
+      return false;
+    }
+  }
+
   static String _durationLabel(Duration duration) {
     if (duration.isNegative) {
       return '만료됨 ${_durationLabel(-duration)} 전';
@@ -101,5 +134,9 @@ class AuthSession {
     if (days > 0) return '$days일 $hours시간';
     if (hours > 0) return '$hours시간 $minutes분';
     return '$minutes분';
+  }
+
+  static void _notifySessionChanged() {
+    sessionVersion.value += 1;
   }
 }
